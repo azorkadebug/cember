@@ -1,3 +1,4 @@
+import '../tema.dart';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -76,7 +77,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
             expandedHeight: 120,
             floating: false,
             pinned: true,
-            backgroundColor: Colors.orange.shade700,
+            backgroundColor: AppTema.ana,
             foregroundColor: Colors.white,
             centerTitle: true,
             title: innerBoxIsScrolled
@@ -91,7 +92,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter, end: Alignment.bottomCenter,
-                    colors: [Colors.orange.shade700, Colors.deepOrange.shade600],
+                    colors: [AppTema.ana, AppTema.anaKoyu],
                   ),
                 ),
                 child: SafeArea(
@@ -187,7 +188,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                     Expanded(
                       child: ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.orange.shade700,
+                          backgroundColor: AppTema.ana,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -224,7 +225,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
     return StreamBuilder<QuerySnapshot>(
       stream: _db.ogrencilerStream(widget.sinifId),
       builder: (context, snapshot) {
-        if (!snapshot.hasData) return const Center(child: CircularProgressIndicator(color: Colors.orange));
+        if (!snapshot.hasData) return const Center(child: CircularProgressIndicator(color: AppTema.ana));
         List<Ogrenci> liste = snapshot.data!.docs
             .map((d) => Ogrenci.fromMap(d.id, d.data() as Map<String, dynamic>))
             .toList();
@@ -287,33 +288,27 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
               ),
             ),
             child: Material(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(12),
               color: Colors.white,
               elevation: 1,
               shadowColor: Colors.black.withAlpha(15),
               child: InkWell(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(12),
                 onTap: () => _ogrenciDuzenle(o),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 3.5,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: o.isMale ? Colors.blue.shade400 : Colors.pink.shade400,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    Expanded(child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                   child: Row(
                     children: [
-                      Container(
-                        width: 42, height: 42,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: o.isMale
-                                ? [Colors.blue.shade300, Colors.blue.shade500]
-                                : [Colors.pink.shade300, Colors.pink.shade500],
-                          ),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Center(
-                          child: Text(o.isMale ? "♂" : "♀",
-                              style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -347,6 +342,8 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                       _rozetGrubu(o),
                     ],
                   ),
+                )),
+                  ],
                 ),
               ),
             ),
@@ -362,26 +359,34 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _rozet('👟', o.ayakkabiEksik),
-          _rozet('👕', o.kiyafetEksik),
-          _rozet(o.sariKart >= 2 ? '🟥' : '🟨', o.sariKart),
-          _rozet('🏥', o.saglikDurumu),
+          _rozet(Icons.do_not_step_rounded, Colors.deepOrange, o.ayakkabiEksik),
+          _rozet(Icons.checkroom_rounded, Colors.purple, o.kiyafetEksik),
+          _rozet(o.sariKart >= 2 ? Icons.square_rounded : Icons.square_rounded,
+              o.sariKart >= 2 ? Colors.red : Colors.amber.shade700, o.sariKart),
+          _rozet(Icons.medical_services_rounded, Colors.teal, o.saglikDurumu),
         ],
       ),
     );
   }
 
-  Widget _rozet(String icon, int val) {
-    if (val == 0) {
-      return Padding(padding: const EdgeInsets.symmetric(horizontal: 2), child: Text(icon, style: const TextStyle(fontSize: 18)));
-    }
+  Widget _rozet(IconData icon, Color renk, int val) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 2),
-      child: Badge(
-        label: Text('$val', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 9)),
-        backgroundColor: val < 0 ? Colors.red : Colors.green,
-        child: Text(icon, style: const TextStyle(fontSize: 18)),
-      ),
+      child: val == 0
+          ? Container(
+              width: 28, height: 28,
+              decoration: BoxDecoration(color: renk.withAlpha(20), borderRadius: BorderRadius.circular(8)),
+              child: Icon(icon, size: 16, color: renk.withAlpha(120)),
+            )
+          : Badge(
+              label: Text('$val', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 9)),
+              backgroundColor: val < 0 ? Colors.red : Colors.green,
+              child: Container(
+                width: 28, height: 28,
+                decoration: BoxDecoration(color: renk.withAlpha(30), borderRadius: BorderRadius.circular(8)),
+                child: Icon(icon, size: 16, color: renk),
+              ),
+            ),
     );
   }
 
@@ -406,20 +411,20 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
             Flexible(child: Text(o.ad, style: const TextStyle(fontWeight: FontWeight.w700))),
           ]),
           content: Column(mainAxisSize: MainAxisSize.min, children: [
-            _artieksi("👟 Ayakkabı", o.ayakkabiEksik, (v) => setDialogState(() => o.ayakkabiEksik += v)),
+            _artieksi(Icons.do_not_step_rounded, Colors.deepOrange, "Ayakkabı", o.ayakkabiEksik, (v) => setDialogState(() => o.ayakkabiEksik += v)),
             const Divider(height: 1),
-            _artieksi("👕 Kıyafet", o.kiyafetEksik, (v) => setDialogState(() => o.kiyafetEksik += v)),
+            _artieksi(Icons.checkroom_rounded, Colors.purple, "Kıyafet", o.kiyafetEksik, (v) => setDialogState(() => o.kiyafetEksik += v)),
             const Divider(height: 1),
-            _artieksi("🟨 Kart", o.sariKart, (v) => setDialogState(() => o.sariKart += v)),
+            _artieksi(Icons.square_rounded, Colors.amber.shade700, "Kart", o.sariKart, (v) => setDialogState(() => o.sariKart += v)),
             const Divider(height: 1),
-            _artieksi("🏥 Sağlık", o.saglikDurumu, (v) => setDialogState(() => o.saglikDurumu += v)),
+            _artieksi(Icons.medical_services_rounded, Colors.teal, "Sağlık", o.saglikDurumu, (v) => setDialogState(() => o.saglikDurumu += v)),
           ]),
           actions: [
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange.shade700, foregroundColor: Colors.white,
+                  backgroundColor: AppTema.ana, foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
@@ -433,11 +438,19 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
     );
   }
 
-  Widget _artieksi(String label, int val, Function(int) onEdit) {
+  Widget _artieksi(IconData icon, Color renk, String label, int val, Function(int) onEdit) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-        Text(label, style: const TextStyle(fontSize: 14)),
+        Row(children: [
+          Container(
+            width: 30, height: 30,
+            decoration: BoxDecoration(color: renk.withAlpha(25), borderRadius: BorderRadius.circular(8)),
+            child: Icon(icon, size: 18, color: renk),
+          ),
+          const SizedBox(width: 8),
+          Text(label, style: const TextStyle(fontSize: 14)),
+        ]),
         Container(
           decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(10)),
           child: Row(children: [
@@ -471,7 +484,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
               decoration: InputDecoration(
                 labelText: "Yetenek Puanı",
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.orange.shade700, width: 2)),
+                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: AppTema.ana, width: 2)),
               ),
               keyboardType: TextInputType.number,
             ),
@@ -481,7 +494,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
               decoration: InputDecoration(
                 labelText: "Özel Not",
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.orange.shade700, width: 2)),
+                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: AppTema.ana, width: 2)),
               ),
               maxLines: 2,
             ),
@@ -495,7 +508,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.orange.shade700, foregroundColor: Colors.white,
+                backgroundColor: AppTema.ana, foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               ),
@@ -578,8 +591,8 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                   child: Row(children: [
                     Container(
                       padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(color: Colors.orange.shade50, borderRadius: BorderRadius.circular(12)),
-                      child: Icon(Icons.group_add_rounded, color: Colors.orange.shade700, size: 24),
+                      decoration: BoxDecoration(color: AppTema.ana50, borderRadius: BorderRadius.circular(12)),
+                      child: Icon(Icons.group_add_rounded, color: AppTema.ana, size: 24),
                     ),
                     const SizedBox(width: 12),
                     const Expanded(child: Text("Hızlı Öğrenci Ekle", style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800))),
@@ -675,7 +688,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                     const SizedBox(width: 12),
                     ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.orange.shade700, foregroundColor: Colors.white,
+                        backgroundColor: AppTema.ana, foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14), elevation: 2,
                       ),
@@ -722,7 +735,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
         builder: (c) => AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Row(children: [
-            Icon(Icons.warning_amber_rounded, color: Colors.orange.shade700),
+            Icon(Icons.warning_amber_rounded, color: AppTema.ana),
             const SizedBox(width: 8),
             const Text("Aynı İsim Var", style: TextStyle(fontWeight: FontWeight.w700)),
           ]),
@@ -732,7 +745,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
             ...cakisanlar.map((ad) => Padding(
               padding: const EdgeInsets.only(bottom: 4),
               child: Row(children: [
-                Icon(Icons.person, color: Colors.orange.shade700, size: 18),
+                Icon(Icons.person, color: AppTema.ana, size: 18),
                 const SizedBox(width: 8),
                 Text(ad, style: const TextStyle(fontWeight: FontWeight.w600)),
               ]),
@@ -743,7 +756,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
           actions: [
             TextButton(onPressed: () => Navigator.pop(c, false), child: Text("Atla", style: TextStyle(color: Colors.grey.shade600))),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.orange.shade700, foregroundColor: Colors.white,
+              style: ElevatedButton.styleFrom(backgroundColor: AppTema.ana, foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
               onPressed: () => Navigator.pop(c, true),
               child: const Text("Yine de Ekle", style: TextStyle(fontWeight: FontWeight.w700)),
@@ -811,7 +824,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
           ),
           actions: [
             ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.orange.shade700, foregroundColor: Colors.white,
+              style: ElevatedButton.styleFrom(backgroundColor: AppTema.ana, foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
               onPressed: () {
                 if (c.text.isNotEmpty) { setDialogState(() => formaRenkleri.add(c.text)); c.clear(); setState(() {}); }
@@ -836,12 +849,12 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
       case 'yeşil': return Colors.green;
       case 'siyah': return Colors.black87;
       case 'beyaz': return Colors.grey.shade400;
-      case 'turuncu': return Colors.orange;
+      case 'turuncu': return AppTema.ana;
       case 'mor': return Colors.purple;
       case 'pembe': return Colors.pink;
       case 'lacivert': return Colors.indigo;
       case 'gri': return Colors.grey;
-      default: return Colors.orange;
+      default: return AppTema.ana;
     }
   }
 
@@ -914,9 +927,9 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                 Text("${gelenler.length} oyuncu  •  $secilenTakimSayisi takım", style: TextStyle(color: Colors.grey.shade500)),
               ]),
               Material(
-                color: Colors.orange.shade50, borderRadius: BorderRadius.circular(12),
+                color: AppTema.ana50, borderRadius: BorderRadius.circular(12),
                 child: IconButton(
-                  icon: Icon(Icons.refresh_rounded, color: Colors.orange.shade700, size: 28),
+                  icon: Icon(Icons.refresh_rounded, color: AppTema.ana, size: 28),
                   tooltip: "Yeniden Karıştır",
                   onPressed: () { Navigator.pop(sheetCtx); _takimlariKur(); },
                 ),

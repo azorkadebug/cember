@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'firebase_options.dart';
 import 'screens/giris_ekrani.dart';
 import 'screens/siniflar_ekrani.dart';
+import 'tema.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,7 +21,7 @@ class CemberApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-            seedColor: Colors.orange, primary: Colors.orange),
+            seedColor: AppTema.ana, primary: AppTema.ana),
         useMaterial3: true,
         cardTheme: const CardThemeData(
             elevation: 2,

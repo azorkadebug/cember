@@ -1,3 +1,4 @@
+import '../tema.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/auth_service.dart';
@@ -16,7 +17,7 @@ class SiniflarEkrani extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Sınıflarım', style: TextStyle(fontWeight: FontWeight.w800)),
         centerTitle: false,
-        backgroundColor: Colors.orange.shade700,
+        backgroundColor: AppTema.ana,
         foregroundColor: Colors.white,
         elevation: 0,
         actions: [
@@ -37,7 +38,7 @@ class SiniflarEkrani extends StatelessWidget {
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [Colors.orange.shade700, Colors.orange.shade500],
+                colors: [AppTema.ana, AppTema.anaAcik],
               ),
               borderRadius: const BorderRadius.only(
                 bottomLeft: Radius.circular(28),
@@ -78,7 +79,7 @@ class SiniflarEkrani extends StatelessWidget {
                   );
                 }
                 if (!snapshot.hasData) {
-                  return const Center(child: CircularProgressIndicator(color: Colors.orange));
+                  return const Center(child: CircularProgressIndicator(color: AppTema.ana));
                 }
                 if (snapshot.data!.docs.isEmpty) {
                   return Center(
@@ -108,7 +109,7 @@ class SiniflarEkrani extends StatelessWidget {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _sinifEkle(context),
-        backgroundColor: Colors.orange.shade700,
+        backgroundColor: AppTema.ana,
         foregroundColor: Colors.white,
         elevation: 4,
         icon: const Icon(Icons.add_rounded),
@@ -141,7 +142,7 @@ class SiniflarEkrani extends StatelessWidget {
                   height: 52,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [Colors.orange.shade400, Colors.deepOrange.shade500],
+                      colors: [AppTema.anaAcik, AppTema.anaKoyu],
                     ),
                     borderRadius: BorderRadius.circular(14),
                   ),
@@ -191,10 +192,10 @@ class SiniflarEkrani extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.orange.shade50,
+                color: AppTema.ana50,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(Icons.add_rounded, color: Colors.orange.shade700),
+              child: Icon(Icons.add_rounded, color: AppTema.ana),
             ),
             const SizedBox(width: 12),
             const Text('Yeni Sınıf', style: TextStyle(fontWeight: FontWeight.w700)),
@@ -209,7 +210,7 @@ class SiniflarEkrani extends StatelessWidget {
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: Colors.orange.shade700, width: 2),
+              borderSide: BorderSide(color: AppTema.ana, width: 2),
             ),
           ),
         ),
@@ -220,7 +221,7 @@ class SiniflarEkrani extends StatelessWidget {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.orange.shade700,
+              backgroundColor: AppTema.ana,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),

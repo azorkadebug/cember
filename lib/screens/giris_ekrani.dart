@@ -1,3 +1,4 @@
+import '../tema.dart';
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 
@@ -68,7 +69,7 @@ class _GirisEkraniState extends State<GirisEkrani> with SingleTickerProviderStat
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text("Lütfen e-posta ve şifre girin."),
-            backgroundColor: Colors.orange.shade700,
+            backgroundColor: AppTema.ana,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           ),
@@ -107,7 +108,7 @@ class _GirisEkraniState extends State<GirisEkrani> with SingleTickerProviderStat
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Colors.orange.shade600, Colors.deepOrange.shade800],
+            colors: [AppTema.ana, AppTema.anaKoyu],
           ),
         ),
         child: SafeArea(
@@ -155,11 +156,11 @@ class _GirisEkraniState extends State<GirisEkrani> with SingleTickerProviderStat
                             keyboardType: TextInputType.emailAddress,
                             decoration: InputDecoration(
                               labelText: "E-Posta",
-                              prefixIcon: Icon(Icons.email_outlined, color: Colors.orange.shade700),
+                              prefixIcon: Icon(Icons.email_outlined, color: AppTema.ana),
                               border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(14),
-                                borderSide: BorderSide(color: Colors.orange.shade700, width: 2),
+                                borderSide: BorderSide(color: AppTema.ana, width: 2),
                               ),
                               filled: true,
                               fillColor: Colors.grey.shade50,
@@ -171,7 +172,7 @@ class _GirisEkraniState extends State<GirisEkrani> with SingleTickerProviderStat
                             obscureText: _obscurePass,
                             decoration: InputDecoration(
                               labelText: "Şifre",
-                              prefixIcon: Icon(Icons.lock_outline, color: Colors.orange.shade700),
+                              prefixIcon: Icon(Icons.lock_outline, color: AppTema.ana),
                               suffixIcon: IconButton(
                                 icon: Icon(_obscurePass ? Icons.visibility_off : Icons.visibility, color: Colors.grey),
                                 onPressed: () => setState(() => _obscurePass = !_obscurePass),
@@ -179,7 +180,7 @@ class _GirisEkraniState extends State<GirisEkrani> with SingleTickerProviderStat
                               border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(14),
-                                borderSide: BorderSide(color: Colors.orange.shade700, width: 2),
+                                borderSide: BorderSide(color: AppTema.ana, width: 2),
                               ),
                               filled: true,
                               fillColor: Colors.grey.shade50,
@@ -191,7 +192,7 @@ class _GirisEkraniState extends State<GirisEkrani> with SingleTickerProviderStat
                             height: 52,
                             child: ElevatedButton(
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.orange.shade700,
+                                backgroundColor: AppTema.ana,
                                 foregroundColor: Colors.white,
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                                 elevation: 2,
@@ -206,7 +207,7 @@ class _GirisEkraniState extends State<GirisEkrani> with SingleTickerProviderStat
                           TextButton(
                             onPressed: _loading ? null : () => _emailGirisKayit(true),
                             child: Text("Hesabınız yok mu? Kayıt Ol",
-                                style: TextStyle(color: Colors.orange.shade700, fontWeight: FontWeight.w600)),
+                                style: TextStyle(color: AppTema.ana, fontWeight: FontWeight.w600)),
                           ),
                         ],
                       ),
