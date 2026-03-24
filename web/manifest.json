@@ -1,11 +1,11 @@
 {
-    "name": "cember",
-    "short_name": "cember",
+    "name": "Çember",
+    "short_name": "Çember",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#37474F",
+    "theme_color": "#37474F",
+    "description": "Sınıf Yönetimi Asistanı",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
