@@ -1,8 +1,28 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/ogrenci.dart';
 import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
+
+// Geniş absürt komik takım isim havuzu
+const List<String> _takimIsimHavuzu = [
+  "Uçan Lahmacunlar", "Gökteki Patatesler", "Kaçak Bezelye", "Çılgın Simitleri",
+  "Uzay Mantısı", "Ninja Kaplumbağalar", "Galaktik Börekler", "Ejder Çorapları",
+  "Roket Tavukları", "Turbo Salyangozlar", "Atom Karıncaları", "Megafonlu Cırcırlar",
+  "Süper Kalemler", "Deli Çikolata", "Fırtına Fındıkları", "Yıldız Pideciler",
+  "Buldozer Kelebekler", "Gizli Ajanlar FC", "Patlayan Mısırlar", "Meteor Kurabiyeler",
+  "Viking Kedileri", "Şimşek Hamsterlar", "Nükleer Cevizler", "Korsan Papağanlar",
+  "Perişan Penguenler", "Uçan Halıcılar", "Süpersonik Sincaplar", "Çaydanlık United",
+  "Tsunami Tavşanları", "Kızgın Bamyalar", "Lazer Koyunları", "Kaptan Patlıcan",
+  "Dinamit Domatesler", "Hızlı Kurbağalar", "Gökgürültüsü FC", "Ayı Lokumu Spor",
+  "Çekiç Balıkları", "Havuç Gladyatörleri", "Turşu Yıldızları", "Kaçak Lokumlar",
+  "Panik Ahtapotlar", "Disko Arıları", "Biber Gazı Spor", "Sihirli Noktalar",
+  "Kozmik Köfteciler", "Karambol Kedileri", "Torpido Tilkileri", "Fantom Peynirler",
+  "Karga Takımı", "Yıkılmaz Yumurtalar", "Bumerang Balıkları", "Dalga Delileri",
+  "Fırtınalı Fasulye", "Gürültücü Gofretler", "Haylaz Hıyarlar", "İnatçı İgloolar",
+  "Jetler FC", "Kudretli Kurabiye", "Lav Lalesi", "Müthiş Muhallebi",
+];
 
 class OgrenciListesiEkrani extends StatefulWidget {
   final String sinifId;
@@ -15,11 +35,13 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
   late final FirestoreService _db;
   int secilenTakimSayisi = 2;
   List<String> formaRenkleri = [];
-  List<String> aiTakimIsimleri = [
-    "Kopernik", "Zımbalar", "Gırlatanlar", "Atik Spor",
-    "Pro Gamerlar", "Newton", "Zıpırlar", "Peder",
-  ];
   bool _renkleriYuklendi = false;
+  final _random = Random();
+
+  List<String> _rastgeleTakimIsimleri(int adet) {
+    final havuz = [..._takimIsimHavuzu]..shuffle(_random);
+    return havuz.take(adet).toList();
+  }
 
   @override
   void initState() {
@@ -67,9 +89,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
       ),
       body: Column(
         children: [
-          // Gradient header with attendance
           _buildHeader(),
-          // Student list
           Expanded(child: _bulutListeInsaEt()),
         ],
       ),
@@ -234,10 +254,8 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 child: Row(
                   children: [
-                    // Avatar
                     Container(
-                      width: 46,
-                      height: 46,
+                      width: 46, height: 46,
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: o.isMale
@@ -252,7 +270,6 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                       ),
                     ),
                     const SizedBox(width: 12),
-                    // Name & note
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -262,8 +279,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                               Flexible(
                                 child: Text(o.ad,
                                     style: TextStyle(
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 15,
+                                      fontWeight: FontWeight.w700, fontSize: 15,
                                       decoration: o.buradaMi ? null : TextDecoration.lineThrough,
                                       color: o.buradaMi ? Colors.black87 : Colors.grey,
                                     )),
@@ -272,10 +288,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                                 const SizedBox(width: 6),
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: Colors.red.shade50,
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
+                                  decoration: BoxDecoration(color: Colors.red.shade50, borderRadius: BorderRadius.circular(6)),
                                   child: Text("Yok", style: TextStyle(fontSize: 10, color: Colors.red.shade700, fontWeight: FontWeight.w600)),
                                 ),
                               ],
@@ -290,7 +303,6 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                         ],
                       ),
                     ),
-                    // Badges
                     _rozetGrubu(o),
                   ],
                 ),
@@ -358,7 +370,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                 child: Center(child: Text(o.isMale ? "♂" : "♀", style: const TextStyle(color: Colors.white, fontSize: 18))),
               ),
               const SizedBox(width: 12),
-              Text(o.ad, style: const TextStyle(fontWeight: FontWeight.w700)),
+              Flexible(child: Text(o.ad, style: const TextStyle(fontWeight: FontWeight.w700))),
             ],
           ),
           content: Column(
@@ -378,8 +390,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange.shade700,
-                  foregroundColor: Colors.white,
+                  backgroundColor: Colors.orange.shade700, foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
@@ -401,27 +412,11 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
         children: [
           Text(label, style: const TextStyle(fontSize: 15)),
           Container(
-            decoration: BoxDecoration(
-              color: Colors.grey.shade100,
-              borderRadius: BorderRadius.circular(10),
-            ),
+            decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(10)),
             child: Row(children: [
-              IconButton(
-                icon: const Icon(Icons.remove_circle_rounded, color: Colors.red),
-                onPressed: () => onEdit(-1),
-                iconSize: 28,
-              ),
-              SizedBox(
-                width: 32,
-                child: Text("$val",
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
-              ),
-              IconButton(
-                icon: const Icon(Icons.add_circle_rounded, color: Colors.green),
-                onPressed: () => onEdit(1),
-                iconSize: 28,
-              ),
+              IconButton(icon: const Icon(Icons.remove_circle_rounded, color: Colors.red), onPressed: () => onEdit(-1), iconSize: 28),
+              SizedBox(width: 32, child: Text("$val", textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18))),
+              IconButton(icon: const Icon(Icons.add_circle_rounded, color: Colors.green), onPressed: () => onEdit(1), iconSize: 28),
             ]),
           ),
         ],
@@ -455,10 +450,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                 decoration: InputDecoration(
                   labelText: "Yetenek Puanı",
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.orange.shade700, width: 2),
-                  ),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.orange.shade700, width: 2)),
                 ),
                 keyboardType: TextInputType.number,
               ),
@@ -468,10 +460,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                 decoration: InputDecoration(
                   labelText: "Özel Not",
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.orange.shade700, width: 2),
-                  ),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.orange.shade700, width: 2)),
                 ),
                 maxLines: 2,
               ),
@@ -486,8 +475,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.orange.shade700,
-                foregroundColor: Colors.white,
+                backgroundColor: Colors.orange.shade700, foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               ),
@@ -502,10 +490,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
           ],
         ),
       ),
-    ).then((_) {
-      pC.dispose();
-      nC.dispose();
-    });
+    ).then((_) { pC.dispose(); nC.dispose(); });
   }
 
   Widget _genderChip(String label, bool selected, Color color, VoidCallback onTap) {
@@ -551,111 +536,209 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
     );
   }
 
+  // --- HIZLI SINIF OLUŞTUR (Yeni tasarım - bottom sheet) ---
   void _hizliSinifEkleDialog() {
     List<TopluOgrenciSatiri> satirlar = List.generate(5, (i) => TopluOgrenciSatiri());
-    showDialog(
+
+    showModalBottomSheet(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDState) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: Colors.orange.shade50, borderRadius: BorderRadius.circular(10)),
-                child: Icon(Icons.group_add_rounded, color: Colors.orange.shade700),
-              ),
-              const SizedBox(width: 12),
-              const Text("Hızlı Ekle", style: TextStyle(fontWeight: FontWeight.w700)),
-            ],
-          ),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: satirlar.length,
-              itemBuilder: (context, i) => Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: satirlar[i].adCtrl,
-                        decoration: InputDecoration(
-                          hintText: "Ad Soyad",
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                          isDense: true,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    GestureDetector(
-                      onTap: () => setDState(() => satirlar[i].isMale = !satirlar[i].isMale),
-                      child: Container(
-                        width: 36, height: 36,
-                        decoration: BoxDecoration(
-                          color: satirlar[i].isMale ? Colors.blue.shade50 : Colors.pink.shade50,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Center(
-                          child: Text(satirlar[i].isMale ? "♂" : "♀",
-                              style: TextStyle(color: satirlar[i].isMale ? Colors.blue : Colors.pink, fontSize: 18)),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    SizedBox(
-                      width: 50,
-                      child: TextField(
-                        controller: satirlar[i].puanCtrl,
-                        keyboardType: TextInputType.number,
-                        decoration: InputDecoration(
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-                          isDense: true,
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.remove_circle_rounded, color: Colors.red.shade300, size: 22),
-                      onPressed: () { satirlar[i].dispose(); setDState(() => satirlar.removeAt(i)); },
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(minWidth: 30),
-                    ),
-                  ],
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (sheetContext, setSheetState) {
+          return Container(
+            height: MediaQuery.of(context).size.height * 0.85,
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.only(topLeft: Radius.circular(28), topRight: Radius.circular(28)),
+            ),
+            child: Column(
+              children: [
+                // Handle
+                Container(
+                  margin: const EdgeInsets.only(top: 12),
+                  width: 40, height: 4,
+                  decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
                 ),
-              ),
+                // Header
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 16, 16, 0),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(color: Colors.orange.shade50, borderRadius: BorderRadius.circular(12)),
+                        child: Icon(Icons.group_add_rounded, color: Colors.orange.shade700, size: 24),
+                      ),
+                      const SizedBox(width: 12),
+                      const Expanded(child: Text("Hızlı Öğrenci Ekle", style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800))),
+                      TextButton.icon(
+                        onPressed: () => setSheetState(() => satirlar.add(TopluOgrenciSatiri())),
+                        icon: const Icon(Icons.add_rounded, size: 20),
+                        label: const Text("Satır"),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                // Column headers
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Row(
+                    children: [
+                      const Expanded(flex: 5, child: Text("Ad Soyad", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12, color: Colors.grey))),
+                      SizedBox(width: 44, child: Center(child: Text("C", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12, color: Colors.grey.shade500)))),
+                      SizedBox(width: 54, child: Center(child: Text("Puan", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12, color: Colors.grey.shade500)))),
+                      const SizedBox(width: 36),
+                    ],
+                  ),
+                ),
+                const Divider(height: 12),
+                // Student rows
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    children: List.generate(satirlar.length, (i) {
+                      final satir = satirlar[i];
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 6),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade50,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            children: [
+                              // Sıra no
+                              SizedBox(
+                                width: 24,
+                                child: Text("${i + 1}", style: TextStyle(color: Colors.grey.shade400, fontWeight: FontWeight.w600)),
+                              ),
+                              // Ad Soyad
+                              Expanded(
+                                flex: 5,
+                                child: TextField(
+                                  controller: satir.adCtrl,
+                                  decoration: const InputDecoration(
+                                    hintText: "Ad Soyad",
+                                    border: InputBorder.none,
+                                    contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+                                    isDense: true,
+                                  ),
+                                  style: const TextStyle(fontSize: 15),
+                                ),
+                              ),
+                              // Cinsiyet
+                              GestureDetector(
+                                onTap: () => setSheetState(() => satir.isMale = !satir.isMale),
+                                child: Container(
+                                  width: 38, height: 38,
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: satir.isMale
+                                          ? [Colors.blue.shade200, Colors.blue.shade400]
+                                          : [Colors.pink.shade200, Colors.pink.shade400],
+                                    ),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Center(
+                                    child: Text(satir.isMale ? "♂" : "♀",
+                                        style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              // Puan
+                              SizedBox(
+                                width: 54,
+                                child: TextField(
+                                  controller: satir.puanCtrl,
+                                  keyboardType: TextInputType.number,
+                                  textAlign: TextAlign.center,
+                                  decoration: InputDecoration(
+                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade300)),
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
+                                    isDense: true,
+                                  ),
+                                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                                ),
+                              ),
+                              // Sil
+                              IconButton(
+                                icon: Icon(Icons.close_rounded, color: Colors.red.shade300, size: 20),
+                                onPressed: () { satir.dispose(); setSheetState(() => satirlar.removeAt(i)); },
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(minWidth: 36),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }),
+                  ),
+                ),
+                // Bottom save bar
+                Container(
+                  padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    boxShadow: [BoxShadow(color: Colors.black.withAlpha(10), blurRadius: 8, offset: const Offset(0, -2))],
+                  ),
+                  child: Row(
+                    children: [
+                      Text("${satirlar.length} satır",
+                          style: TextStyle(color: Colors.grey.shade500, fontWeight: FontWeight.w600)),
+                      const Spacer(),
+                      TextButton(
+                        onPressed: () {
+                          for (var s in satirlar) { s.dispose(); }
+                          Navigator.pop(sheetContext);
+                        },
+                        child: Text("İptal", style: TextStyle(color: Colors.grey.shade600)),
+                      ),
+                      const SizedBox(width: 12),
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.orange.shade700, foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                          elevation: 2,
+                        ),
+                        icon: const Icon(Icons.save_rounded, size: 20),
+                        label: const Text("Tümünü Kaydet", style: TextStyle(fontWeight: FontWeight.w700)),
+                        onPressed: () async {
+                          int eklenen = 0;
+                          for (var s in satirlar) {
+                            if (s.adCtrl.text.trim().isNotEmpty) {
+                              await _db.ogrenciEkle(widget.sinifId, Ogrenci(
+                                id: '', ad: s.adCtrl.text.trim(), isMale: s.isMale,
+                                puan: int.tryParse(s.puanCtrl.text) ?? 100,
+                              ));
+                              eklenen++;
+                            }
+                          }
+                          for (var s in satirlar) { s.dispose(); }
+                          if (sheetContext.mounted) Navigator.pop(sheetContext);
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text("$eklenen öğrenci eklendi!"),
+                                backgroundColor: Colors.green.shade700,
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                            );
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ),
-          actions: [
-            TextButton.icon(
-              onPressed: () => setDState(() => satirlar.add(TopluOgrenciSatiri())),
-              icon: const Icon(Icons.add_rounded),
-              label: const Text("Satır Ekle"),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.orange.shade700, foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              ),
-              onPressed: () async {
-                for (var s in satirlar) {
-                  if (s.adCtrl.text.isNotEmpty) {
-                    await _db.ogrenciEkle(widget.sinifId, Ogrenci(
-                      id: '', ad: s.adCtrl.text.trim(), isMale: s.isMale,
-                      puan: int.tryParse(s.puanCtrl.text) ?? 100,
-                    ));
-                  }
-                }
-                for (var s in satirlar) { s.dispose(); }
-                if (context.mounted) Navigator.pop(context);
-              },
-              child: const Text("Kaydet", style: TextStyle(fontWeight: FontWeight.w700)),
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -674,8 +757,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
+                  spacing: 8, runSpacing: 8,
                   children: formaRenkleri.map((r) => Chip(
                     label: Text(r),
                     backgroundColor: _takimRenginiBul(r).withAlpha(30),
@@ -740,6 +822,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
     }
   }
 
+  // --- TAKıM KURMA: puan + rastgele varyasyon (-4/+4) ---
   void _takimlariKur() async {
     final gelenler = (await _db.ogrencileriGetir(widget.sinifId))
         .where((o) => o.buradaMi).toList();
@@ -758,7 +841,14 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
       return;
     }
 
-    gelenler.sort((a, b) => b.puan.compareTo(a.puan));
+    // Her öğrenciye -4 ile +4 arası rastgele varyasyon ekle
+    final Map<String, int> efektifPuan = {};
+    for (var o in gelenler) {
+      efektifPuan[o.id] = o.puan + _random.nextInt(9) - 4; // -4 ile +4
+    }
+
+    // Efektif puana göre sırala
+    gelenler.sort((a, b) => efektifPuan[b.id]!.compareTo(efektifPuan[a.id]!));
 
     // Snake draft
     List<List<Ogrenci>> takimlar = List.generate(secilenTakimSayisi, (_) => []);
@@ -770,7 +860,8 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
       takimlar[index].add(gelenler[i]);
     }
 
-    List<String> karisikIsimler = [...aiTakimIsimleri]..shuffle();
+    // Rastgele komik takım isimleri
+    final takimIsimleri = _rastgeleTakimIsimleri(secilenTakimSayisi);
     if (!mounted) return;
 
     showModalBottomSheet(
@@ -781,14 +872,10 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
         height: MediaQuery.of(context).size.height * 0.85,
         decoration: const BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(28),
-            topRight: Radius.circular(28),
-          ),
+          borderRadius: BorderRadius.only(topLeft: Radius.circular(28), topRight: Radius.circular(28)),
         ),
         child: Column(
           children: [
-            // Handle
             Container(
               margin: const EdgeInsets.only(top: 12),
               width: 40, height: 4,
@@ -802,8 +889,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text("AI Takım Dağılımı",
-                          style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
+                      const Text("AI Takım Dağılımı", style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
                       Text("${gelenler.length} oyuncu  •  $secilenTakimSayisi takım",
                           style: TextStyle(color: Colors.grey.shade500)),
                     ],
@@ -828,11 +914,15 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                 itemBuilder: (context, i) {
                   String takimRenkAdi = formaRenkleri.length > i ? formaRenkleri[i] : 'Siyah';
                   Color gorselRenk = _takimRenginiBul(takimRenkAdi);
-                  String komikIsim = karisikIsimler.length > i ? karisikIsimler[i] : "Atik Spor";
+                  String komikIsim = takimIsimleri.length > i ? takimIsimleri[i] : "Bilinmeyen Takım";
                   final takim = takimlar[i];
-                  takim.sort((a, b) => b.puan.compareTo(a.puan));
-                  Ogrenci? kaptan = takim.isNotEmpty ? takim.first : null;
-                  int toplamPuan = takim.fold(0, (total, o) => total + o.puan);
+
+                  // Kaptan: takımdaki rastgele efektif puana göre en yüksek
+                  // (varyasyon sayesinde her seferinde farklı olabilir)
+                  Ogrenci? kaptan;
+                  if (takim.isNotEmpty) {
+                    kaptan = takim.reduce((a, b) => efektifPuan[a.id]! >= efektifPuan[b.id]! ? a : b);
+                  }
 
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 12),
@@ -854,9 +944,9 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                           ),
                           child: const Icon(Icons.shield_rounded, color: Colors.white, size: 24),
                         ),
-                        title: Text("$takimRenkAdi $komikIsim",
+                        title: Text(komikIsim,
                             style: TextStyle(fontWeight: FontWeight.w800, color: gorselRenk == Colors.grey.shade400 ? Colors.black87 : gorselRenk, fontSize: 16)),
-                        subtitle: Text("${takim.length} Oyuncu  •  Toplam: $toplamPuan puan",
+                        subtitle: Text("$takimRenkAdi  •  ${takim.length} Oyuncu",
                             style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
                         children: takim.map((o) {
                           bool isKaptan = kaptan != null && o.id == kaptan.id;
@@ -890,7 +980,6 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                                 ],
                               ],
                             ),
-                            trailing: Text("${o.puan}", style: TextStyle(color: Colors.grey.shade500, fontWeight: FontWeight.w600)),
                           );
                         }).toList(),
                       ),
