@@ -1,0 +1,12 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "siniflar",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "ownerId", "order": "ASCENDING" },
+        { "fieldPath": "created", "order": "DESCENDING" }
+      ]
+    }
+  ]
+}

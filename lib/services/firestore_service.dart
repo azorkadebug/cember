@@ -13,7 +13,6 @@ class FirestoreService {
     return _db
         .collection('siniflar')
         .where('ownerId', isEqualTo: uid)
-        .orderBy('created', descending: true)
         .snapshots();
   }
 
