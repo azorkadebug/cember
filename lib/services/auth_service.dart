@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
@@ -18,31 +19,47 @@ class AuthService {
   }
 
   Future<void> signInWithGoogle() async {
-    final googleSignIn = GoogleSignIn.instance;
-    await googleSignIn.initialize(
-      clientId: '73438566042-j4s7hrbqavmf51a5m40o0535m9frqfnj.apps.googleusercontent.com',
-    );
+    if (kIsWeb) {
+      // Web: popup ile giriş
+      final googleProvider = GoogleAuthProvider();
+      googleProvider.addScope('email');
+      googleProvider.addScope('profile');
+      await _auth.signInWithPopup(googleProvider);
+    } else {
+      // Mobil/Desktop: google_sign_in paketi
+      final googleSignIn = GoogleSignIn.instance;
+      await googleSignIn.initialize(
+        clientId: '73438566042-j4s7hrbqavmf51a5m40o0535m9frqfnj.apps.googleusercontent.com',
+      );
 
-    final account = await googleSignIn.authenticate();
-    final idToken = account.authentication.idToken;
+      final account = await googleSignIn.authenticate();
+      final idToken = account.authentication.idToken;
 
-    final clientAuth = await account.authorizationClient.authorizeScopes(['email', 'profile']);
-    final accessToken = clientAuth.accessToken;
+      final clientAuth = await account.authorizationClient.authorizeScopes(['email', 'profile']);
+      final accessToken = clientAuth.accessToken;
 
-    await _auth.signInWithCredential(
-      GoogleAuthProvider.credential(idToken: idToken, accessToken: accessToken),
-    );
+      await _auth.signInWithCredential(
+        GoogleAuthProvider.credential(idToken: idToken, accessToken: accessToken),
+      );
+    }
   }
 
   Future<void> signInWithApple() async {
-    final appleCredential = await SignInWithApple.getAppleIDCredential(
-      scopes: [AppleIDAuthorizationScopes.email, AppleIDAuthorizationScopes.fullName],
-    );
-    final oauthCredential = OAuthProvider('apple.com').credential(
-      idToken: appleCredential.identityToken,
-      accessToken: appleCredential.authorizationCode,
-    );
-    await _auth.signInWithCredential(oauthCredential);
+    if (kIsWeb) {
+      final appleProvider = OAuthProvider('apple.com');
+      appleProvider.addScope('email');
+      appleProvider.addScope('name');
+      await _auth.signInWithPopup(appleProvider);
+    } else {
+      final appleCredential = await SignInWithApple.getAppleIDCredential(
+        scopes: [AppleIDAuthorizationScopes.email, AppleIDAuthorizationScopes.fullName],
+      );
+      final oauthCredential = OAuthProvider('apple.com').credential(
+        idToken: appleCredential.identityToken,
+        accessToken: appleCredential.authorizationCode,
+      );
+      await _auth.signInWithCredential(oauthCredential);
+    }
   }
 
   Future<void> signOut() async {
