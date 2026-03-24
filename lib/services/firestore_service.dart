@@ -57,6 +57,16 @@ class FirestoreService {
         .snapshots();
   }
 
+  Future<bool> ogrenciVarMi(String sinifId, String ad) async {
+    final snap = await _db
+        .collection('siniflar')
+        .doc(sinifId)
+        .collection('ogrenciler')
+        .where('ad', isEqualTo: ad)
+        .get();
+    return snap.docs.isNotEmpty;
+  }
+
   Future<void> ogrenciEkle(String sinifId, Ogrenci ogrenci) async {
     await _db
         .collection('siniflar')
