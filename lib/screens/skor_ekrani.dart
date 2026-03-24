@@ -1,6 +1,7 @@
 import '../tema.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../models/ogrenci.dart';
 
 class TakimBilgi {
@@ -158,10 +159,59 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin {
         if (ceza.kalanSaniye <= 0) {
           t.cancel();
           _cezalar.remove(ceza);
+          _cezaBittiUyari(takimIndex, oyuncu);
         }
       });
     });
     setState(() => _cezalar.add(ceza));
+  }
+
+  void _cezaBittiUyari(int takimIndex, Ogrenci oyuncu) {
+    // Sistem sesi + titreşim
+    SystemSound.play(SystemSoundType.alert);
+    HapticFeedback.heavyImpact();
+
+    final t = widget.takimlar[takimIndex];
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF16213E),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(color: Colors.green.withAlpha(30), borderRadius: BorderRadius.circular(10)),
+            child: const Icon(Icons.check_circle_rounded, color: Colors.green, size: 24),
+          ),
+          const SizedBox(width: 12),
+          const Expanded(child: Text("Ceza Bitti!", style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800))),
+        ]),
+        content: Row(children: [
+          Container(width: 10, height: 10, decoration: BoxDecoration(color: t.renk, shape: BoxShape.circle)),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text.rich(TextSpan(children: [
+              TextSpan(text: oyuncu.ad, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+              TextSpan(text: " oyuna dönebilir!", style: TextStyle(color: Colors.white.withAlpha(180))),
+            ])),
+          ),
+        ]),
+        actions: [
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green, foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+              ),
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text("Tamam", style: TextStyle(fontWeight: FontWeight.w700)),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   List<_Ceza> _takimCezalari(int takimIndex) {
