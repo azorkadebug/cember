@@ -8,21 +8,41 @@ import '../services/firestore_service.dart';
 import 'skor_ekrani.dart';
 
 const List<String> _takimIsimHavuzu = [
-  "Uçan Lahmacunlar", "Gökteki Patatesler", "Kaçak Bezelye", "Çılgın Simitleri",
-  "Uzay Mantısı", "Ninja Kaplumbağalar", "Galaktik Börekler", "Ejder Çorapları",
-  "Roket Tavukları", "Turbo Salyangozlar", "Atom Karıncaları", "Megafonlu Cırcırlar",
-  "Süper Kalemler", "Deli Çikolata", "Fırtına Fındıkları", "Yıldız Pideciler",
-  "Buldozer Kelebekler", "Gizli Ajanlar FC", "Patlayan Mısırlar", "Meteor Kurabiyeler",
-  "Viking Kedileri", "Şimşek Hamsterlar", "Nükleer Cevizler", "Korsan Papağanlar",
-  "Perişan Penguenler", "Uçan Halıcılar", "Süpersonik Sincaplar", "Çaydanlık United",
-  "Tsunami Tavşanları", "Kızgın Bamyalar", "Lazer Koyunları", "Kaptan Patlıcan",
-  "Dinamit Domatesler", "Hızlı Kurbağalar", "Gökgürültüsü FC", "Ayı Lokumu Spor",
-  "Çekiç Balıkları", "Havuç Gladyatörleri", "Turşu Yıldızları", "Kaçak Lokumlar",
-  "Panik Ahtapotlar", "Disko Arıları", "Biber Gazı Spor", "Sihirli Noktalar",
-  "Kozmik Köfteciler", "Karambol Kedileri", "Torpido Tilkileri", "Fantom Peynirler",
-  "Karga Takımı", "Yıkılmaz Yumurtalar", "Bumerang Balıkları", "Dalga Delileri",
-  "Fırtınalı Fasulye", "Gürültücü Gofretler", "Haylaz Hıyarlar", "İnatçı İgloolar",
-  "Jetler FC", "Kudretli Kurabiye", "Lav Lalesi", "Müthiş Muhallebi",
+  // Oyun & internet kültürü
+  "Lag Kralları", "AFK Takımı", "Respawn FC", "Noob Avcıları", "GG United",
+  "Bot Ordusu", "Ctrl+Z Spor", "Alt+F4 Kalesi", "Pro Oyuncular", "Ping Canavarları",
+  "Combo Kralları", "Double Kill FC", "Glitch Takımı", "Bug Avcıları",
+  // Kantin & yemek teması
+  "Tost Mafyası", "Ayran United", "Simit Karteli", "Poğaça Operasyonu",
+  "Kantin Korsanları", "Çikolata Çetesi", "Kraker Komandoları", "Cips Fırtınası",
+  "Kaşarlı Ejderhalar", "Susamlı Şimşekler", "Ketçap Canavarları", "Kola Kasırgası",
+  // Okul teması
+  "Teneffüs Kaplanları", "Ödev Avcıları", "Zil Korsanları", "Sınav Hayaletleri",
+  "Silgi Savaşçıları", "Uçan Tebeşirler", "Mega Cetvel", "Defter Ejderhaları",
+  "Çılgın Silgiler", "Kalem Açar Birliği", "Tahta Kalesi FC", "Müdür Yardımcıları",
+  "Sıra Arkası Spor", "Kopya Ajanları", "Yoklama Fantastiği",
+  // Absürt hayvan
+  "Ninja Kaplumbağalar", "Korsan Papağanlar", "Viking Kedileri", "Şimşek Hamsterlar",
+  "Perişan Penguenler", "Süpersonik Sincaplar", "Panik Ahtapotlar", "Disko Arıları",
+  "Turbo Salyangozlar", "Karambol Kedileri", "Torpido Tilkileri", "Roket Tavukları",
+  "Lazer Koyunları", "Bumerang Balıkları", "Tsunami Tavşanları", "Atom Karıncaları",
+  "Kızgın Flamingolar", "Parkur Pandaları", "Dubstep Yunusları",
+  // Absürt yemek
+  "Uçan Lahmacunlar", "Galaktik Börekler", "Patlayan Mısırlar", "Meteor Kurabiyeler",
+  "Kozmik Köfteciler", "Turşu Yıldızları", "Dinamit Domatesler", "Kaptan Patlıcan",
+  "Fantom Peynirler", "Kızgın Bamyalar", "Fırtınalı Fasulye",
+  // Absürt eşya & kavram
+  "Çaydanlık United", "Ejder Çorapları", "Gizli Ajanlar FC", "Gökgürültüsü FC",
+  "Buldozer Kelebekler", "Sihirli Noktalar", "Nükleer Cevizler", "Dalga Delileri",
+  "Yıkılmaz Yumurtalar", "Uçan Halıcılar", "Biber Gazı Spor",
+  // Epik & komik karışım
+  "Meşhur Patatesler", "Efsane Peçeteler", "Korkusuz Krakerler", "Sönen Yıldızlar",
+  "Asi Kurabiyeler", "Gölge Simsarları", "Fırtına Fıstıkları", "Yanan Buzlar",
+  "Demir Elmalar", "Altın Sakızlar", "Gümüş Göbekler", "Elmas Dirsekler",
+  // Trend & pop kültür
+  "WiFi Avcıları", "Şarj Bitti FC", "Ekran Kırıkları", "Caps Efsaneleri",
+  "Meme Lordu", "Hashtag Ordusu", "Emoji Savaşçıları", "TikTok Kaplanları",
+  "Spotify Hayaletleri", "Netflix Nöbetçileri", "Bluetooth Korsanları",
 ];
 
 class OgrenciListesiEkrani extends StatefulWidget {
