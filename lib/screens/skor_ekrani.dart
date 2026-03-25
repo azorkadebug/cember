@@ -218,15 +218,67 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin {
     return _cezalar.where((c) => c.takimIndex == takimIndex).toList();
   }
 
+  Future<bool> _cikisOnay() async {
+    final sonuc = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF16213E),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(color: Colors.orange.withAlpha(30), borderRadius: BorderRadius.circular(10)),
+            child: const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 22),
+          ),
+          const SizedBox(width: 12),
+          const Text("Maçtan Çık", style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
+        ]),
+        content: Text(
+          "Maç devam ediyor! Çıkarsanız skor ve cezalar sıfırlanır.",
+          style: TextStyle(color: Colors.white.withAlpha(180), height: 1.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text("Maça Dön", style: TextStyle(color: Colors.white60)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red.shade700, foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text("Çık", style: TextStyle(fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+    return sonuc ?? false;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        final cik = await _cikisOnay();
+        if (cik && context.mounted) Navigator.pop(context);
+      },
+      child: Scaffold(
       backgroundColor: const Color(0xFF1A1A2E),
       appBar: AppBar(
         backgroundColor: const Color(0xFF1A1A2E),
         foregroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded),
+          onPressed: () async {
+            final cik = await _cikisOnay();
+            if (cik && context.mounted) Navigator.pop(context);
+          },
+        ),
         title: const Text("Skor Tablosu", style: TextStyle(fontWeight: FontWeight.w800, letterSpacing: 1)),
       ),
       body: Column(
@@ -239,6 +291,7 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin {
           Expanded(child: _takimListeleri()),
         ],
       ),
+    ),
     );
   }
 

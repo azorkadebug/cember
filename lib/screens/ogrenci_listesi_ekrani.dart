@@ -59,6 +59,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
   bool _renkleriYuklendi = false;
   final _random = Random();
   String _aramaMetni = '';
+  List<TakimBilgi>? _aktifMacTakimlari;
 
   List<String> _rastgeleTakimIsimleri(int adet) {
     final havuz = [..._takimIsimHavuzu]..shuffle(_random);
@@ -159,6 +160,8 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
         ],
         body: Column(
           children: [
+            // Aktif maç banner'ı
+            if (_aktifMacTakimlari != null) _aktifMacBanner(),
             // Arama çubuğu
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
@@ -239,6 +242,46 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
 
   Widget _miniDivider() {
     return Container(width: 1, height: 14, color: Colors.white.withAlpha(60));
+  }
+
+  Widget _aktifMacBanner() {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(context, MaterialPageRoute(
+          builder: (_) => SkorEkrani(takimlar: _aktifMacTakimlari!),
+        ));
+      },
+      child: Container(
+        margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(colors: [Color(0xFF1A1A2E), Color(0xFF16213E)]),
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [BoxShadow(color: Colors.black.withAlpha(20), blurRadius: 8, offset: const Offset(0, 2))],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 8, height: 8,
+              decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle),
+            ),
+            const SizedBox(width: 10),
+            const Expanded(
+              child: Text("Maç devam ediyor",
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13)),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.green.withAlpha(40),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Text("Devam Et", style: TextStyle(color: Colors.green, fontWeight: FontWeight.w700, fontSize: 12)),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _bulutListeInsaEt() {
@@ -1069,6 +1112,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                 label: const Text("Oyunu Başlat", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, letterSpacing: 1)),
                 onPressed: () {
                   Navigator.pop(sheetCtx);
+                  setState(() => _aktifMacTakimlari = takimBilgileri);
                   Navigator.push(context, MaterialPageRoute(
                     builder: (_) => SkorEkrani(takimlar: takimBilgileri),
                   ));
