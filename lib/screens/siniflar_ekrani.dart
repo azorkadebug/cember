@@ -119,7 +119,9 @@ class SiniflarEkrani extends StatelessWidget {
   }
 
   Widget _sinifKarti(BuildContext context, QueryDocumentSnapshot doc) {
-    final ad = doc.id;
+    final data = doc.data() as Map<String, dynamic>?;
+    final ad = data?['ad'] ?? doc.id; // ad field varsa onu kullan, yoksa doc ID
+    final docId = doc.id;
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Material(
@@ -131,7 +133,7 @@ class SiniflarEkrani extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           onTap: () => Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => OgrenciListesiEkrani(sinifId: ad)),
+            MaterialPageRoute(builder: (context) => OgrenciListesiEkrani(sinifId: docId)),
           ),
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -158,7 +160,7 @@ class SiniflarEkrani extends StatelessWidget {
                       // Öğrenci sayısını göster
                       StreamBuilder<QuerySnapshot>(
                         stream: FirestoreService(uid: AuthService().uid)
-                            .ogrencilerStream(ad),
+                            .ogrencilerStream(docId),
                         builder: (context, snap) {
                           final count = snap.hasData ? snap.data!.docs.length : 0;
                           return Text("$count öğrenci",
@@ -170,7 +172,7 @@ class SiniflarEkrani extends StatelessWidget {
                 ),
                 IconButton(
                   icon: Icon(Icons.delete_outline_rounded, color: Colors.red.shade300),
-                  onPressed: () => _sinifSilOnay(context, ad),
+                  onPressed: () => _sinifSilOnay(context, docId),
                 ),
                 Icon(Icons.chevron_right_rounded, color: Colors.grey.shade400),
               ],

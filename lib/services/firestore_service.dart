@@ -16,10 +16,14 @@ class FirestoreService {
         .snapshots();
   }
 
+  /// Sınıf adındaki / karakteri Firestore doc ID'sinde kullanılamaz
+  static String _safeDocId(String ad) => ad.replaceAll('/', '-');
+
   Future<void> sinifEkle(String sinifAdi, {List<String>? formaRenkleri}) async {
-    await _db.collection('siniflar').doc(sinifAdi).set({
+    await _db.collection('siniflar').doc(_safeDocId(sinifAdi)).set({
       'created': FieldValue.serverTimestamp(),
       'ownerId': uid,
+      'ad': sinifAdi,
       'formaRenkleri': formaRenkleri ?? ['Kırmızı', 'Mavi', 'Sarı', 'Yeşil', 'Siyah', 'Beyaz', 'Turuncu', 'Lacivert'],
     });
   }
