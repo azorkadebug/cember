@@ -1,6 +1,5 @@
 import '../tema.dart';
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import '../services/auth_service.dart';
 
 class GirisEkrani extends StatefulWidget {
@@ -51,17 +50,6 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
     }
   }
 
-  Future<void> _appleGiris() async {
-    setState(() => _loading = true);
-    try {
-      await _authService.signInWithApple();
-    } catch (e) {
-      if (mounted) _hataGoster("Apple Hatası: $e");
-    } finally {
-      if (mounted) setState(() => _loading = false);
-    }
-  }
-
   Future<void> _emailGirisKayit() async {
     if (_emailCtrl.text.isEmpty || _passCtrl.text.isEmpty) {
       _hataGoster("Lütfen e-posta ve şifre girin.");
@@ -79,155 +67,6 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
     } finally {
       if (mounted) setState(() => _loading = false);
     }
-  }
-
-  void _telefonGirisi() {
-    final telefonCtrl = TextEditingController(text: "+905");
-    showDialog(
-      context: context,
-      builder: (ctx) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Row(children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(color: Colors.green.shade50, borderRadius: BorderRadius.circular(10)),
-              child: Icon(Icons.phone_rounded, color: Colors.green.shade700, size: 22),
-            ),
-            const SizedBox(width: 12),
-            const Text("Telefon ile Giriş", style: TextStyle(fontWeight: FontWeight.w700)),
-          ]),
-          content: TextField(
-            controller: telefonCtrl,
-            keyboardType: TextInputType.phone,
-            autofocus: true,
-            decoration: InputDecoration(
-              hintText: "+905XXXXXXXXX",
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
-              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: Colors.green.shade700, width: 2)),
-              prefixIcon: Icon(Icons.phone_rounded, color: Colors.green.shade700),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text("İptal", style: TextStyle(color: Colors.grey.shade600)),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green.shade700, foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              onPressed: () {
-                final tel = telefonCtrl.text.replaceAll(RegExp(r'[\s\-\(\)]'), '').trim();
-                if (tel.length < 12 || !tel.startsWith('+')) {
-                  _hataGoster("Örnek: +905XXXXXXXXX (başında + ve ülke kodu olmalı)");
-                  return;
-                }
-                Navigator.pop(ctx);
-                _smsKoduGonder(tel);
-              },
-              child: const Text("SMS Gönder", style: TextStyle(fontWeight: FontWeight.w700)),
-            ),
-          ],
-        );
-      },
-    ).then((_) => telefonCtrl.dispose());
-  }
-
-  void _smsKoduGonder(String telefon) {
-    setState(() => _loading = true);
-    FirebaseAuth.instance.verifyPhoneNumber(
-      phoneNumber: telefon,
-      verificationCompleted: (PhoneAuthCredential credential) async {
-        // Otomatik doğrulama (Android'de)
-        await FirebaseAuth.instance.signInWithCredential(credential);
-        if (mounted) setState(() => _loading = false);
-      },
-      verificationFailed: (FirebaseAuthException e) {
-        if (mounted) {
-          setState(() => _loading = false);
-          _hataGoster("SMS gönderilemedi: ${e.message}");
-        }
-      },
-      codeSent: (String verificationId, int? resendToken) {
-        if (mounted) {
-          setState(() => _loading = false);
-          _smsKoduDogrulaDialog(verificationId);
-        }
-      },
-      codeAutoRetrievalTimeout: (String verificationId) {},
-      timeout: const Duration(seconds: 60),
-    );
-  }
-
-  void _smsKoduDogrulaDialog(String verificationId) {
-    final kodCtrl = TextEditingController();
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Row(children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(color: Colors.green.shade50, borderRadius: BorderRadius.circular(10)),
-              child: Icon(Icons.sms_rounded, color: Colors.green.shade700, size: 22),
-            ),
-            const SizedBox(width: 12),
-            const Text("SMS Kodu", style: TextStyle(fontWeight: FontWeight.w700)),
-          ]),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text("Telefonunuza gelen 6 haneli kodu girin.",
-                  style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
-              const SizedBox(height: 16),
-              TextField(
-                controller: kodCtrl,
-                keyboardType: TextInputType.number,
-                autofocus: true,
-                textAlign: TextAlign.center,
-                maxLength: 6,
-                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800, letterSpacing: 8),
-                decoration: InputDecoration(
-                  counterText: "",
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: Colors.green.shade700, width: 2)),
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text("İptal", style: TextStyle(color: Colors.grey.shade600)),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green.shade700, foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              onPressed: () async {
-                if (kodCtrl.text.length != 6) return;
-                try {
-                  final credential = PhoneAuthProvider.credential(
-                    verificationId: verificationId,
-                    smsCode: kodCtrl.text.trim(),
-                  );
-                  await FirebaseAuth.instance.signInWithCredential(credential);
-                  if (ctx.mounted) Navigator.pop(ctx);
-                } catch (e) {
-                  if (mounted) _hataGoster("Kod hatalı, tekrar deneyin.");
-                }
-              },
-              child: const Text("Doğrula", style: TextStyle(fontWeight: FontWeight.w700)),
-            ),
-          ],
-        );
-      },
-    ).then((_) => kodCtrl.dispose());
   }
 
   void _hataGoster(String mesaj) {
@@ -376,18 +215,9 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
                       const SizedBox(height: 24),
 
                       // Social Buttons
-                      Row(
-                        children: [
-                          Expanded(child: _socialBtn(Icons.g_mobiledata, "Google", Colors.red, _googleGiris)),
-                          const SizedBox(width: 14),
-                          Expanded(child: _socialBtn(Icons.apple_rounded, "Apple", Colors.black, _appleGiris)),
-                        ],
-                      ),
-                      const SizedBox(height: 14),
-                      // Telefon girişi
                       SizedBox(
                         width: double.infinity,
-                        child: _socialBtn(Icons.phone_rounded, "Telefon ile Giriş", Colors.green.shade700, _telefonGirisi),
+                        child: _socialBtn(Icons.g_mobiledata, "Google ile Giriş", Colors.red, _googleGiris),
                       ),
                       const SizedBox(height: 24),
                       Text("v1.0.0", style: TextStyle(color: Colors.grey.shade300, fontSize: 11)),
