@@ -82,7 +82,7 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
   }
 
   void _telefonGirisi() {
-    final telefonCtrl = TextEditingController(text: "+90");
+    final telefonCtrl = TextEditingController(text: "+905");
     showDialog(
       context: context,
       builder: (ctx) {
@@ -102,7 +102,7 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
             keyboardType: TextInputType.phone,
             autofocus: true,
             decoration: InputDecoration(
-              hintText: "+90 5XX XXX XXXX",
+              hintText: "+905XXXXXXXXX",
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
               focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: Colors.green.shade700, width: 2)),
               prefixIcon: Icon(Icons.phone_rounded, color: Colors.green.shade700),
@@ -119,9 +119,9 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
               onPressed: () {
-                final tel = telefonCtrl.text.trim();
-                if (tel.length < 10) {
-                  _hataGoster("Geçerli bir telefon numarası girin.");
+                final tel = telefonCtrl.text.replaceAll(RegExp(r'[\s\-\(\)]'), '').trim();
+                if (tel.length < 12 || !tel.startsWith('+')) {
+                  _hataGoster("Örnek: +905XXXXXXXXX (başında + ve ülke kodu olmalı)");
                   return;
                 }
                 Navigator.pop(ctx);
