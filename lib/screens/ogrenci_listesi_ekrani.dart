@@ -892,19 +892,33 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
       return;
     }
 
+    // Efektif puan: gerçek puan + rastgele -4/+4
     final Map<String, int> efektifPuan = {};
     for (var o in gelenler) {
       efektifPuan[o.id] = o.puan + _random.nextInt(9) - 4;
     }
 
-    gelenler.sort((a, b) => efektifPuan[b.id]!.compareTo(efektifPuan[a.id]!));
+    // Kız-erkek ayır
+    final kizlar = gelenler.where((o) => !o.isMale).toList();
+    final erkekler = gelenler.where((o) => o.isMale).toList();
 
+    // Her grubu efektif puana göre sırala
+    kizlar.sort((a, b) => efektifPuan[b.id]!.compareTo(efektifPuan[a.id]!));
+    erkekler.sort((a, b) => efektifPuan[b.id]!.compareTo(efektifPuan[a.id]!));
+
+    // Önce kızları snake draft ile dağıt, sonra erkekleri
     List<List<Ogrenci>> takimlar = List.generate(secilenTakimSayisi, (_) => []);
-    for (int i = 0; i < gelenler.length; i++) {
-      int round = i ~/ secilenTakimSayisi;
-      int index = round.isEven ? i % secilenTakimSayisi : (secilenTakimSayisi - 1) - (i % secilenTakimSayisi);
-      takimlar[index].add(gelenler[i]);
+
+    void snakeDraft(List<Ogrenci> liste) {
+      for (int i = 0; i < liste.length; i++) {
+        int round = i ~/ secilenTakimSayisi;
+        int index = round.isEven ? i % secilenTakimSayisi : (secilenTakimSayisi - 1) - (i % secilenTakimSayisi);
+        takimlar[index].add(liste[i]);
+      }
     }
+
+    snakeDraft(kizlar);
+    snakeDraft(erkekler);
 
     final takimIsimleri = _rastgeleTakimIsimleri(secilenTakimSayisi);
     if (!mounted) return;
