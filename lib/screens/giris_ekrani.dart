@@ -1,5 +1,6 @@
 import '../tema.dart';
 import 'package:flutter/material.dart';
+import '../services/analytics_service.dart';
 import '../services/auth_service.dart';
 
 class GirisEkrani extends StatefulWidget {
@@ -43,6 +44,7 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
     setState(() => _loading = true);
     try {
       await _authService.signInWithGoogle();
+      AnalyticsService.girisYapildi('google');
     } catch (e) {
       if (mounted) _hataGoster("Google Hatası: $e");
     } finally {
@@ -59,8 +61,10 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
     try {
       if (_kayitModu) {
         await _authService.signUpWithEmail(_emailCtrl.text, _passCtrl.text);
+        AnalyticsService.girisYapildi('email_kayit');
       } else {
         await _authService.signInWithEmail(_emailCtrl.text, _passCtrl.text);
+        AnalyticsService.girisYapildi('email');
       }
     } catch (e) {
       if (mounted) _hataGoster(e.toString().split('] ').last);

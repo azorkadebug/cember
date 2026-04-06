@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/ogrenci.dart';
+import '../services/mac_durumu.dart';
 
 class TakimBilgi {
   final String isim;
@@ -20,6 +21,12 @@ class TakimBilgi {
     this.kaptan,
     this.skor = 0,
   });
+}
+
+class _SuruklenenOgrenci {
+  final Ogrenci ogrenci;
+  final int kaynakTakimIndex;
+  _SuruklenenOgrenci({required this.ogrenci, required this.kaynakTakimIndex});
 }
 
 class _Ceza {
@@ -52,10 +59,31 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     _pulseCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
+    _durumGeriYukle();
+  }
+
+  void _durumGeriYukle() {
+    final mac = MacDurumu();
+    if (mac.toplamSaniye > 0) {
+      _toplamSaniye = mac.toplamSaniye;
+      _kalanSaniye = mac.kalanSaniyeHesapla();
+      _timerBitti = mac.timerBitti;
+      // Timer çalışıyordu ve henüz bitmemişse devam ettir
+      if (mac.timerCalisiyor && !_timerBitti && _kalanSaniye > 0) {
+        WidgetsBinding.instance.addPostFrameCallback((_) => _baslaDurdur());
+      }
+    }
   }
 
   @override
   void dispose() {
+    // Çıkarken durumu kaydet
+    MacDurumu().durumKaydet(
+      kalanSn: _kalanSaniye,
+      toplamSn: _toplamSaniye,
+      calisiyor: _timerCalisiyor,
+      bitti: _timerBitti,
+    );
     _timer?.cancel();
     _pulseCtrl.dispose();
     for (var c in _cezalar) { c.timer.cancel(); }
@@ -126,7 +154,7 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 leading: Text(o.isMale ? "♂" : "♀",
                     style: TextStyle(color: o.isMale ? Colors.blue.shade300 : Colors.pink.shade300, fontSize: 14)),
-                title: Text(o.ad, style: TextStyle(
+                title: Text(o.gorunenAd, style: TextStyle(
                     color: zatenCezali ? Colors.white30 : Colors.white,
                     fontWeight: FontWeight.w600)),
                 trailing: zatenCezali
@@ -218,52 +246,15 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin {
     return _cezalar.where((c) => c.takimIndex == takimIndex).toList();
   }
 
-  Future<bool> _cikisOnay() async {
-    final sonuc = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF16213E),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: Colors.orange.withAlpha(30), borderRadius: BorderRadius.circular(10)),
-            child: const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 22),
-          ),
-          const SizedBox(width: 12),
-          const Text("Maçtan Çık", style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
-        ]),
-        content: Text(
-          "Maç devam ediyor! Çıkarsanız skor ve cezalar sıfırlanır.",
-          style: TextStyle(color: Colors.white.withAlpha(180), height: 1.5),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text("Maça Dön", style: TextStyle(color: Colors.white60)),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red.shade700, foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text("Çık", style: TextStyle(fontWeight: FontWeight.w700)),
-          ),
-        ],
-      ),
-    );
-    return sonuc ?? false;
-  }
 
   @override
   Widget build(BuildContext context) {
     return PopScope(
       canPop: false,
-      onPopInvokedWithResult: (didPop, result) async {
+      onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
-        final cik = await _cikisOnay();
-        if (cik && context.mounted) Navigator.pop(context);
+        if (_timerCalisiyor) _baslaDurdur();
+        Navigator.pop(context, 'geridon');
       },
       child: Scaffold(
       backgroundColor: const Color(0xFF1A1A2E),
@@ -274,9 +265,9 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin {
         centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: () async {
-            final cik = await _cikisOnay();
-            if (cik && context.mounted) Navigator.pop(context);
+          onPressed: () {
+            if (_timerCalisiyor) _baslaDurdur();
+            Navigator.pop(context, 'geridon');
           },
         ),
         title: const Text("Skor Tablosu", style: TextStyle(fontWeight: FontWeight.w800, letterSpacing: 1)),
@@ -319,12 +310,12 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    _skorBtn(Icons.remove_rounded, () => setState(() { if (t.skor > 0) t.skor--; })),
+                    _skorBtn(Icons.remove_rounded, () => setState(() { if (t.skor > 0) { t.skor--; MacDurumu().kaydet(); } })),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 10),
                       child: Text("${t.skor}", style: const TextStyle(color: Colors.white, fontSize: 38, fontWeight: FontWeight.w900)),
                     ),
-                    _skorBtn(Icons.add_rounded, () => setState(() => t.skor++)),
+                    _skorBtn(Icons.add_rounded, () => setState(() { t.skor++; MacDurumu().kaydet(); })),
                   ],
                 ),
                 const SizedBox(height: 6),
@@ -544,6 +535,77 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin {
     );
   }
 
+  void _isimDuzenle(Ogrenci o) {
+    final c = TextEditingController(text: o.ad);
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text("İsim Düzenle", style: TextStyle(fontWeight: FontWeight.w700)),
+        content: TextField(
+          controller: c,
+          autofocus: true,
+          textCapitalization: TextCapitalization.words,
+          decoration: InputDecoration(
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: AppTema.ana, width: 2)),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text("İptal", style: TextStyle(color: Colors.grey.shade600)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTema.ana, foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () {
+              final yeniAd = c.text.trim();
+              if (yeniAd.isNotEmpty && yeniAd != o.ad) {
+                setState(() => o.ad = yeniAd);
+              }
+              Navigator.pop(ctx);
+            },
+            child: const Text("Kaydet", style: TextStyle(fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    ).then((_) => c.dispose());
+  }
+
+  Widget _oyuncuSatiri(Ogrenci o, {required bool isKaptan, required bool isCezali, required Color takimRenk}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      child: Row(
+        children: [
+          Text(o.isMale ? "♂" : "♀",
+              style: TextStyle(color: o.isMale ? Colors.blue.shade300 : Colors.pink.shade300, fontSize: 12)),
+          if (o.element != null) ...[
+            const SizedBox(width: 3),
+            Text(ElementSistemi.sembol(o.element)!, style: const TextStyle(fontSize: 10)),
+          ],
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              "${o.gorunenAd}${isKaptan ? ' ©' : ''}",
+              style: TextStyle(
+                color: isCezali ? Colors.red.shade300 : isKaptan ? Colors.amber : Colors.white70,
+                fontWeight: isKaptan ? FontWeight.w800 : FontWeight.w400,
+                fontSize: 12,
+                decoration: isCezali ? TextDecoration.lineThrough : null,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          if (isCezali)
+            Icon(Icons.front_hand_rounded, color: Colors.red.shade400, size: 12),
+        ],
+      ),
+    );
+  }
+
   Widget _takimListeleri() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -553,62 +615,75 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin {
           final t = widget.takimlar[i];
           final cezaliIdler = _takimCezalari(i).map((c) => c.oyuncu.id).toSet();
           return Expanded(
-            child: Container(
-              margin: EdgeInsets.only(left: i == 0 ? 0 : 4, right: i == widget.takimlar.length - 1 ? 0 : 4),
-              decoration: BoxDecoration(
-                color: const Color(0xFF16213E), borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: t.renk.withAlpha(60)),
-              ),
-              child: Column(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    decoration: BoxDecoration(
-                      color: t.renk.withAlpha(30),
-                      borderRadius: const BorderRadius.only(topLeft: Radius.circular(15), topRight: Radius.circular(15)),
-                    ),
-                    child: Center(
-                      child: Text("${t.renkAdi} (${t.oyuncular.length})",
-                          style: TextStyle(color: t.renk, fontWeight: FontWeight.w700, fontSize: 12)),
-                    ),
+            child: DragTarget<_SuruklenenOgrenci>(
+              onWillAcceptWithDetails: (details) => details.data.kaynakTakimIndex != i,
+              onAcceptWithDetails: (details) {
+                setState(() {
+                  final kaynak = widget.takimlar[details.data.kaynakTakimIndex];
+                  kaynak.oyuncular.remove(details.data.ogrenci);
+                  t.oyuncular.add(details.data.ogrenci);
+                });
+              },
+              builder: (context, candidateData, rejectedData) {
+                final uzerindeHover = candidateData.isNotEmpty;
+                return Container(
+                  margin: EdgeInsets.only(left: i == 0 ? 0 : 4, right: i == widget.takimlar.length - 1 ? 0 : 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF16213E), borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: uzerindeHover ? t.renk : t.renk.withAlpha(60), width: uzerindeHover ? 2 : 1),
                   ),
-                  Expanded(
-                    child: ListView.builder(
-                      padding: const EdgeInsets.symmetric(vertical: 4),
-                      itemCount: t.oyuncular.length,
-                      itemBuilder: (context, j) {
-                        final o = t.oyuncular[j];
-                        final isKaptan = t.kaptan != null && o.id == t.kaptan!.id;
-                        final isCezali = cezaliIdler.contains(o.id);
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                          child: Row(
-                            children: [
-                              Text(o.isMale ? "♂" : "♀",
-                                  style: TextStyle(color: o.isMale ? Colors.blue.shade300 : Colors.pink.shade300, fontSize: 12)),
-                              const SizedBox(width: 6),
-                              Expanded(
-                                child: Text(
-                                  "${o.ad}${isKaptan ? ' ©' : ''}",
-                                  style: TextStyle(
-                                    color: isCezali ? Colors.red.shade300 : isKaptan ? Colors.amber : Colors.white70,
-                                    fontWeight: isKaptan ? FontWeight.w800 : FontWeight.w400,
-                                    fontSize: 12,
-                                    decoration: isCezali ? TextDecoration.lineThrough : null,
+                  child: Column(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        decoration: BoxDecoration(
+                          color: t.renk.withAlpha(uzerindeHover ? 60 : 30),
+                          borderRadius: const BorderRadius.only(topLeft: Radius.circular(15), topRight: Radius.circular(15)),
+                        ),
+                        child: Center(
+                          child: Text("${t.renkAdi} (${t.oyuncular.length})",
+                              style: TextStyle(color: t.renk, fontWeight: FontWeight.w700, fontSize: 12)),
+                        ),
+                      ),
+                      Expanded(
+                        child: ListView.builder(
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          itemCount: t.oyuncular.length,
+                          itemBuilder: (context, j) {
+                            final o = t.oyuncular[j];
+                            final isKaptan = t.kaptan != null && o.id == t.kaptan!.id;
+                            final isCezali = cezaliIdler.contains(o.id);
+                            return LongPressDraggable<_SuruklenenOgrenci>(
+                              data: _SuruklenenOgrenci(ogrenci: o, kaynakTakimIndex: i),
+                              delay: const Duration(milliseconds: 200),
+                              feedback: Material(
+                                color: Colors.transparent,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: t.renk.withAlpha(200),
+                                    borderRadius: BorderRadius.circular(10),
+                                    boxShadow: [BoxShadow(color: Colors.black.withAlpha(80), blurRadius: 8)],
                                   ),
-                                  overflow: TextOverflow.ellipsis,
+                                  child: Text(o.gorunenAd, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13)),
                                 ),
                               ),
-                              if (isCezali)
-                                Icon(Icons.front_hand_rounded, color: Colors.red.shade400, size: 12),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
+                              childWhenDragging: Opacity(
+                                opacity: 0.3,
+                                child: _oyuncuSatiri(o, isKaptan: isKaptan, isCezali: isCezali, takimRenk: t.renk),
+                              ),
+                              child: GestureDetector(
+                                onTap: () => _isimDuzenle(o),
+                                child: _oyuncuSatiri(o, isKaptan: isKaptan, isCezali: isCezali, takimRenk: t.renk),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                );
+              },
             ),
           );
         }),

@@ -16,6 +16,9 @@ dependencies:
   google_sign_in: ^7.2.0
   sign_in_with_apple: ^7.0.1
   flutter_launcher_icons: ^0.14.4
+  encrypt: ^5.0.3
+  firebase_analytics: ^12.2.0
+  shared_preferences: ^2.5.5
 
 dev_dependencies:
   flutter_test:

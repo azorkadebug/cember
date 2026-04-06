@@ -48,6 +48,7 @@ class DefaultFirebaseOptions {
     authDomain: 'cemberapp-2a101.firebaseapp.com',
     databaseURL: 'https://cemberapp-2a101-default-rtdb.europe-west1.firebasedatabase.app',
     storageBucket: 'cemberapp-2a101.firebasestorage.app',
+    measurementId: 'G-1ZLQWNS1JM',
   );
 
   static const FirebaseOptions android = FirebaseOptions(

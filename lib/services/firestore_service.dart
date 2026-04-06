@@ -51,6 +51,29 @@ class FirestoreService {
     await _db.collection('siniflar').doc(sinifId).update({'formaRenkleri': renkler});
   }
 
+  Future<void> sinifAdiniGuncelle(String sinifId, String yeniAd) async {
+    await _db.collection('siniflar').doc(sinifId).update({'ad': yeniAd});
+  }
+
+  // --- Profil ---
+
+  Future<Map<String, dynamic>?> profilGetir() async {
+    final doc = await _db.collection('users').doc(uid).get();
+    return doc.data();
+  }
+
+  Future<void> profilKaydet(Map<String, dynamic> data) async {
+    await _db.collection('users').doc(uid).set({
+      ...data,
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
+  Future<bool> profilVarMi() async {
+    final doc = await _db.collection('users').doc(uid).get();
+    return doc.exists && (doc.data()?['ad'] ?? '').toString().isNotEmpty;
+  }
+
   // --- Öğrenciler ---
 
   Stream<QuerySnapshot> ogrencilerStream(String sinifId) {
@@ -106,5 +129,40 @@ class FirestoreService {
     return snap.docs
         .map((d) => Ogrenci.fromMap(d.id, d.data()))
         .toList();
+  }
+
+  /// Şifrelenmemiş öğrenci verilerini tespit edip şifreler
+  Future<int> sifrelemeyiMigrate(String sinifId) async {
+    final snap = await _db
+        .collection('siniflar')
+        .doc(sinifId)
+        .collection('ogrenciler')
+        .get();
+    int sayac = 0;
+    final batch = _db.batch();
+    for (var doc in snap.docs) {
+      final data = doc.data();
+      if (data['sifrelendi'] != true) {
+        // Eski veriyi oku (şifresiz), model üzerinden şifreli yaz
+        final ogrenci = Ogrenci.fromMap(doc.id, data);
+        batch.update(doc.reference, ogrenci.toMap());
+        sayac++;
+      }
+    }
+    if (sayac > 0) await batch.commit();
+    return sayac;
+  }
+
+  /// Tüm sınıflardaki öğrencileri migrate eder
+  Future<int> tumSiniflariMigrate() async {
+    final siniflar = await _db
+        .collection('siniflar')
+        .where('ownerId', isEqualTo: uid)
+        .get();
+    int toplam = 0;
+    for (var sinif in siniflar.docs) {
+      toplam += await sifrelemeyiMigrate(sinif.id);
+    }
+    return toplam;
   }
 }
