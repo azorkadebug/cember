@@ -175,13 +175,29 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _sinifEkle(context),
-        backgroundColor: AppTema.ana,
-        foregroundColor: Colors.white,
-        elevation: 4,
-        icon: const Icon(Icons.add_rounded),
-        label: const Text("Sınıf Ekle", style: TextStyle(fontWeight: FontWeight.w700)),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FloatingActionButton.extended(
+            heroTag: 'mac',
+            onPressed: () => _siniflarArasiMacDialog(context),
+            backgroundColor: const Color(0xFF1A1A2E),
+            foregroundColor: Colors.white,
+            elevation: 4,
+            icon: const Icon(Icons.sports_rounded),
+            label: const Text("Sınıflar Arası Maç", style: TextStyle(fontWeight: FontWeight.w700)),
+          ),
+          const SizedBox(height: 12),
+          FloatingActionButton.extended(
+            heroTag: 'ekle',
+            onPressed: () => _sinifEkle(context),
+            backgroundColor: AppTema.ana,
+            foregroundColor: Colors.white,
+            elevation: 4,
+            icon: const Icon(Icons.add_rounded),
+            label: const Text("Sınıf Ekle", style: TextStyle(fontWeight: FontWeight.w700)),
+          ),
+        ],
       ),
     );
   }
@@ -519,6 +535,196 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
         ],
       ),
     );
+  }
+
+  static const _renkSecenekleri = ['Kırmızı', 'Mavi', 'Sarı', 'Yeşil', 'Siyah', 'Turuncu', 'Mor', 'Lacivert'];
+
+  Color _renkBul(String renkAdi) {
+    switch (renkAdi.toLowerCase().trim()) {
+      case 'kırmızı': return Colors.red;
+      case 'mavi': return Colors.blue;
+      case 'sarı': return Colors.amber.shade600;
+      case 'yeşil': return Colors.green;
+      case 'siyah': return Colors.black87;
+      case 'turuncu': return AppTema.ana;
+      case 'mor': return Colors.purple;
+      case 'lacivert': return Colors.indigo;
+      default: return AppTema.ana;
+    }
+  }
+
+  void _siniflarArasiMacDialog(BuildContext context) async {
+    final snapshot = await _db.siniflarGetir();
+    if (snapshot.docs.length < 2) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: const Text("En az 2 sınıf gerekli."),
+          backgroundColor: Colors.red.shade700, behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        ));
+      }
+      return;
+    }
+
+    final siniflar = snapshot.docs.map((d) {
+      final data = d.data() as Map<String, dynamic>?;
+      return {'id': d.id, 'ad': data?['ad'] ?? d.id};
+    }).toList();
+
+    String? sinif1Id = siniflar[0]['id'] as String;
+    String? sinif2Id = siniflar[1]['id'] as String;
+    String renk1 = 'Kırmızı';
+    String renk2 = 'Mavi';
+
+    if (!context.mounted) return;
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Row(children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(color: Colors.indigo.shade50, borderRadius: BorderRadius.circular(10)),
+              child: const Icon(Icons.sports_rounded, color: Colors.indigo),
+            ),
+            const SizedBox(width: 12),
+            const Text("Sınıflar Arası Maç", style: TextStyle(fontWeight: FontWeight.w700)),
+          ]),
+          content: Column(mainAxisSize: MainAxisSize.min, children: [
+            // Sınıf 1
+            _macSinifSecici("Ev Sahibi", siniflar, sinif1Id!, renk1, (id) => setDialogState(() => sinif1Id = id), (r) => setDialogState(() => renk1 = r)),
+            const SizedBox(height: 8),
+            const Text("VS", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 20, color: Colors.grey)),
+            const SizedBox(height: 8),
+            // Sınıf 2
+            _macSinifSecici("Deplasman", siniflar, sinif2Id!, renk2, (id) => setDialogState(() => sinif2Id = id), (r) => setDialogState(() => renk2 = r)),
+          ]),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text("İptal", style: TextStyle(color: Colors.grey.shade600)),
+            ),
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF1A1A2E), foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              ),
+              icon: const Icon(Icons.sports_rounded, size: 20),
+              onPressed: () {
+                if (sinif1Id == sinif2Id) {
+                  ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
+                    content: const Text("Aynı sınıfı seçemezsiniz."),
+                    backgroundColor: Colors.red.shade700, behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ));
+                  return;
+                }
+                Navigator.pop(ctx);
+                _siniflarArasiMacBaslat(sinif1Id!, sinif2Id!, renk1, renk2,
+                  siniflar.firstWhere((s) => s['id'] == sinif1Id)['ad'] as String,
+                  siniflar.firstWhere((s) => s['id'] == sinif2Id)['ad'] as String,
+                );
+              },
+              label: const Text("Maçı Başlat", style: TextStyle(fontWeight: FontWeight.w700)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _macSinifSecici(String etiket, List<Map<String, dynamic>> siniflar, String secilenId, String secilenRenk,
+      Function(String) onSinifChanged, Function(String) onRenkChanged) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: _renkBul(secilenRenk).withAlpha(15),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: _renkBul(secilenRenk).withAlpha(60)),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(etiket, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.grey.shade600)),
+        const SizedBox(height: 6),
+        DropdownButtonFormField<String>(
+          value: secilenId,
+          isExpanded: true,
+          decoration: InputDecoration(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+            isDense: true,
+          ),
+          items: siniflar.map((s) => DropdownMenuItem(value: s['id'] as String, child: Text(s['ad'] as String, style: const TextStyle(fontWeight: FontWeight.w600)))).toList(),
+          onChanged: (v) { if (v != null) onSinifChanged(v); },
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 6, runSpacing: 6,
+          children: _renkSecenekleri.map((r) {
+            final secili = r == secilenRenk;
+            return GestureDetector(
+              onTap: () => onRenkChanged(r),
+              child: Container(
+                width: 28, height: 28,
+                decoration: BoxDecoration(
+                  color: _renkBul(r),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: secili ? Colors.white : Colors.transparent, width: 2),
+                  boxShadow: secili ? [BoxShadow(color: _renkBul(r).withAlpha(120), blurRadius: 6)] : null,
+                ),
+                child: secili ? const Icon(Icons.check_rounded, color: Colors.white, size: 16) : null,
+              ),
+            );
+          }).toList(),
+        ),
+      ]),
+    );
+  }
+
+  void _siniflarArasiMacBaslat(String sinif1Id, String sinif2Id, String renk1, String renk2, String ad1, String ad2) async {
+    final ogrenciler1 = await _db.ogrencileriGetir(sinif1Id);
+    final ogrenciler2 = await _db.ogrencileriGetir(sinif2Id);
+
+    final gelenler1 = ogrenciler1.where((o) => o.buradaMi).toList();
+    final gelenler2 = ogrenciler2.where((o) => o.buradaMi).toList();
+
+    if (gelenler1.isEmpty || gelenler2.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text("${gelenler1.isEmpty ? ad1 : ad2} sınıfında hazır öğrenci yok."),
+          backgroundColor: Colors.red.shade700, behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        ));
+      }
+      return;
+    }
+
+    final takimlar = [
+      TakimBilgi(
+        isim: ad1,
+        renkAdi: renk1,
+        renk: _renkBul(renk1),
+        oyuncular: gelenler1,
+        kaptan: gelenler1.first,
+      ),
+      TakimBilgi(
+        isim: ad2,
+        renkAdi: renk2,
+        renk: _renkBul(renk2),
+        oyuncular: gelenler2,
+        kaptan: gelenler2.first,
+      ),
+    ];
+
+    MacDurumu().macBaslat(sinif1Id, takimlar);
+    AnalyticsService.macBasladi(takimSayisi: 2, oyuncuSayisi: gelenler1.length + gelenler2.length);
+
+    if (mounted) {
+      Navigator.push(context, MaterialPageRoute(
+        builder: (_) => SkorEkrani(takimlar: takimlar),
+      ));
+    }
   }
 
   void _sinifSilOnay(BuildContext context, String sinifId) {

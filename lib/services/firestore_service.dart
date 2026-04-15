@@ -16,6 +16,13 @@ class FirestoreService {
         .snapshots();
   }
 
+  Future<QuerySnapshot> siniflarGetir() {
+    return _db
+        .collection('siniflar')
+        .where('ownerId', isEqualTo: uid)
+        .get();
+  }
+
   /// Sınıf adındaki / karakteri Firestore doc ID'sinde kullanılamaz
   static String _safeDocId(String ad) => ad.replaceAll('/', '-');
 

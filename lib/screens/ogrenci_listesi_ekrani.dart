@@ -405,6 +405,15 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                                 ],
                               ],
                             ),
+                            if (o.rozetler.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 2),
+                                child: Text(
+                                  o.rozetler.map((r) => Ogrenci.rozetTanimlari[r['rozet']]?.split(' ').first ?? '').join(' '),
+                                  maxLines: 1, overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(fontSize: 12),
+                                ),
+                              ),
                             if (o.not.isNotEmpty)
                               Text(o.not, maxLines: 1, overflow: TextOverflow.ellipsis,
                                   style: TextStyle(color: Colors.grey.shade500, fontSize: 11)),
@@ -663,6 +672,117 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
     );
   }
 
+  void _rozetVerDialog(Ogrenci o, StateSetter parentSetState) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(children: [
+          const Icon(Icons.emoji_events_rounded, color: Colors.amber, size: 22),
+          const SizedBox(width: 8),
+          Flexible(child: Text("${o.gorunenAd} - Rozet Ver", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700))),
+        ]),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            if (o.rozetler.isNotEmpty) ...[
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(color: Colors.amber.shade50, borderRadius: BorderRadius.circular(10)),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text("Mevcut Rozetler:", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.amber.shade800)),
+                    const SizedBox(height: 4),
+                    Wrap(
+                      spacing: 4, runSpacing: 4,
+                      children: o.rozetler.reversed.map((r) {
+                        final tanim = Ogrenci.rozetTanimlari[r['rozet']] ?? r['rozet'];
+                        return Chip(
+                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          visualDensity: VisualDensity.compact,
+                          label: Text("$tanim  ${r['tarih']}", style: const TextStyle(fontSize: 11)),
+                          deleteIcon: Icon(Icons.close_rounded, size: 16, color: Colors.red.shade400),
+                          onDeleted: () {
+                            Navigator.pop(ctx);
+                            _rozetSilOnay(o, r, parentSetState);
+                          },
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
+            ...Ogrenci.rozetTanimlari.entries.map((e) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(10),
+                  onTap: () {
+                    final now = DateTime.now();
+                    final tarih = "${now.day.toString().padLeft(2, '0')}.${now.month.toString().padLeft(2, '0')}.${now.year}";
+                    o.rozetler.add({'rozet': e.key, 'tarih': tarih});
+                    _save(o);
+                    parentSetState(() {});
+                    Navigator.pop(ctx);
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade50,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Colors.grey.shade200),
+                    ),
+                    child: Row(children: [
+                      Text(e.value, style: const TextStyle(fontSize: 14)),
+                    ]),
+                  ),
+                ),
+              );
+            }),
+          ]),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text("Kapat"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _rozetSilOnay(Ogrenci o, Map<String, dynamic> rozet, StateSetter parentSetState) {
+    final tanim = Ogrenci.rozetTanimlari[rozet['rozet']] ?? rozet['rozet'];
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text("Rozet Sil", style: TextStyle(fontWeight: FontWeight.w700)),
+        content: Text("$tanim rozetini silmek istediğinize emin misiniz?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text("İptal"),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            onPressed: () {
+              o.rozetler.remove(rozet);
+              _save(o);
+              parentSetState(() {});
+              Navigator.pop(ctx);
+            },
+            child: const Text("Sil"),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _ogrenciDuzenle(Ogrenci o) {
     final adC = TextEditingController(text: o.ad);
     final pC = TextEditingController(text: o.puan.toString());
@@ -673,7 +793,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
         builder: (dialogContext, setDialogState) => AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: const Text("Öğrenci Düzenle", style: TextStyle(fontWeight: FontWeight.w700)),
-          content: Column(mainAxisSize: MainAxisSize.min, children: [
+          content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
             TextField(
               controller: adC,
               decoration: InputDecoration(
@@ -710,6 +830,36 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
               maxLines: 2,
             ),
             const SizedBox(height: 16),
+            // Rozet ver butonu
+            GestureDetector(
+              onTap: () => _rozetVerDialog(o, setDialogState),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                decoration: BoxDecoration(
+                  color: Colors.amber.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.amber.shade300),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.emoji_events_rounded, color: Colors.amber, size: 20),
+                    const SizedBox(width: 8),
+                    Text("Rozet Ver", style: TextStyle(fontWeight: FontWeight.w700, color: Colors.amber.shade800)),
+                    if (o.rozetler.isNotEmpty) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(color: Colors.amber.shade200, borderRadius: BorderRadius.circular(8)),
+                        child: Text("${o.rozetler.length}", style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.amber.shade900)),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
             // Element seçici
             Row(
               children: [
@@ -736,7 +886,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                 }),
               ],
             ),
-          ]),
+          ])),
           actionsAlignment: MainAxisAlignment.spaceBetween,
           actions: [
             TextButton.icon(

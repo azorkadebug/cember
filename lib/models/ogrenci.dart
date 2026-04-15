@@ -41,6 +41,18 @@ class Ogrenci {
   bool buradaMi, isMale;
   String? element;
   List<Map<String, dynamic>> saglikNotlari;
+  List<Map<String, dynamic>> rozetler;
+
+  static const Map<String, String> rozetTanimlari = {
+    'cevre_dostu': '🌿 Çevre Dostu',
+    'yardimci_antrenor': '🏅 Yardımcı Antrenör',
+    'centilmen': '🤝 Centilmen',
+    'lider': '👑 Lider',
+    'fair_play': '🕊️ Fair Play',
+    'guler_yuz': '😊 Güler Yüz',
+    'takim_ruhu': '💪 Takım Ruhu',
+    'strateji_ustasi': '🧠 Strateji Ustası',
+  };
 
   Ogrenci({
     required this.id,
@@ -55,7 +67,9 @@ class Ogrenci {
     this.isMale = true,
     this.element,
     List<Map<String, dynamic>>? saglikNotlari,
-  }) : saglikNotlari = saglikNotlari ?? [];
+    List<Map<String, dynamic>>? rozetler,
+  }) : saglikNotlari = saglikNotlari ?? [],
+       rozetler = rozetler ?? [];
 
   Map<String, dynamic> toMap() {
     final s = SifrelemeService.instance;
@@ -72,6 +86,7 @@ class Ogrenci {
       'sifrelendi': true,
       if (element != null) 'element': element,
       'saglikNotlari': saglikNotlari,
+      'rozetler': rozetler,
     };
   }
 
@@ -91,6 +106,9 @@ class Ogrenci {
       isMale: map['isMale'] ?? true,
       element: map['element'],
       saglikNotlari: (map['saglikNotlari'] as List<dynamic>?)
+          ?.map((e) => Map<String, dynamic>.from(e as Map))
+          .toList(),
+      rozetler: (map['rozetler'] as List<dynamic>?)
           ?.map((e) => Map<String, dynamic>.from(e as Map))
           .toList(),
     );
