@@ -40,6 +40,7 @@ class Ogrenci {
   int puan, ayakkabiEksik, kiyafetEksik, sariKart, saglikDurumu;
   bool buradaMi, isMale;
   String? element;
+  List<Map<String, dynamic>> saglikNotlari;
 
   Ogrenci({
     required this.id,
@@ -53,7 +54,8 @@ class Ogrenci {
     this.not = "",
     this.isMale = true,
     this.element,
-  });
+    List<Map<String, dynamic>>? saglikNotlari,
+  }) : saglikNotlari = saglikNotlari ?? [];
 
   Map<String, dynamic> toMap() {
     final s = SifrelemeService.instance;
@@ -69,6 +71,7 @@ class Ogrenci {
       'buradaMi': buradaMi,
       'sifrelendi': true,
       if (element != null) 'element': element,
+      'saglikNotlari': saglikNotlari,
     };
   }
 
@@ -87,6 +90,9 @@ class Ogrenci {
       not: sifrelendi ? s.coz(map['not'] ?? '') : (map['not'] ?? ''),
       isMale: map['isMale'] ?? true,
       element: map['element'],
+      saglikNotlari: (map['saglikNotlari'] as List<dynamic>?)
+          ?.map((e) => Map<String, dynamic>.from(e as Map))
+          .toList(),
     );
   }
 }
@@ -94,6 +100,7 @@ class Ogrenci {
 class TopluOgrenciSatiri {
   final TextEditingController adCtrl = TextEditingController();
   final TextEditingController puanCtrl = TextEditingController(text: "100");
+  final GlobalKey rowKey = GlobalKey();
   bool isMale = true;
 
   void dispose() {

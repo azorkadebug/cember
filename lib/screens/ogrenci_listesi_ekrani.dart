@@ -489,7 +489,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
             const Divider(height: 1),
             _artieksi(Icons.square_rounded, Colors.amber.shade700, "Kart", o.sariKart, (v) => setDialogState(() => o.sariKart += v)),
             const Divider(height: 1),
-            _artieksi(Icons.medical_services_rounded, Colors.teal, "Sağlık", o.saglikDurumu, (v) => setDialogState(() => o.saglikDurumu += v)),
+            _saglikSatiri(o, setDialogState),
           ]),
           actions: [
             SizedBox(
@@ -532,6 +532,134 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
           ]),
         ),
       ]),
+    );
+  }
+
+  Widget _saglikSatiri(Ogrenci o, StateSetter setDialogState) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+        GestureDetector(
+          onTap: o.saglikNotlari.isEmpty ? null : () => _saglikGecmisiDialog(o),
+          child: Row(children: [
+            Container(
+              width: 30, height: 30,
+              decoration: BoxDecoration(color: Colors.teal.withAlpha(25), borderRadius: BorderRadius.circular(8)),
+              child: const Icon(Icons.medical_services_rounded, size: 18, color: Colors.teal),
+            ),
+            const SizedBox(width: 8),
+            Text("Sağlık", style: const TextStyle(fontSize: 14)),
+            if (o.saglikNotlari.isNotEmpty) ...[
+              const SizedBox(width: 4),
+              const Icon(Icons.history_rounded, size: 16, color: Colors.teal),
+            ],
+          ]),
+        ),
+        Container(
+          decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(10)),
+          child: Row(children: [
+            IconButton(
+              icon: const Icon(Icons.remove_circle_rounded, color: Colors.red),
+              onPressed: () => setDialogState(() => o.saglikDurumu += -1),
+              iconSize: 26,
+            ),
+            SizedBox(width: 28, child: Text("${o.saglikDurumu}", textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16))),
+            IconButton(
+              icon: const Icon(Icons.add_circle_rounded, color: Colors.green),
+              onPressed: () => _saglikNotuEkleDialog(o, setDialogState),
+              iconSize: 26,
+            ),
+          ]),
+        ),
+      ]),
+    );
+  }
+
+  void _saglikNotuEkleDialog(Ogrenci o, StateSetter setDialogState) {
+    final notCtrl = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(children: [
+          const Icon(Icons.medical_services_rounded, color: Colors.teal, size: 22),
+          const SizedBox(width: 8),
+          const Text("Sağlık Notu", style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
+        ]),
+        content: TextField(
+          controller: notCtrl,
+          autofocus: true,
+          textCapitalization: TextCapitalization.sentences,
+          decoration: InputDecoration(
+            hintText: "Örn: tırnak batması, epilepsi...",
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          ),
+          maxLines: 2,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text("İptal"),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.teal,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () {
+              final now = DateTime.now();
+              final tarih = "${now.day.toString().padLeft(2, '0')}.${now.month.toString().padLeft(2, '0')}.${now.year}";
+              o.saglikNotlari.add({'tarih': tarih, 'not': notCtrl.text.trim()});
+              setDialogState(() => o.saglikDurumu += 1);
+              Navigator.pop(ctx);
+            },
+            child: const Text("Ekle", style: TextStyle(fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _saglikGecmisiDialog(Ogrenci o) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(children: [
+          const Icon(Icons.history_rounded, color: Colors.teal, size: 22),
+          const SizedBox(width: 8),
+          Flexible(child: Text("${o.gorunenAd} - Sağlık Geçmişi", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700))),
+        ]),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.separated(
+            shrinkWrap: true,
+            itemCount: o.saglikNotlari.length,
+            separatorBuilder: (_, __) => const Divider(height: 1),
+            itemBuilder: (_, i) {
+              final kayit = o.saglikNotlari[o.saglikNotlari.length - 1 - i];
+              return ListTile(
+                dense: true,
+                contentPadding: EdgeInsets.zero,
+                leading: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(color: Colors.teal.withAlpha(25), borderRadius: BorderRadius.circular(8)),
+                  child: Text(kayit['tarih'] ?? '', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.teal)),
+                ),
+                title: Text(kayit['not'] ?? '-', style: const TextStyle(fontSize: 14)),
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text("Kapat"),
+          ),
+        ],
+      ),
     );
   }
 
@@ -729,10 +857,19 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                 const Divider(height: 12),
                 Expanded(
                   child: ListView(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: EdgeInsets.fromLTRB(16, 0, 16, MediaQuery.of(sheetContext).viewInsets.bottom),
                     children: List.generate(satirlar.length, (i) {
                       final satir = satirlar[i];
+                      void scrollToRow() {
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          final ctx = satir.rowKey.currentContext;
+                          if (ctx != null) {
+                            Scrollable.ensureVisible(ctx, duration: const Duration(milliseconds: 250), curve: Curves.easeInOut, alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtEnd);
+                          }
+                        });
+                      }
                       return Padding(
+                        key: satir.rowKey,
                         padding: const EdgeInsets.only(bottom: 6),
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -743,6 +880,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                               flex: 5,
                               child: TextField(
                                 controller: satir.adCtrl,
+                                onTap: scrollToRow,
                                 decoration: const InputDecoration(hintText: "Ad Soyad", border: InputBorder.none,
                                     contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 12), isDense: true),
                                 style: const TextStyle(fontSize: 15),
@@ -764,6 +902,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                               width: 54,
                               child: TextField(
                                 controller: satir.puanCtrl,
+                                onTap: scrollToRow,
                                 keyboardType: TextInputType.number,
                                 textAlign: TextAlign.center,
                                 decoration: InputDecoration(
@@ -821,23 +960,34 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
   Future<void> _topluKaydet(List<TopluOgrenciSatiri> satirlar, BuildContext sheetContext) async {
     int eklenen = 0;
     int atlanan = 0;
-    List<String> cakisanlar = [];
+
+    // Tüm mevcut isimleri tek sorguda al
+    final mevcutAdlar = await _db.mevcutOgrenciAdlari(widget.sinifId);
+
+    // Yeni ve çakışan öğrencileri ayır
+    final yeniOgrenciler = <Ogrenci>[];
+    final cakisanSatirlar = <TopluOgrenciSatiri>[];
+    final cakisanlar = <String>[];
 
     for (var s in satirlar) {
       final ad = s.adCtrl.text.trim();
       if (ad.isEmpty) continue;
 
-      final varMi = await _db.ogrenciVarMi(widget.sinifId, ad);
-      if (varMi) {
+      if (mevcutAdlar.contains(ad)) {
         cakisanlar.add(ad);
-        continue; // Şimdilik atla, sonra soracağız
+        cakisanSatirlar.add(s);
+      } else {
+        yeniOgrenciler.add(Ogrenci(
+          id: '', ad: ad, isMale: s.isMale,
+          puan: int.tryParse(s.puanCtrl.text) ?? 100,
+        ));
       }
+    }
 
-      await _db.ogrenciEkle(widget.sinifId, Ogrenci(
-        id: '', ad: ad, isMale: s.isMale,
-        puan: int.tryParse(s.puanCtrl.text) ?? 100,
-      ));
-      eklenen++;
+    // Yeni öğrencileri toplu ekle
+    if (yeniOgrenciler.isNotEmpty) {
+      await _db.ogrencilerTopluEkle(widget.sinifId, yeniOgrenciler);
+      eklenen = yeniOgrenciler.length;
     }
 
     // Çakışanları sor
@@ -878,16 +1028,12 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
       );
 
       if (devamEt == true) {
-        for (var s in satirlar) {
-          final ad = s.adCtrl.text.trim();
-          if (cakisanlar.contains(ad)) {
-            await _db.ogrenciEkle(widget.sinifId, Ogrenci(
-              id: '', ad: ad, isMale: s.isMale,
-              puan: int.tryParse(s.puanCtrl.text) ?? 100,
-            ));
-            eklenen++;
-          }
-        }
+        final cakisanOgrenciler = cakisanSatirlar.map((s) => Ogrenci(
+          id: '', ad: s.adCtrl.text.trim(), isMale: s.isMale,
+          puan: int.tryParse(s.puanCtrl.text) ?? 100,
+        )).toList();
+        await _db.ogrencilerTopluEkle(widget.sinifId, cakisanOgrenciler);
+        eklenen += cakisanOgrenciler.length;
       } else {
         atlanan = cakisanlar.length;
       }

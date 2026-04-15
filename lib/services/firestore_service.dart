@@ -102,6 +102,26 @@ class FirestoreService {
         .add(ogrenci.toMap());
   }
 
+  /// Birden fazla öğrenciyi tek batch'te ekler (max 500).
+  Future<void> ogrencilerTopluEkle(String sinifId, List<Ogrenci> ogrenciler) async {
+    final batch = _db.batch();
+    final col = _db.collection('siniflar').doc(sinifId).collection('ogrenciler');
+    for (final o in ogrenciler) {
+      batch.set(col.doc(), o.toMap());
+    }
+    await batch.commit();
+  }
+
+  /// Sınıftaki mevcut öğrenci adlarını döndürür.
+  Future<Set<String>> mevcutOgrenciAdlari(String sinifId) async {
+    final snap = await _db
+        .collection('siniflar')
+        .doc(sinifId)
+        .collection('ogrenciler')
+        .get();
+    return snap.docs.map((d) => (d.data()['ad'] as String? ?? '').trim()).toSet();
+  }
+
   Future<void> ogrenciGuncelle(String sinifId, Ogrenci ogrenci) async {
     await _db
         .collection('siniflar')
