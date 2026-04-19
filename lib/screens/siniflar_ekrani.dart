@@ -53,7 +53,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
         foregroundColor: Colors.white,
         elevation: 0,
         actions: [
-          if (AuthService().uid == 'A1Xyb80fR7NQ6KuwBt6NUa5p2743') ...[
+          if (AuthService().isAdmin) ...[
             IconButton(
               icon: Icon(DemoModu.aktif ? Icons.visibility_off_rounded : Icons.visibility_rounded),
               tooltip: DemoModu.aktif ? 'Demo Kapat' : 'Demo Aç',
@@ -90,10 +90,10 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
       ),
       body: Column(
         children: [
-          // Header gradient
+          // Header gradient — kompakt
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(24, 0, 24, 28),
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 14),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
@@ -101,22 +101,25 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
                 colors: [AppTema.ana, AppTema.anaAcik],
               ),
               borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(28),
-                bottomRight: Radius.circular(28),
+                bottomLeft: Radius.circular(20),
+                bottomRight: Radius.circular(20),
               ),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Row(
               children: [
-                Text("Hoş geldiniz!",
-                    style: TextStyle(color: Colors.white.withAlpha(200), fontSize: 14)),
-                const SizedBox(height: 4),
-                Text(AuthService().currentUser?.email ?? '',
-                    style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
+                Text("👋", style: TextStyle(fontSize: 16, color: Colors.white.withAlpha(220))),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    AuthService().currentUser?.email ?? '',
+                    style: TextStyle(color: Colors.white.withAlpha(220), fontSize: 13, fontWeight: FontWeight.w500),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           // Aktif maç banner'ı
           ListenableBuilder(
             listenable: MacDurumu(),
@@ -166,7 +169,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
                   );
                 }
                 return ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 180),
                   itemCount: snapshot.data!.docs.length,
                   itemBuilder: (context, i) => _sinifKarti(context, snapshot.data!.docs[i]),
                 );
@@ -276,9 +279,12 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
                       height: 52,
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
-                          colors: [AppTema.anaAcik, AppTema.anaKoyu],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: _sinifPaleti(ad),
                         ),
                         borderRadius: BorderRadius.circular(14),
+                        boxShadow: [BoxShadow(color: _sinifPaleti(ad).first.withAlpha(60), blurRadius: 8, offset: const Offset(0, 2))],
                       ),
                       child: const Icon(Icons.groups_rounded, color: Colors.white, size: 28),
                     ),
@@ -535,6 +541,21 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
         ],
       ),
     );
+  }
+
+  static const _sinifPaletleri = [
+    [Color(0xFFE94B6A), Color(0xFFFF6B35)], // pembe → turuncu
+    [Color(0xFF4A90E2), Color(0xFF50C9C3)], // mavi → turkuaz
+    [Color(0xFF00C896), Color(0xFF7FE5C5)], // yeşil → mint
+    [Color(0xFF9B59B6), Color(0xFFD16BA5)], // mor → pembe
+    [Color(0xFFF5C544), Color(0xFFFF8C42)], // sarı → turuncu
+    [Color(0xFF26A69A), Color(0xFF4DB6AC)], // teal
+    [Color(0xFFEF5350), Color(0xFFEC407A)], // kırmızı
+    [Color(0xFF5C6BC0), Color(0xFF7986CB)], // indigo
+  ];
+
+  List<Color> _sinifPaleti(String ad) {
+    return _sinifPaletleri[ad.hashCode.abs() % _sinifPaletleri.length];
   }
 
   static const _renkSecenekleri = ['Kırmızı', 'Mavi', 'Sarı', 'Yeşil', 'Siyah', 'Turuncu', 'Mor', 'Lacivert'];

@@ -140,7 +140,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                               : 0;
                           return Container(
                             margin: const EdgeInsets.symmetric(horizontal: 40),
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                             decoration: BoxDecoration(
                               color: Colors.white.withAlpha(25),
                               borderRadius: BorderRadius.circular(20),
@@ -148,11 +148,12 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               children: [
-                                _miniStat(Icons.people_alt_rounded, "$total"),
+                                _miniStat(Icons.people_alt_rounded, "$total", "Toplam", Colors.white),
                                 _miniDivider(),
-                                _miniStat(Icons.check_circle_rounded, "$present"),
+                                _miniStat(Icons.check_circle_rounded, "$present", "Mevcut", Colors.greenAccent.shade100),
                                 _miniDivider(),
-                                _miniStat(Icons.cancel_rounded, "${total - present}"),
+                                _miniStat(Icons.cancel_rounded, "${total - present}", "Yok",
+                                    (total - present) > 0 ? Colors.redAccent.shade100 : Colors.white.withAlpha(140)),
                               ],
                             ),
                           );
@@ -236,18 +237,26 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
     );
   }
 
-  Widget _miniStat(IconData icon, String value) {
-    return Row(
+  Widget _miniStat(IconData icon, String value, String label, Color renk) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, color: Colors.white, size: 15),
-        const SizedBox(width: 4),
-        Text(value, style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800)),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: renk, size: 15),
+            const SizedBox(width: 5),
+            Text(value, style: TextStyle(color: renk, fontSize: 16, fontWeight: FontWeight.w800)),
+          ],
+        ),
+        const SizedBox(height: 2),
+        Text(label, style: TextStyle(color: Colors.white.withAlpha(160), fontSize: 10, letterSpacing: 0.5)),
       ],
     );
   }
 
   Widget _miniDivider() {
-    return Container(width: 1, height: 14, color: Colors.white.withAlpha(60));
+    return Container(width: 1, height: 28, color: Colors.white.withAlpha(60));
   }
 
   Widget _aktifMacBanner() {
@@ -435,17 +444,23 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
   }
 
   Widget _rozetGrubu(Ogrenci o) {
+    final aktifler = <Widget>[
+      if (o.ayakkabiEksik != 0) _rozet(Icons.do_not_step_rounded, Colors.deepOrange, o.ayakkabiEksik),
+      if (o.kiyafetEksik != 0) _rozet(Icons.checkroom_rounded, Colors.purple, o.kiyafetEksik),
+      if (o.sariKart != 0)
+        _rozet(Icons.square_rounded, o.sariKart >= 2 ? Colors.red : Colors.amber.shade700, o.sariKart),
+      if (o.saglikDurumu != 0) _rozet(Icons.medical_services_rounded, Colors.teal, o.saglikDurumu),
+    ];
+
     return GestureDetector(
       onTap: () => _durumPopUp(o),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _rozet(Icons.do_not_step_rounded, Colors.deepOrange, o.ayakkabiEksik),
-          _rozet(Icons.checkroom_rounded, Colors.purple, o.kiyafetEksik),
-          _rozet(o.sariKart >= 2 ? Icons.square_rounded : Icons.square_rounded,
-              o.sariKart >= 2 ? Colors.red : Colors.amber.shade700, o.sariKart),
-          _rozet(Icons.medical_services_rounded, Colors.teal, o.saglikDurumu),
-        ],
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+        constraints: const BoxConstraints(minWidth: 40, minHeight: 32),
+        child: aktifler.isEmpty
+            ? Icon(Icons.check_circle_rounded, size: 18, color: Colors.green.shade300)
+            : Row(mainAxisSize: MainAxisSize.min, children: aktifler),
       ),
     );
   }
@@ -453,21 +468,15 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
   Widget _rozet(IconData icon, Color renk, int val) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 2),
-      child: val == 0
-          ? Container(
-              width: 28, height: 28,
-              decoration: BoxDecoration(color: renk.withAlpha(20), borderRadius: BorderRadius.circular(8)),
-              child: Icon(icon, size: 16, color: renk.withAlpha(120)),
-            )
-          : Badge(
-              label: Text('$val', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 9)),
-              backgroundColor: val < 0 ? Colors.red : Colors.green,
-              child: Container(
-                width: 28, height: 28,
-                decoration: BoxDecoration(color: renk.withAlpha(30), borderRadius: BorderRadius.circular(8)),
-                child: Icon(icon, size: 16, color: renk),
-              ),
-            ),
+      child: Badge(
+        label: Text('${val.abs()}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 9)),
+        backgroundColor: val < 0 ? Colors.red : Colors.green,
+        child: Container(
+          width: 32, height: 32,
+          decoration: BoxDecoration(color: renk.withAlpha(40), borderRadius: BorderRadius.circular(8)),
+          child: Icon(icon, size: 18, color: renk),
+        ),
+      ),
     );
   }
 
@@ -977,7 +986,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                 Container(margin: const EdgeInsets.only(top: 12), width: 40, height: 4,
                     decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2))),
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 16, 16, 0),
+                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
                   child: Row(children: [
                     Container(
                       padding: const EdgeInsets.all(10),
@@ -986,21 +995,16 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                     ),
                     const SizedBox(width: 12),
                     const Expanded(child: Text("Hızlı Öğrenci Ekle", style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800))),
-                    TextButton.icon(
-                      onPressed: () => setSheetState(() => satirlar.add(TopluOgrenciSatiri())),
-                      icon: const Icon(Icons.add_rounded, size: 20),
-                      label: const Text("Satır"),
-                    ),
                   ]),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24),
                   child: Row(children: [
                     const SizedBox(width: 24),
-                    const Expanded(flex: 5, child: Text("Ad Soyad", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12, color: Colors.grey))),
-                    SizedBox(width: 44, child: Center(child: Text("C", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12, color: Colors.grey.shade500)))),
-                    SizedBox(width: 54, child: Center(child: Text("Puan", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12, color: Colors.grey.shade500)))),
+                    Expanded(flex: 5, child: Text("Ad Soyad", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 11, color: Colors.grey.shade500, letterSpacing: 0.3))),
+                    SizedBox(width: 44, child: Center(child: Text("♂ / ♀", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 11, color: Colors.grey.shade500)))),
+                    SizedBox(width: 54, child: Center(child: Text("Puan", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 11, color: Colors.grey.shade500, letterSpacing: 0.3)))),
                     const SizedBox(width: 36),
                   ]),
                 ),
@@ -1020,57 +1024,106 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                       }
                       return Padding(
                         key: satir.rowKey,
-                        padding: const EdgeInsets.only(bottom: 6),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(color: Colors.grey.shade50, borderRadius: BorderRadius.circular(12)),
-                          child: Row(children: [
-                            SizedBox(width: 24, child: Text("${i + 1}", style: TextStyle(color: Colors.grey.shade400, fontWeight: FontWeight.w600))),
-                            Expanded(
-                              flex: 5,
-                              child: TextField(
-                                controller: satir.adCtrl,
-                                onTap: scrollToRow,
-                                decoration: const InputDecoration(hintText: "Ad Soyad", border: InputBorder.none,
-                                    contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 12), isDense: true),
-                                style: const TextStyle(fontSize: 15),
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Row(children: [
+                          SizedBox(width: 24, child: Text("${i + 1}", style: TextStyle(color: Colors.grey.shade400, fontWeight: FontWeight.w600))),
+                          Expanded(
+                            flex: 5,
+                            child: TextField(
+                              controller: satir.adCtrl,
+                              onTap: scrollToRow,
+                              textCapitalization: TextCapitalization.words,
+                              decoration: InputDecoration(
+                                hintText: "Ad Soyad",
+                                hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+                                filled: true,
+                                fillColor: Colors.grey.shade50,
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade200)),
+                                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade200)),
+                                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: AppTema.ana, width: 1.5)),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10), isDense: true,
                               ),
+                              style: const TextStyle(fontSize: 15),
                             ),
-                            GestureDetector(
-                              onTap: () => setSheetState(() => satir.isMale = !satir.isMale),
-                              child: Container(
-                                width: 38, height: 38,
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(colors: satir.isMale ? [Colors.blue.shade200, Colors.blue.shade400] : [Colors.pink.shade200, Colors.pink.shade400]),
-                                  borderRadius: BorderRadius.circular(10),
+                          ),
+                          const SizedBox(width: 8),
+                          GestureDetector(
+                            onTap: () => setSheetState(() {
+                              if (!satir.cinsiyetSecildi) {
+                                satir.cinsiyetSecildi = true;
+                              } else {
+                                satir.isMale = !satir.isMale;
+                              }
+                            }),
+                            child: Container(
+                              width: 36, height: 36,
+                              decoration: BoxDecoration(
+                                color: !satir.cinsiyetSecildi
+                                    ? Colors.grey.shade100
+                                    : (satir.isMale ? Colors.blue.shade400 : Colors.pink.shade400),
+                                borderRadius: BorderRadius.circular(10),
+                                border: !satir.cinsiyetSecildi ? Border.all(color: Colors.grey.shade300) : null,
+                              ),
+                              child: Center(
+                                child: Text(
+                                  !satir.cinsiyetSecildi ? "?" : (satir.isMale ? "♂" : "♀"),
+                                  style: TextStyle(
+                                    color: !satir.cinsiyetSecildi ? Colors.grey.shade400 : Colors.white,
+                                    fontSize: !satir.cinsiyetSecildi ? 14 : 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                                child: Center(child: Text(satir.isMale ? "♂" : "♀", style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold))),
                               ),
                             ),
-                            const SizedBox(width: 6),
-                            SizedBox(
-                              width: 54,
-                              child: TextField(
-                                controller: satir.puanCtrl,
-                                onTap: scrollToRow,
-                                keyboardType: TextInputType.number,
-                                textAlign: TextAlign.center,
-                                decoration: InputDecoration(
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade300)),
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10), isDense: true,
-                                ),
-                                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                          ),
+                          const SizedBox(width: 8),
+                          SizedBox(
+                            width: 54,
+                            child: TextField(
+                              controller: satir.puanCtrl,
+                              onTap: scrollToRow,
+                              keyboardType: TextInputType.number,
+                              textAlign: TextAlign.center,
+                              decoration: InputDecoration(
+                                hintText: "100",
+                                hintStyle: TextStyle(color: Colors.grey.shade400, fontWeight: FontWeight.w600),
+                                filled: true,
+                                fillColor: Colors.grey.shade50,
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade200)),
+                                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade200)),
+                                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: AppTema.ana, width: 1.5)),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10), isDense: true,
                               ),
+                              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
                             ),
-                            IconButton(
-                              icon: Icon(Icons.close_rounded, color: Colors.red.shade300, size: 20),
-                              onPressed: () { satir.dispose(); setSheetState(() => satirlar.removeAt(i)); },
-                              padding: EdgeInsets.zero, constraints: const BoxConstraints(minWidth: 36),
-                            ),
-                          ]),
-                        ),
+                          ),
+                          IconButton(
+                            icon: Icon(Icons.close_rounded, color: Colors.red.shade300, size: 20),
+                            onPressed: () { satir.dispose(); setSheetState(() => satirlar.removeAt(i)); },
+                            padding: EdgeInsets.zero, constraints: const BoxConstraints(minWidth: 36),
+                          ),
+                        ]),
                       );
-                    }),
+                    })..add(
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: Center(
+                          child: TextButton.icon(
+                            onPressed: () => setSheetState(() => satirlar.add(TopluOgrenciSatiri())),
+                            icon: const Icon(Icons.add_rounded, size: 20),
+                            label: const Text("Satır Ekle", style: TextStyle(fontWeight: FontWeight.w600)),
+                            style: TextButton.styleFrom(
+                              foregroundColor: AppTema.ana,
+                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                side: BorderSide(color: AppTema.ana.withAlpha(60), width: 1),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
                 Container(

@@ -4,10 +4,13 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 class AuthService {
+  static const String _adminUid = 'A1Xyb80fR7NQ6KuwBt6NUa5p2743';
+
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   User? get currentUser => _auth.currentUser;
   String get uid => _auth.currentUser!.uid;
+  bool get isAdmin => _auth.currentUser?.uid == _adminUid;
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
   Future<void> signInWithEmail(String email, String password) async {

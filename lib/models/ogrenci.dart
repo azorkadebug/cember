@@ -117,9 +117,10 @@ class Ogrenci {
 
 class TopluOgrenciSatiri {
   final TextEditingController adCtrl = TextEditingController();
-  final TextEditingController puanCtrl = TextEditingController(text: "100");
+  final TextEditingController puanCtrl = TextEditingController();
   final GlobalKey rowKey = GlobalKey();
   bool isMale = true;
+  bool cinsiyetSecildi = false;
 
   void dispose() {
     adCtrl.dispose();

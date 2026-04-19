@@ -321,21 +321,21 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin {
                 const SizedBox(height: 6),
                 // Ceza butonu
                 Material(
-                  color: cezaSayisi > 0 ? Colors.red.withAlpha(60) : Colors.white.withAlpha(20),
+                  color: cezaSayisi > 0 ? Colors.red.withAlpha(180) : Colors.white.withAlpha(50),
                   borderRadius: BorderRadius.circular(10),
                   child: InkWell(
                     borderRadius: BorderRadius.circular(10),
                     onTap: () => _cezaVer(i),
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.front_hand_rounded, color: cezaSayisi > 0 ? Colors.red.shade300 : Colors.white60, size: 14),
-                          const SizedBox(width: 4),
+                          Icon(Icons.front_hand_rounded, color: Colors.white, size: 15),
+                          const SizedBox(width: 5),
                           Text(
                             cezaSayisi > 0 ? "Ceza ($cezaSayisi)" : "2dk Ceza",
-                            style: TextStyle(color: cezaSayisi > 0 ? Colors.red.shade300 : Colors.white60, fontSize: 11, fontWeight: FontWeight.w700),
+                            style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700),
                           ),
                         ],
                       ),
@@ -641,8 +641,12 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin {
                           borderRadius: const BorderRadius.only(topLeft: Radius.circular(15), topRight: Radius.circular(15)),
                         ),
                         child: Center(
-                          child: Text("${t.renkAdi} (${t.oyuncular.length})",
-                              style: TextStyle(color: t.renk, fontWeight: FontWeight.w700, fontSize: 12)),
+                          child: Text(
+                            "${t.isim.isNotEmpty ? t.isim : t.renkAdi} (${t.oyuncular.length})",
+                            style: TextStyle(color: t.renk, fontWeight: FontWeight.w800, fontSize: 13),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                       ),
                       Expanded(

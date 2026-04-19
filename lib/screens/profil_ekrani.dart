@@ -120,77 +120,73 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
             ? const Center(child: CircularProgressIndicator(color: AppTema.ana))
             : SingleChildScrollView(
                 padding: const EdgeInsets.all(24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (widget.ilkKayit) ...[
-                      const Text("Hosgeldin!",
-                          style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800)),
-                      const SizedBox(height: 4),
-                      Text("Seni daha iyi tanıyalım.",
-                          style: TextStyle(color: Colors.grey.shade600, fontSize: 14)),
-                      const SizedBox(height: 28),
-                    ],
-                    _buildField("Ad Soyad *", _adCtrl, Icons.person_rounded),
-                    const SizedBox(height: 16),
-                    _buildField("Okul", _okulCtrl, Icons.school_rounded),
-                    const SizedBox(height: 16),
-                    _buildField("Sehir", _sehirCtrl, Icons.location_city_rounded),
-                    const SizedBox(height: 16),
-                    Text("Brans", style: TextStyle(color: Colors.grey.shade700, fontWeight: FontWeight.w600, fontSize: 13)),
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: Colors.grey.shade200),
-                      ),
-                      child: DropdownButton<String>(
-                        value: _brans,
-                        isExpanded: true,
-                        underline: const SizedBox(),
-                        borderRadius: BorderRadius.circular(14),
-                        items: _branslar.map((b) => DropdownMenuItem(value: b, child: Text(b))).toList(),
-                        onChanged: (val) => setState(() => _brans = val!),
-                      ),
-                    ),
-                    const SizedBox(height: 32),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 52,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTema.ana,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                          elevation: 2,
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 480),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (widget.ilkKayit) ...[
+                          const Text("Hoş geldin!",
+                              style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800)),
+                          const SizedBox(height: 4),
+                          Text("Seni daha iyi tanıyalım.",
+                              style: TextStyle(color: Colors.grey.shade600, fontSize: 14)),
+                          const SizedBox(height: 28),
+                        ],
+                        _buildField("Ad Soyad *", _adCtrl, Icons.person_rounded),
+                        const SizedBox(height: 16),
+                        _buildField("Okul", _okulCtrl, Icons.school_rounded),
+                        const SizedBox(height: 16),
+                        _buildField("Şehir", _sehirCtrl, Icons.location_city_rounded),
+                        const SizedBox(height: 16),
+                        Text("Branş", style: TextStyle(color: Colors.grey.shade700, fontWeight: FontWeight.w600, fontSize: 13)),
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: Colors.grey.shade200),
+                          ),
+                          child: DropdownButton<String>(
+                            value: _brans,
+                            isExpanded: true,
+                            underline: const SizedBox(),
+                            borderRadius: BorderRadius.circular(14),
+                            items: _branslar.map((b) => DropdownMenuItem(value: b, child: Text(b))).toList(),
+                            onChanged: (val) => setState(() => _brans = val!),
+                          ),
                         ),
-                        onPressed: _kaydediliyor ? null : _kaydet,
-                        child: _kaydediliyor
-                            ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
-                            : const Text("Kaydet", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
-                      ),
-                    ),
-                    if (!widget.ilkKayit) ...[
-                      const SizedBox(height: 16),
-                      Center(
-                        child: Column(
-                          children: [
-                            Text(
+                        const SizedBox(height: 32),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 52,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTema.ana,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                              elevation: 2,
+                            ),
+                            onPressed: _kaydediliyor ? null : _kaydet,
+                            child: _kaydediliyor
+                                ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
+                                : const Text("Kaydet", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                          ),
+                        ),
+                        if (!widget.ilkKayit) ...[
+                          const SizedBox(height: 20),
+                          Center(
+                            child: Text(
                               AuthService().currentUser?.email ?? '',
                               style: TextStyle(color: Colors.grey.shade400, fontSize: 12),
                             ),
-                            const SizedBox(height: 4),
-                            SelectableText(
-                              'UID: ${AuthService().uid}',
-                              style: TextStyle(color: Colors.grey.shade300, fontSize: 10),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ],
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
                 ),
               ),
       ),
