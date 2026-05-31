@@ -7,6 +7,7 @@ import '../services/auth_service.dart';
 import '../services/analytics_service.dart';
 import '../services/firestore_service.dart';
 import '../services/mac_durumu.dart';
+import '../widgets/yardim_diyalogu.dart';
 import 'skor_ekrani.dart';
 
 const List<String> _takimIsimHavuzu = [
@@ -45,6 +46,23 @@ const List<String> _takimIsimHavuzu = [
   "WiFi Avcıları", "Şarj Bitti FC", "Ekran Kırıkları", "Caps Efsaneleri",
   "Meme Lordu", "Hashtag Ordusu", "Emoji Savaşçıları", "TikTok Kaplanları",
   "Spotify Hayaletleri", "Netflix Nöbetçileri", "Bluetooth Korsanları",
+  // Sınıf içi klasikler & self-deprecating
+  "Son Sıra Kulübü", "Geç Kalanlar Birliği", "Unuttum Spor", "Ders Bitti FC",
+  "Kitap Unutanlar", "Rapor Kralları", "Pardon Hocam", "Ben Yapmadım FC",
+  "Beş Dakika Daha", "Zil Çalsın Yeter", "Tahtaya Kalkmam",
+  // Ortaokul meme / gündelik dil
+  "Efsane Çocuklar", "Mood Bozanlar", "Resmen Biz", "Aynen Öyle FC",
+  "Off Yine mi Biz", "Sus Len", "Tamamdır Reis", "Hadi Canım",
+  "Valla Olmaz", "Yok Artık", "Bana mı Dedin",
+  // Absürt süper kahraman
+  "Kaptan Kek", "Süper Simit", "Işın Kılıçlı Kalemler", "Radyoaktif Silgiler",
+  "X-Men Yok Biz Varız", "Lazerli Lokumlar", "Atomik Ayakkabılar",
+  // Ortaokul spor & çakma marka
+  "Adidos FC", "Nayki United", "Pumba Spor", "Beşiktoast", "Galatasaray Tost",
+  "Real Mısır", "Barçelona Börek", "Manchester Mantı",
+  // Matematik & ders esprisi
+  "Pisagor Çetesi", "Bölen Bulunmaz", "Sıfırın Altı", "Negatif Enerji FC",
+  "Virgülden Sonrası", "Türev Canavarları", "X'i Bulanlar",
 ];
 
 class OgrenciListesiEkrani extends StatefulWidget {
@@ -115,6 +133,58 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
             actions: [
               IconButton(icon: const Icon(Icons.group_add_rounded), onPressed: _hizliSinifEkleDialog, tooltip: 'Hızlı Öğrenci Ekle'),
               IconButton(icon: const Icon(Icons.palette_outlined), onPressed: _renkYonetimi, tooltip: 'Takım Renkleri'),
+              IconButton(
+                icon: const Icon(Icons.help_outline_rounded),
+                tooltip: 'Yardım',
+                onPressed: () => YardimDiyalogu.goster(
+                  context,
+                  baslik: 'Öğrenciler & Takımlar — Yardım',
+                  bolumler: const [
+                    YardimBolumu(
+                      ikon: Icons.person_add_alt_rounded,
+                      baslik: 'Öğrenci ekleme',
+                      aciklama: 'Sağ alttaki "+" düğmesi → tek tek ekle. Üstte "👥 Hızlı Ekle" ile toplu ekle (her satıra bir isim).',
+                      renk: Color(0xFF1976D2),
+                    ),
+                    YardimBolumu(
+                      ikon: Icons.bolt_rounded,
+                      baslik: 'Puan (50-150)',
+                      aciklama: 'Her öğrenciye yetenek puanı verebilirsin. AI takım dağıtımı bu puanları kullanarak adil takımlar kurar — yüksek puanlı oyuncuları dengeli dağıtır (snake draft). Varsayılan 100; spor yeteneğine göre 70-130 arası ayarla.',
+                      renk: Color(0xFFFFB300),
+                    ),
+                    YardimBolumu(
+                      ikon: Icons.local_fire_department_rounded,
+                      baslik: 'Element sistemi 🔥💧🌱💨',
+                      aciklama: 'Öğrencilere element ata: 🔥 ateş, 💧 su, 🌱 toprak, 💨 hava. Çatışan elementler (🔥↔💧 ve 🌱↔💨) algoritma tarafından FARKLI takımlara yerleştirilir. Sınıfta kavgalı/dağıtılması gereken öğrencileri ayırmak için ideal. Aynı element olan öğrenciler genelde aynı takıma kümelenir.',
+                      renk: Color(0xFFE53935),
+                    ),
+                    YardimBolumu(
+                      ikon: Icons.checklist_rounded,
+                      baslik: 'Yoklama',
+                      aciklama: 'Öğrenciye dokunarak "burada/yok" olarak işaretle. Yalnızca burada olanlar takım dağıtımında ve maçta yer alır.',
+                      renk: Color(0xFF00897B),
+                    ),
+                    YardimBolumu(
+                      ikon: Icons.sports_score_rounded,
+                      baslik: 'AI Takım Oluştur',
+                      aciklama: 'Üstte "Maç Başlat" → AI Takım Dağılımı. Snake draft algoritması: önce kızları, sonra erkekleri puana göre sıralayıp en az kişili takıma yerleştirir. Element çatışmalarını otomatik önler. Sonuç: max 1 kişi farkı + denk puanlar.',
+                      renk: Color(0xFF43A047),
+                    ),
+                    YardimBolumu(
+                      ikon: Icons.visibility_off_rounded,
+                      baslik: 'Demo modu',
+                      aciklama: 'Sınıflarım ekranındaki göz simgesi: AÇIK iken öğrenci adları rastgele sahte isimlerle gösterilir. Sunum, ekran görüntüsü veya gösterimler için ideal — gerçek öğrenci adları sızmaz.',
+                      renk: Color(0xFFFB8C00),
+                    ),
+                    YardimBolumu(
+                      ikon: Icons.assignment_late_rounded,
+                      baslik: 'Disiplin kayıtları',
+                      aciklama: 'Her öğrenci için sarı kart, kıyafet eksik, ayakkabı eksik sayaçları + sağlık notları + rozetler tutulur. Sezon boyu birikim sağlar.',
+                      renk: Color(0xFF8E24AA),
+                    ),
+                  ],
+                ),
+              ),
             ],
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
@@ -1352,34 +1422,48 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
     // Her takımın toplam efektif puanını tut
     List<int> takimPuanlari = List.filled(secilenTakimSayisi, 0);
 
-    // Takımdaki oyuncularla element çatışması var mı?
-    bool elementCatismasi(int takimIdx, Ogrenci o) {
-      if (o.element == null) return false;
-      return takimlar[takimIdx].any((m) => ElementSistemi.catisir(o.element, m.element));
+    /// Bir oyuncunun belirli bir takıma uygunluk puanı.
+    /// Aynı element: +10 (birleştirme bonusu)
+    /// Çatışan element: -100 (ayırma cezası — agresif şekilde uzaklaştırır)
+    /// Bu skor min-pop takımlar arasında karşılaştırılır; eşit kişi sayısı
+    /// hard constraint, element uyumu soft preference.
+    int elementUyumPuani(int takimIdx, Ogrenci o) {
+      if (o.element == null) return 0;
+      int puan = 0;
+      for (final m in takimlar[takimIdx]) {
+        if (m.element == null) continue;
+        if (m.element == o.element) {
+          puan += 10;
+        } else if (ElementSistemi.catisir(o.element, m.element)) {
+          puan -= 100;
+        }
+      }
+      return puan;
     }
 
     void dengeliDagit(List<Ogrenci> liste) {
       for (var o in liste) {
-        // En az kişiye sahip takımları bul
-        int minKisi = takimlar.map((t) => t.length).reduce((a, b) => a < b ? a : b);
-        List<int> enAzKisiTakimlar = [];
-        for (int t = 0; t < secilenTakimSayisi; t++) {
-          if (takimlar[t].length == minKisi) enAzKisiTakimlar.add(t);
-        }
+        // 1. HARD: En az kişiye sahip takımları bul (count balance ≤ 1)
+        final minKisi = takimlar.map((t) => t.length).reduce((a, b) => a < b ? a : b);
+        final enAzKisiTakimlar = <int>[
+          for (var t = 0; t < secilenTakimSayisi; t++)
+            if (takimlar[t].length == minKisi) t,
+        ];
 
-        // Element çatışması olmayanları öncelikle tercih et
-        List<int> uygunTakimlar = enAzKisiTakimlar.where((t) => !elementCatismasi(t, o)).toList();
-        if (uygunTakimlar.isEmpty) {
-          // Tüm en-az-kişili takımlarda çatışma var, tüm takımlar arasında çatışmasız ara
-          uygunTakimlar = List.generate(secilenTakimSayisi, (i) => i)
-              .where((t) => !elementCatismasi(t, o))
-              .toList();
-        }
-        // Hâlâ bulunamazsa (kaçınılmaz çatışma), en az kişili takımlardan devam et
-        if (uygunTakimlar.isEmpty) uygunTakimlar = enAzKisiTakimlar;
+        // 2. SOFT: Her min-pop takım için element uyumu puanı hesapla
+        final uyumPuanlari = {
+          for (final t in enAzKisiTakimlar) t: elementUyumPuani(t, o),
+        };
+        final maxUyum = uyumPuanlari.values.reduce((a, b) => a > b ? a : b);
 
-        // Bunlar arasından en düşük puanlı takıma ver (puan dengesi)
-        int hedef = uygunTakimlar.reduce((a, b) => takimPuanlari[a] <= takimPuanlari[b] ? a : b);
+        // En yüksek element-uyum puanına sahip takımları aday seç
+        final adaylar = enAzKisiTakimlar.where((t) => uyumPuanlari[t] == maxUyum).toList();
+
+        // 3. TIE-BREAKER: Aday takımlar arasında en düşük toplam puana sahip
+        // olan (skor dengesi)
+        final hedef = adaylar.reduce(
+          (a, b) => takimPuanlari[a] <= takimPuanlari[b] ? a : b,
+        );
         takimlar[hedef].add(o);
         takimPuanlari[hedef] += efektifPuan[o.id]!;
       }

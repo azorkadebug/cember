@@ -5,6 +5,7 @@ import '../services/analytics_service.dart';
 import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
 import '../services/mac_durumu.dart';
+import '../widgets/yardim_diyalogu.dart';
 import 'ogrenci_listesi_ekrani.dart';
 import 'admin_ekrani.dart';
 import 'profil_ekrani.dart';
@@ -76,6 +77,46 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
               onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminEkrani())),
             ),
           ],
+          IconButton(
+            icon: const Icon(Icons.help_outline_rounded),
+            tooltip: 'Yardım',
+            onPressed: () => YardimDiyalogu.goster(
+              context,
+              baslik: 'Sınıflarım — Yardım',
+              bolumler: const [
+                YardimBolumu(
+                  ikon: Icons.add_circle_outline_rounded,
+                  baslik: 'Yeni sınıf oluştur',
+                  aciklama: 'Sağ alttaki "+" düğmesi → sınıf adı yaz (örn. 7-A, 6-B). Forma renkleri otomatik atanır, sınıf kartına dokunarak değiştirebilirsin.',
+                  renk: Color(0xFF43A047),
+                ),
+                YardimBolumu(
+                  ikon: Icons.touch_app_rounded,
+                  baslik: 'Sınıfa giriş',
+                  aciklama: 'Sınıf kartına dokun → o sınıfın öğrenci listesi açılır. Yoklama alabilir, öğrenci ekleyebilir, maç başlatabilirsin.',
+                  renk: Color(0xFF1976D2),
+                ),
+                YardimBolumu(
+                  ikon: Icons.sports_kabaddi_rounded,
+                  baslik: 'Sınıflar Arası Maç',
+                  aciklama: 'İki farklı sınıfı karşı karşıya getir (örn. 7-A vs 7-B). Her sınıf bir takım olur, skor tablosu açılır.',
+                  renk: Color(0xFFC77B46),
+                ),
+                YardimBolumu(
+                  ikon: Icons.edit_rounded,
+                  baslik: 'Sınıf adı değiştir / sil',
+                  aciklama: 'Sınıf kartına basılı tut → menüden "Yeniden adlandır" veya "Sil" seç. Silme geri alınamaz.',
+                  renk: Color(0xFFE53935),
+                ),
+                YardimBolumu(
+                  ikon: Icons.palette_rounded,
+                  baslik: 'Forma renkleri',
+                  aciklama: 'Her sınıfa 8 takım rengi atanır (kırmızı, mavi, sarı, yeşil, siyah, beyaz, turuncu, lacivert). Takım oluştururken bu renklerden seçilir. Renk paletini sınıfa dokunarak özelleştirebilirsin.',
+                  renk: Color(0xFF8E24AA),
+                ),
+              ],
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.person_rounded),
             tooltip: 'Profilim',
@@ -529,11 +570,22 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
-            onPressed: () {
-              if (c.text.isNotEmpty) {
-                _db.sinifEkle(c.text.toUpperCase());
+            onPressed: () async {
+              if (c.text.trim().isEmpty) return;
+              final ad = c.text.toUpperCase().trim();
+              Navigator.pop(context);
+              try {
+                await _db.sinifEkle(ad);
                 AnalyticsService.sinifOlusturuldu();
-                Navigator.pop(context);
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    content: Text("Sınıf eklenemedi: $e"),
+                    backgroundColor: Colors.red.shade700,
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ));
+                }
               }
             },
             child: const Text('Ekle', style: TextStyle(fontWeight: FontWeight.w700)),

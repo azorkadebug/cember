@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/ogrenci.dart';
 import '../services/mac_durumu.dart';
+import '../widgets/yardim_diyalogu.dart';
 
 class TakimBilgi {
   final String isim;
@@ -271,6 +272,48 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin {
           },
         ),
         title: const Text("Skor Tablosu", style: TextStyle(fontWeight: FontWeight.w800, letterSpacing: 1)),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.help_outline_rounded),
+            tooltip: 'Yardım',
+            onPressed: () => YardimDiyalogu.goster(
+              context,
+              baslik: 'Skor Tablosu — Yardım',
+              bolumler: const [
+                YardimBolumu(
+                  ikon: Icons.add_circle_rounded,
+                  baslik: 'Skor +/-',
+                  aciklama: 'Her takımın altındaki "+" ve "−" düğmeleri ile skoru artır/azalt. Yanlış basarsan "−" ile geri al.',
+                  renk: Color(0xFF43A047),
+                ),
+                YardimBolumu(
+                  ikon: Icons.timer_rounded,
+                  baslik: 'Timer (kronometre)',
+                  aciklama: 'Başlat/Durdur düğmesi ile zamanı kontrol et. Hazır süreler (0:30, 1:00, 2:00, 3:00, 5:00, 10:00) ile maç periyotlarını hızlıca ayarla. Sıfırla butonu zamanı 0:00\'a getirir.',
+                  renk: Color(0xFF1976D2),
+                ),
+                YardimBolumu(
+                  ikon: Icons.report_rounded,
+                  baslik: '2 dakika ceza sistemi',
+                  aciklama: 'Takım kartı üstünde "Ceza" düğmesi → cezalanacak oyuncuyu seç. Seçilen oyuncu 2 dakika boyunca takımdan düşer (kırmızı banner üstte gösterir). Süre dolunca otomatik geri döner. Buz hokeyi/futsal mantığı — disiplinsizliği oyun içinde yönet, dışlama yerine "soğuma" molası.',
+                  renk: Color(0xFFE53935),
+                ),
+                YardimBolumu(
+                  ikon: Icons.flag_circle_rounded,
+                  baslik: 'Maçı sonlandır',
+                  aciklama: 'Sol üstteki geri ok ile maçı bitirip sınıf ekranına dön. Skor + zaman kayıtlı kalmaz (henüz); yenisini başlatınca sıfırdan.',
+                  renk: Color(0xFF8E24AA),
+                ),
+                YardimBolumu(
+                  ikon: Icons.tips_and_updates_rounded,
+                  baslik: 'Önerilen kullanım',
+                  aciklama: 'Basketbol için 10 dk timer + 0\'a sayma. Voleybol için süre yok, sadece skor (25 puan vb.). Futbol/futsal için 5-10 dk yarı + ceza sistemi.',
+                  renk: Color(0xFFFB8C00),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
       body: Column(
         children: [
