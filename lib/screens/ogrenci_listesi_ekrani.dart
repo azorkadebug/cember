@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/ogrenci.dart';
+import '../models/kontrol_kalemi.dart';
 import '../services/auth_service.dart';
 import '../services/analytics_service.dart';
 import '../services/firestore_service.dart';
@@ -79,6 +80,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
   List<String> formaRenkleri = ['Kırmızı', 'Mavi', 'Sarı', 'Yeşil', 'Siyah', 'Beyaz', 'Turuncu', 'Lacivert'];
   bool _renkleriYuklendi = false;
   String? _sinifAd;
+  List<KontrolKalemi> _kontrolKalemleri = [];
   final _random = Random();
   String _aramaMetni = '';
 
@@ -95,19 +97,35 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
     _formaRenkleriniYukle();
   }
 
+  List<KontrolKalemi> _kontrolKalemleriCoz(Map<String, dynamic>? data) {
+    final raw = data?['kontrolKalemleri'];
+    if (raw is List && raw.isNotEmpty) {
+      final list = raw
+          .map((e) => KontrolKalemi.fromMap(Map<String, dynamic>.from(e as Map)))
+          .toList();
+      list.sort((a, b) => a.sira.compareTo(b.sira));
+      return list;
+    }
+    // Eski sınıf: branşı yoksa Beden Eğitimi varsayılır.
+    return bransSablonu(data?['brans'] as String?).varsayilanKalemler;
+  }
+
   Future<void> _formaRenkleriniYukle() async {
     try {
       final data = await _db.sinifBilgisiGetir(widget.sinifId);
       final ad = (data?['ad'] as String?)?.trim();
+      final kalemler = _kontrolKalemleriCoz(data);
       if (data != null && data['formaRenkleri'] != null) {
         if (mounted) setState(() {
           if (ad != null && ad.isNotEmpty) _sinifAd = ad;
+          _kontrolKalemleri = kalemler;
           formaRenkleri = List<String>.from(data['formaRenkleri']);
           _renkleriYuklendi = true;
         });
       } else {
         if (mounted) setState(() {
           if (ad != null && ad.isNotEmpty) _sinifAd = ad;
+          _kontrolKalemleri = kalemler;
           formaRenkleri = ['Kırmızı', 'Mavi', 'Sarı', 'Yeşil', 'Siyah', 'Beyaz', 'Turuncu', 'Lacivert'];
           _renkleriYuklendi = true;
         });
@@ -521,10 +539,13 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
 
   Widget _rozetGrubu(Ogrenci o) {
     final aktifler = <Widget>[
-      if (o.ayakkabiEksik != 0) _rozet(Icons.do_not_step_rounded, Colors.deepOrange, o.ayakkabiEksik),
-      if (o.kiyafetEksik != 0) _rozet(Icons.checkroom_rounded, Colors.purple, o.kiyafetEksik),
-      if (o.sariKart != 0)
-        _rozet(Icons.square_rounded, o.sariKart >= 2 ? Colors.red : Colors.amber.shade700, o.sariKart),
+      for (final k in _kontrolKalemleri)
+        if (o.kalemDeger(k.id) != 0)
+          _rozet(
+            kalemIkonu(k.ikon),
+            k.id == 'sari_kart' && o.kalemDeger(k.id) >= 2 ? Colors.red : _kalemRengi(k),
+            o.kalemDeger(k.id),
+          ),
       if (o.saglikDurumu != 0) _rozet(Icons.medical_services_rounded, Colors.teal, o.saglikDurumu),
     ];
 
@@ -558,6 +579,12 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
 
   void _save(Ogrenci o) => _db.ogrenciGuncelle(widget.sinifId, o);
 
+  Color _kalemRengi(KontrolKalemi k) {
+    if (k.tip == KalemTipi.sayac) return Colors.amber.shade700;
+    final palet = [Colors.deepOrange, Colors.purple, Colors.teal, Colors.indigo, Colors.pink.shade400, Colors.green];
+    return palet[k.id.hashCode.abs() % palet.length];
+  }
+
   void _durumPopUp(Ogrenci o) {
     showDialog(
       context: context,
@@ -576,15 +603,27 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
             const SizedBox(width: 12),
             Flexible(child: Text(o.gorunenAd, style: const TextStyle(fontWeight: FontWeight.w700))),
           ]),
-          content: Column(mainAxisSize: MainAxisSize.min, children: [
-            _artieksi(Icons.do_not_step_rounded, Colors.deepOrange, "Ayakkabı", o.ayakkabiEksik, (v) => setDialogState(() => o.ayakkabiEksik += v)),
-            const Divider(height: 1),
-            _artieksi(Icons.checkroom_rounded, Colors.purple, "Kıyafet", o.kiyafetEksik, (v) => setDialogState(() => o.kiyafetEksik += v)),
-            const Divider(height: 1),
-            _artieksi(Icons.square_rounded, Colors.amber.shade700, "Kart", o.sariKart, (v) => setDialogState(() => o.sariKart += v)),
-            const Divider(height: 1),
-            _saglikSatiri(o, setDialogState),
-          ]),
+          content: SingleChildScrollView(
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              if (_kontrolKalemleri.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Text('Bu sınıfta kontrol kalemi yok.',
+                      style: TextStyle(color: Colors.grey.shade500, fontSize: 13)),
+                ),
+              for (final k in _kontrolKalemleri) ...[
+                _artieksi(
+                  kalemIkonu(k.ikon),
+                  _kalemRengi(k),
+                  k.tip == KalemTipi.sayac ? k.ad : '${k.ad} (eksik)',
+                  o.kalemDeger(k.id),
+                  (v) => setDialogState(() => o.kalemArti(k.id, v)),
+                ),
+                const Divider(height: 1),
+              ],
+              _saglikSatiri(o, setDialogState),
+            ]),
+          ),
           actions: [
             SizedBox(
               width: double.infinity,

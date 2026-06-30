@@ -5,6 +5,7 @@ import '../services/analytics_service.dart';
 import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
 import '../services/mac_durumu.dart';
+import '../models/kontrol_kalemi.dart';
 import '../widgets/yardim_diyalogu.dart';
 import 'ogrenci_listesi_ekrani.dart';
 import 'admin_ekrani.dart';
@@ -529,7 +530,10 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
     final c = TextEditingController();
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) {
+        String secilenBrans = 'beden_egitimi';
+        return StatefulBuilder(
+          builder: (context, setLocal) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(
           children: [
@@ -545,17 +549,80 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
             const Text('Yeni Sınıf', style: TextStyle(fontWeight: FontWeight.w700)),
           ],
         ),
-        content: TextField(
-          controller: c,
-          autofocus: true,
-          textCapitalization: TextCapitalization.characters,
-          decoration: InputDecoration(
-            hintText: 'Örn: 8/B',
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: AppTema.ana, width: 2),
-            ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextField(
+                controller: c,
+                autofocus: true,
+                textCapitalization: TextCapitalization.characters,
+                decoration: InputDecoration(
+                  hintText: 'Örn: 8/B',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide(color: AppTema.ana, width: 2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              Text('Branş',
+                  style: TextStyle(fontWeight: FontWeight.w600, color: Colors.grey.shade700, fontSize: 13)),
+              const SizedBox(height: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey.shade300),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: secilenBrans,
+                    isExpanded: true,
+                    items: bransSablonlari
+                        .map((b) => DropdownMenuItem(
+                              value: b.id,
+                              child: Row(children: [
+                                Icon(b.ikon, size: 20, color: AppTema.ana),
+                                const SizedBox(width: 10),
+                                Text(b.ad, style: const TextStyle(fontWeight: FontWeight.w600)),
+                              ]),
+                            ))
+                        .toList(),
+                    onChanged: (v) => setLocal(() => secilenBrans = v ?? 'beden_egitimi'),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Builder(builder: (_) {
+                final kalemler = bransSablonu(secilenBrans).varsayilanKalemler;
+                if (kalemler.isEmpty) {
+                  return Text('Kalem yok — sınıfı oluşturduktan sonra ekleyebilirsin.',
+                      style: TextStyle(color: Colors.grey.shade500, fontSize: 12));
+                }
+                return Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: kalemler
+                      .map((k) => Chip(
+                            visualDensity: VisualDensity.compact,
+                            backgroundColor: AppTema.ana50,
+                            side: BorderSide.none,
+                            avatar: Icon(kalemIkonu(k.ikon), size: 16, color: AppTema.ana),
+                            label: Text(
+                              k.tip == KalemTipi.sayac ? '${k.ad} (sayaç)' : k.ad,
+                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                            ),
+                          ))
+                      .toList(),
+                );
+              }),
+              const SizedBox(height: 4),
+              Text('Bu kalemleri sonra değiştirebilirsin.',
+                  style: TextStyle(color: Colors.grey.shade500, fontSize: 11)),
+            ],
           ),
         ),
         actions: [
@@ -575,7 +642,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
               final ad = c.text.toUpperCase().trim();
               Navigator.pop(context);
               try {
-                await _db.sinifEkle(ad);
+                await _db.sinifEkle(ad, brans: secilenBrans);
                 AnalyticsService.sinifOlusturuldu();
               } catch (e) {
                 if (context.mounted) {
@@ -592,7 +659,9 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
           ),
         ],
       ),
-    );
+        );
+      },
+    ).then((_) => c.dispose());
   }
 
   static const _sinifPaletleri = [

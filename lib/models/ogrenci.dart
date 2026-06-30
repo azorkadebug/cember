@@ -39,6 +39,8 @@ class Ogrenci {
   String get gorunenAd => DemoModu.isimGetir(ad, isMale);
   int puan, ayakkabiEksik, kiyafetEksik, sariKart, saglikDurumu;
   bool buradaMi, isMale;
+  /// Kontrol kalemi değerleri — kalem id'sine göre (yeni branş-bağımsız sistem).
+  Map<String, int> kalemSayaclari;
   String? element;
   List<Map<String, dynamic>> saglikNotlari;
   List<Map<String, dynamic>> rozetler;
@@ -68,18 +70,37 @@ class Ogrenci {
     this.element,
     List<Map<String, dynamic>>? saglikNotlari,
     List<Map<String, dynamic>>? rozetler,
+    Map<String, int>? kalemSayaclari,
   }) : saglikNotlari = saglikNotlari ?? [],
-       rozetler = rozetler ?? [];
+       rozetler = rozetler ?? [],
+       kalemSayaclari = kalemSayaclari ?? {};
+
+  /// Bir kontrol kaleminin mevcut değeri.
+  int kalemDeger(String id) => kalemSayaclari[id] ?? 0;
+
+  /// Kalem değerini değiştir; 0'ın altına düşmez (eksi sayaç engellenir),
+  /// 0 olunca haritadan temizlenir.
+  void kalemArti(String id, int delta) {
+    final yeni = ((kalemSayaclari[id] ?? 0) + delta).clamp(0, 999);
+    if (yeni == 0) {
+      kalemSayaclari.remove(id);
+    } else {
+      kalemSayaclari[id] = yeni;
+    }
+  }
 
   Map<String, dynamic> toMap() {
     final s = SifrelemeService.instance;
     return {
       'ad': s.sifrele(ad),
       'puan': puan,
-      'ayakkabiEksik': ayakkabiEksik,
-      'kiyafetEksik': kiyafetEksik,
-      'sariKart': sariKart,
+      // Eski PE alanları geriye dönük uyumluluk için yeni haritadan senkronlanır
+      // (v1.0/1.0.1 iOS istemcileri bu alanları okuyor).
+      'ayakkabiEksik': kalemSayaclari['ayakkabi'] ?? ayakkabiEksik,
+      'kiyafetEksik': kalemSayaclari['kiyafet'] ?? kiyafetEksik,
+      'sariKart': kalemSayaclari['sari_kart'] ?? sariKart,
       'saglikDurumu': saglikDurumu,
+      'kalemSayaclari': kalemSayaclari,
       'not': s.sifrele(not),
       'isMale': isMale,
       'buradaMi': buradaMi,
@@ -111,7 +132,27 @@ class Ogrenci {
       rozetler: (map['rozetler'] as List<dynamic>?)
           ?.map((e) => Map<String, dynamic>.from(e as Map))
           .toList(),
+      kalemSayaclari: _kalemSayaclariCoz(map),
     );
+  }
+
+  /// `kalemSayaclari` yoksa (eski belge), branşı olmayan = Beden Eğitimi
+  /// varsayımıyla eski PE alanlarından tohumlar.
+  static Map<String, int> _kalemSayaclariCoz(Map<String, dynamic> map) {
+    final raw = map['kalemSayaclari'];
+    if (raw is Map) {
+      final m = raw.map((k, v) => MapEntry(k.toString(), (v as num?)?.toInt() ?? 0));
+      m.removeWhere((k, v) => v == 0);
+      return m;
+    }
+    final m = <String, int>{};
+    final kiyafet = (map['kiyafetEksik'] as num?)?.toInt() ?? 0;
+    final ayakkabi = (map['ayakkabiEksik'] as num?)?.toInt() ?? 0;
+    final kart = (map['sariKart'] as num?)?.toInt() ?? 0;
+    if (kiyafet != 0) m['kiyafet'] = kiyafet;
+    if (ayakkabi != 0) m['ayakkabi'] = ayakkabi;
+    if (kart != 0) m['sari_kart'] = kart;
+    return m;
   }
 }
 

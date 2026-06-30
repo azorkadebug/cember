@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/ogrenci.dart';
+import '../models/kontrol_kalemi.dart';
 
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -34,11 +35,17 @@ class FirestoreService {
   /// ÖNCEKİ HATA: doc ID = sınıf adı (örn. "5A") global namespace'teydi.
   /// İki farklı öğretmen aynı adda sınıf oluşturmak isteyince ikinci'sinde
   /// Firestore rules write'ı engelliyordu (mevcut sahip yok) → sessiz fail.
-  Future<void> sinifEkle(String sinifAdi, {List<String>? formaRenkleri}) async {
+  Future<void> sinifEkle(String sinifAdi,
+      {String brans = 'beden_egitimi',
+      List<String>? formaRenkleri,
+      List<KontrolKalemi>? kontrolKalemleri}) async {
+    final kalemler = kontrolKalemleri ?? bransSablonu(brans).varsayilanKalemler;
     await _db.collection('siniflar').add({
       'created': FieldValue.serverTimestamp(),
       'ownerId': uid,
       'ad': sinifAdi,
+      'brans': brans,
+      'kontrolKalemleri': kalemler.map((k) => k.toMap()).toList(),
       'formaRenkleri': formaRenkleri ?? ['Kırmızı', 'Mavi', 'Sarı', 'Yeşil', 'Siyah', 'Beyaz', 'Turuncu', 'Lacivert'],
     });
   }
