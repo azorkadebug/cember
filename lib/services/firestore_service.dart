@@ -23,11 +23,19 @@ class FirestoreService {
         .get();
   }
 
-  /// Sınıf adındaki / karakteri Firestore doc ID'sinde kullanılamaz
+  /// Sınıf adındaki / karakteri Firestore doc ID'sinde kullanılamaz (legacy).
+  /// Yeni sınıflar artık auto-id ile oluşturuluyor (aşağıya bakın), ama eski
+  /// belgeler hâlâ name-based ID kullanıyor olabilir.
   static String _safeDocId(String ad) => ad.replaceAll('/', '-');
 
+  /// Yeni sınıf oluştur. Firestore'un otomatik ID'sini kullanır — sınıf
+  /// adını doc ID yapmak yerine `ad` field'ında saklar.
+  ///
+  /// ÖNCEKİ HATA: doc ID = sınıf adı (örn. "5A") global namespace'teydi.
+  /// İki farklı öğretmen aynı adda sınıf oluşturmak isteyince ikinci'sinde
+  /// Firestore rules write'ı engelliyordu (mevcut sahip yok) → sessiz fail.
   Future<void> sinifEkle(String sinifAdi, {List<String>? formaRenkleri}) async {
-    await _db.collection('siniflar').doc(_safeDocId(sinifAdi)).set({
+    await _db.collection('siniflar').add({
       'created': FieldValue.serverTimestamp(),
       'ownerId': uid,
       'ad': sinifAdi,
@@ -178,6 +186,37 @@ class FirestoreService {
     }
     if (sayac > 0) await batch.commit();
     return sayac;
+  }
+
+  /// Kullanıcıya ait tüm verileri (sınıflar + öğrenciler + profil) kalıcı
+  /// olarak siler. Hesap silme akışının Firestore tarafı — geri alınamaz.
+  /// Auth hesabı ayrıca silinmeli.
+  Future<void> tumVerileriSil() async {
+    final siniflar = await _db
+        .collection('siniflar')
+        .where('ownerId', isEqualTo: uid)
+        .get();
+
+    for (final sinif in siniflar.docs) {
+      final ogrenciler = await sinif.reference.collection('ogrenciler').get();
+
+      // Firestore batch sınırı 500 — chunk'lara böl
+      for (var i = 0; i < ogrenciler.docs.length; i += 450) {
+        final batch = _db.batch();
+        final son = (i + 450 < ogrenciler.docs.length)
+            ? i + 450
+            : ogrenciler.docs.length;
+        for (var j = i; j < son; j++) {
+          batch.delete(ogrenciler.docs[j].reference);
+        }
+        await batch.commit();
+      }
+
+      await sinif.reference.delete();
+    }
+
+    // Profil dokümanı en son
+    await _db.collection('users').doc(uid).delete();
   }
 
   /// Tüm sınıflardaki öğrencileri migrate eder

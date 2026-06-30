@@ -61,11 +61,38 @@ class AuthService {
         idToken: appleCredential.identityToken,
         accessToken: appleCredential.authorizationCode,
       );
-      await _auth.signInWithCredential(oauthCredential);
+      final userCredential = await _auth.signInWithCredential(oauthCredential);
+
+      // Apple yalnızca İLK sign-in'de fullName/email döndürür. Firebase
+      // displayName'i otomatik doldurmuyor — biz manuel yapmazsak profil
+      // formunda "Ad Soyad" boş kalır ve kullanıcıdan tekrar isteriz.
+      // Apple Guideline 4 Design: zaten verilen bilgileri yeniden istemek yasak.
+      final ad = [appleCredential.givenName, appleCredential.familyName]
+          .whereType<String>()
+          .where((s) => s.isNotEmpty)
+          .join(' ');
+      if (ad.isNotEmpty && userCredential.user?.displayName == null) {
+        await userCredential.user?.updateDisplayName(ad);
+        await userCredential.user?.reload();
+      }
     }
   }
 
   Future<void> signOut() async {
     await _auth.signOut();
+  }
+
+  /// Firebase Auth hesabını siler. Firestore verileri ayrıca temizlenmeli.
+  /// `requires-recent-login` fırlatabilir — çağıran taraf yakalayıp yeniden
+  /// giriş akışına yönlendirmeli.
+  Future<void> deleteAccount() async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw FirebaseAuthException(
+        code: 'no-current-user',
+        message: 'Oturum açık değil.',
+      );
+    }
+    await user.delete();
   }
 }

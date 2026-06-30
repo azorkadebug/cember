@@ -96,28 +96,14 @@ class _ProfilKontrolState extends State<_ProfilKontrol> {
       return const Scaffold(body: Center(child: CircularProgressIndicator(color: AppTema.ana)));
     }
     if (!_profilTamam) {
-      return _IlkProfilSarmalayici(
-        onTamamlandi: () => setState(() => _profilTamam = true),
+      // Direkt ProfilEkrani; callback ile profil tamamlanınca state güncellenir.
+      // Eski sürümde nested Navigator vardı, iPad'de siyah ekran bug'ına sebep
+      // oluyordu — bu yüzden kaldırıldı.
+      return ProfilEkrani(
+        ilkKayit: true,
+        onIlkKayitTamamlandi: () => setState(() => _profilTamam = true),
       );
     }
     return const SiniflarEkrani();
-  }
-}
-
-class _IlkProfilSarmalayici extends StatelessWidget {
-  final VoidCallback onTamamlandi;
-  const _IlkProfilSarmalayici({required this.onTamamlandi});
-
-  @override
-  Widget build(BuildContext context) {
-    return Navigator(
-      onGenerateRoute: (_) => MaterialPageRoute(
-        builder: (_) => ProfilEkrani(ilkKayit: true),
-      ),
-      onPopPage: (route, result) {
-        if (result == true) onTamamlandi();
-        return route.didPop(result);
-      },
-    );
   }
 }

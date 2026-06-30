@@ -1,6 +1,9 @@
+import 'dart:io' show Platform;
 import 'dart:math' as math;
 import '../tema.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import '../services/analytics_service.dart';
 import '../services/auth_service.dart';
 
@@ -52,6 +55,27 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
       if (mounted) setState(() => _loading = false);
     }
   }
+
+  Future<void> _appleGiris() async {
+    setState(() => _loading = true);
+    try {
+      await _authService.signInWithApple();
+      AnalyticsService.girisYapildi('apple');
+    } catch (e) {
+      if (mounted) _hataGoster("Apple Hatası: $e");
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  /// Apple Sign-In sadece iOS ve macOS'ta gösterilir.
+  /// - Android: Apple hesap altyapısı yok
+  /// - Web: Firebase Apple provider'ı tek Services ID kabul ediyor, biz iOS
+  ///   Bundle ID'sini set ettik (App Store şart). Web OAuth ayrı Service ID
+  ///   gerektirdiği için web'de Apple Sign-In düğmesi gizli — Google + e-posta
+  ///   web kullanıcıları için yeterli. (Future: Cloud Functions ile çözülebilir.)
+  bool get _appleSignInDestekleniyor =>
+      !kIsWeb && (Platform.isIOS || Platform.isMacOS);
 
   Future<void> _emailGirisKayit() async {
     if (_emailCtrl.text.isEmpty || _passCtrl.text.isEmpty) {
@@ -219,7 +243,21 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
                       ]),
                       const SizedBox(height: 24),
 
-                      // Social Buttons
+                      // Social Buttons — Apple HIG: Apple butonu Google'dan az
+                      // göründüğünden değil, en az eşit prominence olmalı.
+                      if (_appleSignInDestekleniyor) ...[
+                        SizedBox(
+                          width: double.infinity,
+                          height: 50,
+                          child: SignInWithAppleButton(
+                            onPressed: _loading ? () {} : _appleGiris,
+                            style: SignInWithAppleButtonStyle.black,
+                            borderRadius: BorderRadius.circular(14),
+                            text: 'Apple ile Giriş Yap',
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                      ],
                       SizedBox(
                         width: double.infinity,
                         child: _socialBtn(Icons.g_mobiledata, "Google ile Giriş", Colors.red, _googleGiris),
