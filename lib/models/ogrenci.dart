@@ -122,7 +122,10 @@ class TopluOgrenciSatiri {
   bool isMale = true;
   bool cinsiyetSecildi = false;
 
+  bool _disposed = false;
   void dispose() {
+    if (_disposed) return;
+    _disposed = true;
     adCtrl.dispose();
     puanCtrl.dispose();
   }

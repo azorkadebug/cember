@@ -309,7 +309,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
               borderRadius: BorderRadius.circular(16),
               onTap: () => Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => OgrenciListesiEkrani(sinifId: docId)),
+                MaterialPageRoute(builder: (context) => OgrenciListesiEkrani(sinifId: docId, sinifAd: ad)),
               ),
               child: Padding(
                 padding: const EdgeInsets.all(16),

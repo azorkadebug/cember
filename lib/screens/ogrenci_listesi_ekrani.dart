@@ -67,7 +67,8 @@ const List<String> _takimIsimHavuzu = [
 
 class OgrenciListesiEkrani extends StatefulWidget {
   final String sinifId;
-  const OgrenciListesiEkrani({super.key, required this.sinifId});
+  final String? sinifAd;
+  const OgrenciListesiEkrani({super.key, required this.sinifId, this.sinifAd});
   @override
   State<OgrenciListesiEkrani> createState() => _OgrenciListesiEkraniState();
 }
@@ -77,6 +78,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
   int secilenTakimSayisi = 2;
   List<String> formaRenkleri = ['Kırmızı', 'Mavi', 'Sarı', 'Yeşil', 'Siyah', 'Beyaz', 'Turuncu', 'Lacivert'];
   bool _renkleriYuklendi = false;
+  String? _sinifAd;
   final _random = Random();
   String _aramaMetni = '';
 
@@ -89,19 +91,23 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
   void initState() {
     super.initState();
     _db = FirestoreService(uid: AuthService().uid);
+    _sinifAd = widget.sinifAd; // sınıf listesinden geldiyse anında göster; yoksa fetch dolduracak
     _formaRenkleriniYukle();
   }
 
   Future<void> _formaRenkleriniYukle() async {
     try {
       final data = await _db.sinifBilgisiGetir(widget.sinifId);
+      final ad = (data?['ad'] as String?)?.trim();
       if (data != null && data['formaRenkleri'] != null) {
         if (mounted) setState(() {
+          if (ad != null && ad.isNotEmpty) _sinifAd = ad;
           formaRenkleri = List<String>.from(data['formaRenkleri']);
           _renkleriYuklendi = true;
         });
       } else {
         if (mounted) setState(() {
+          if (ad != null && ad.isNotEmpty) _sinifAd = ad;
           formaRenkleri = ['Kırmızı', 'Mavi', 'Sarı', 'Yeşil', 'Siyah', 'Beyaz', 'Turuncu', 'Lacivert'];
           _renkleriYuklendi = true;
         });
@@ -128,7 +134,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
             foregroundColor: Colors.white,
             centerTitle: true,
             title: innerBoxIsScrolled
-                ? Text(widget.sinifId, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18))
+                ? Text(_sinifAd ?? '', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18))
                 : null,
             actions: [
               IconButton(icon: const Icon(Icons.group_add_rounded), onPressed: _hizliSinifEkleDialog, tooltip: 'Hızlı Öğrenci Ekle'),
@@ -198,7 +204,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      Text(widget.sinifId, style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w900, letterSpacing: 1)),
+                      Text(_sinifAd ?? '', style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w900, letterSpacing: 1)),
                       const SizedBox(height: 4),
                       // Kompakt istatistik satırı
                       StreamBuilder<QuerySnapshot>(
@@ -1169,7 +1175,11 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                           ),
                           IconButton(
                             icon: Icon(Icons.close_rounded, color: Colors.red.shade300, size: 20),
-                            onPressed: () { satir.dispose(); setSheetState(() => satirlar.removeAt(i)); },
+                            onPressed: () {
+                              setSheetState(() => satirlar.remove(satir));
+                              // Önce listeden çıkar/rebuild et, controller'ı sonra dispose et.
+                              WidgetsBinding.instance.addPostFrameCallback((_) => satir.dispose());
+                            },
                             padding: EdgeInsets.zero, constraints: const BoxConstraints(minWidth: 36),
                           ),
                         ]),
@@ -1206,7 +1216,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                     Text("${satirlar.length} satır", style: TextStyle(color: Colors.grey.shade500, fontWeight: FontWeight.w600)),
                     const Spacer(),
                     TextButton(
-                      onPressed: () { for (var s in satirlar) { s.dispose(); } Navigator.pop(sheetContext); },
+                      onPressed: () => Navigator.pop(sheetContext),
                       child: Text("İptal", style: TextStyle(color: Colors.grey.shade600)),
                     ),
                     const SizedBox(width: 12),
@@ -1227,7 +1237,17 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
           );
         },
       ),
-    );
+    ).then((_) {
+      // .then() pop anında çalışır ama sheet kapanış animasyonu (~250ms)
+      // henüz bitmemiştir; TextField'lar animasyon boyunca hâlâ bu
+      // controller'lara bağlı. Animasyon bitene kadar bekleyip dispose et,
+      // aksi halde "TextEditingController used after disposed" hatası olur.
+      Future.delayed(const Duration(milliseconds: 500), () {
+        for (final s in satirlar) {
+          s.dispose();
+        }
+      });
+    });
   }
 
   Future<void> _topluKaydet(List<TopluOgrenciSatiri> satirlar, BuildContext sheetContext) async {
@@ -1312,7 +1332,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
       }
     }
 
-    for (var s in satirlar) { s.dispose(); }
+    // Not: controller dispose'u sheet kapanışındaki .then() içinde yapılıyor.
     if (sheetContext.mounted) Navigator.pop(sheetContext);
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
