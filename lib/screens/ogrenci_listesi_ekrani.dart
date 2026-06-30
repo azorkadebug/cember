@@ -10,6 +10,8 @@ import '../services/firestore_service.dart';
 import '../services/mac_durumu.dart';
 import '../widgets/yardim_diyalogu.dart';
 import 'skor_ekrani.dart';
+import 'yoklama_ekrani.dart';
+import 'kontrol_kalemleri_ekrani.dart';
 
 const List<String> _takimIsimHavuzu = [
   // Oyun & internet kültürü
@@ -155,6 +157,23 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                 ? Text(_sinifAd ?? '', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18))
                 : null,
             actions: [
+              IconButton(
+                icon: const Icon(Icons.fact_check_rounded),
+                tooltip: 'Yoklama',
+                onPressed: () => Navigator.push(context, MaterialPageRoute(
+                  builder: (_) => YoklamaEkrani(sinifId: widget.sinifId, sinifAd: _sinifAd, kalemler: _kontrolKalemleri),
+                )),
+              ),
+              IconButton(
+                icon: const Icon(Icons.tune_rounded),
+                tooltip: 'Kontrol Kalemleri',
+                onPressed: () async {
+                  final yeni = await Navigator.push<List<KontrolKalemi>>(context, MaterialPageRoute(
+                    builder: (_) => KontrolKalemleriEkrani(sinifId: widget.sinifId, kalemler: _kontrolKalemleri),
+                  ));
+                  if (yeni != null && mounted) setState(() => _kontrolKalemleri = yeni);
+                },
+              ),
               IconButton(icon: const Icon(Icons.group_add_rounded), onPressed: _hizliSinifEkleDialog, tooltip: 'Hızlı Öğrenci Ekle'),
               IconButton(icon: const Icon(Icons.palette_outlined), onPressed: _renkYonetimi, tooltip: 'Takım Renkleri'),
               IconButton(

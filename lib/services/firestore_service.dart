@@ -77,6 +77,53 @@ class FirestoreService {
     await _db.collection('siniflar').doc(sinifId).update({'ad': yeniAd});
   }
 
+  /// Sınıfın kontrol/yoklama kalemlerini günceller.
+  Future<void> kontrolKalemleriGuncelle(String sinifId, List<KontrolKalemi> kalemler) async {
+    await _db.collection('siniflar').doc(sinifId).update({
+      'kontrolKalemleri': kalemler.map((k) => k.toMap()).toList(),
+    });
+  }
+
+  // --- Yoklama (günlük tarihli kayıt) ---
+
+  /// Belirli bir günün yoklama kaydını getirir (yoksa null).
+  Future<Map<String, dynamic>?> yoklamaGetir(String sinifId, String tarihKey) async {
+    final doc = await _db
+        .collection('siniflar')
+        .doc(sinifId)
+        .collection('yoklamalar')
+        .doc(tarihKey)
+        .get();
+    return doc.data();
+  }
+
+  /// Bir günün yoklamasını kaydeder. [kayitlar]: { ogrenciId: {geldi, kalemler} }.
+  Future<void> yoklamaKaydet(
+      String sinifId, String tarihKey, Map<String, dynamic> kayitlar) async {
+    await _db
+        .collection('siniflar')
+        .doc(sinifId)
+        .collection('yoklamalar')
+        .doc(tarihKey)
+        .set({
+      'tarih': tarihKey,
+      'guncellendi': FieldValue.serverTimestamp(),
+      'kayitlar': kayitlar,
+    });
+  }
+
+  /// Bir öğrencinin geçmiş yoklama kayıtlarını (tarih sıralı) getirir.
+  Future<List<Map<String, dynamic>>> yoklamaGecmisi(String sinifId) async {
+    final snap = await _db
+        .collection('siniflar')
+        .doc(sinifId)
+        .collection('yoklamalar')
+        .orderBy('tarih', descending: true)
+        .limit(60)
+        .get();
+    return snap.docs.map((d) => {'tarih': d.id, ...d.data()}).toList();
+  }
+
   // --- Profil ---
 
   Future<Map<String, dynamic>?> profilGetir() async {
