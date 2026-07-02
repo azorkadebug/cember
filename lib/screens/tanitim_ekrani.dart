@@ -39,30 +39,30 @@ class _TanitimEkraniState extends State<TanitimEkrani> {
   static const _sayfalar = [
     _TanitimSayfasi(
       Icons.school_rounded,
-      'Sınıflarını Yönet',
-      'Sınıflarını oluştur, branşını seç: Beden Eğitimi, Türkçe, Resim, Müzik… '
-          'Kontrol kalemleri (forma, kitap, boya, enstrüman) branşına göre hazır gelir.',
+      'Sınıfını Kur',
+      'Sınıflarını ekle, branşını seç. Derste ne takip ediyorsan '
+          '— forma, kitap, boya, enstrüman — branşına göre hazır gelir.',
       Color(0xFF43A047),
     ),
     _TanitimSayfasi(
       Icons.fact_check_rounded,
-      'Yoklama & Kontrol',
-      'Tek dokunuşla tarihli yoklama al. Günlük ✓/✗ kontrolleri ve sezon boyu '
-          'sayaçlarla (sarı kart gibi) kim neyi getirmiş anında gör.',
+      'Yoklamanı Tek Dokunuşla Al',
+      'Kim geldi, kim gelmedi? Dokun, işaretle. Kitabını ya da formasını '
+          'unutanı da aynı ekranda not et. Hepsi tarihiyle kaydedilir.',
       Color(0xFF1976D2),
     ),
     _TanitimSayfasi(
       Icons.emoji_events_rounded,
-      'Takım & Etkinlik',
-      'AI takım dağıtımı ile saniyeler içinde adil gruplar kur. Element sistemi '
-          'kavgalıları ayırır. Skor tablosu, zamanlayıcı ve ceza sistemi hazır.',
+      'Adil Takımlar Kur',
+      'Bir dokunuşla dengeli takımlar oluştur. Uygulama, anlaşamayan '
+          'öğrencileri ayrı takımlara koyar. Skor tablosu ve süre sayacı da hazır.',
       Color(0xFFC77B46),
     ),
     _TanitimSayfasi(
       Icons.visibility_off_rounded,
-      'Demo Modu',
-      'Sunum veya ekran görüntüsü mü alacaksın? Demo modu gerçek öğrenci adlarını '
-          'rastgele isimlerle maskeler — veriler güvende kalır.',
+      'Öğrenci Bilgileri Güvende',
+      'Sunum yaparken ya da ekran görüntüsü paylaşırken demo modunu aç: '
+          'gerçek isimler gizlenir, yerlerine rastgele isimler görünür.',
       Color(0xFF8E24AA),
     ),
   ];
