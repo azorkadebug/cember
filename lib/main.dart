@@ -79,6 +79,9 @@ class _TanitimVeyaGirisState extends State<_TanitimVeyaGiris> {
     super.initState();
     TanitimEkrani.goruldueMu().then((v) {
       if (mounted) setState(() => _goruldu = v);
+    }).catchError((_) {
+      // Depolama erişilemezse (ör. eklenti sorunu) tanıtımı atla — uygulama açılsın.
+      if (mounted) setState(() => _goruldu = true);
     });
   }
 
