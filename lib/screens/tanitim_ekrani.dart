@@ -1,0 +1,178 @@
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../tema.dart';
+
+/// İlk açılışta gösterilen tanıtım carousel'i (v1.1).
+/// Bir kez gösterilir; [goruldueMu] / [goruldueIsaretle] ile takip edilir.
+class TanitimEkrani extends StatefulWidget {
+  final VoidCallback onTamamlandi;
+  const TanitimEkrani({super.key, required this.onTamamlandi});
+
+  static const _prefsAnahtari = 'tanitim_goruldu_v1_1';
+
+  static Future<bool> goruldueMu() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_prefsAnahtari) ?? false;
+  }
+
+  static Future<void> goruldueIsaretle() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_prefsAnahtari, true);
+  }
+
+  @override
+  State<TanitimEkrani> createState() => _TanitimEkraniState();
+}
+
+class _TanitimSayfasi {
+  final IconData ikon;
+  final String baslik;
+  final String aciklama;
+  final Color renk;
+  const _TanitimSayfasi(this.ikon, this.baslik, this.aciklama, this.renk);
+}
+
+class _TanitimEkraniState extends State<TanitimEkrani> {
+  final _controller = PageController();
+  int _sayfa = 0;
+
+  static const _sayfalar = [
+    _TanitimSayfasi(
+      Icons.school_rounded,
+      'Sınıflarını Yönet',
+      'Sınıflarını oluştur, branşını seç: Beden Eğitimi, Türkçe, Resim, Müzik… '
+          'Kontrol kalemleri (forma, kitap, boya, enstrüman) branşına göre hazır gelir.',
+      Color(0xFF43A047),
+    ),
+    _TanitimSayfasi(
+      Icons.fact_check_rounded,
+      'Yoklama & Kontrol',
+      'Tek dokunuşla tarihli yoklama al. Günlük ✓/✗ kontrolleri ve sezon boyu '
+          'sayaçlarla (sarı kart gibi) kim neyi getirmiş anında gör.',
+      Color(0xFF1976D2),
+    ),
+    _TanitimSayfasi(
+      Icons.emoji_events_rounded,
+      'Takım & Etkinlik',
+      'AI takım dağıtımı ile saniyeler içinde adil gruplar kur. Element sistemi '
+          'kavgalıları ayırır. Skor tablosu, zamanlayıcı ve ceza sistemi hazır.',
+      Color(0xFFC77B46),
+    ),
+    _TanitimSayfasi(
+      Icons.visibility_off_rounded,
+      'Demo Modu',
+      'Sunum veya ekran görüntüsü mü alacaksın? Demo modu gerçek öğrenci adlarını '
+          'rastgele isimlerle maskeler — veriler güvende kalır.',
+      Color(0xFF8E24AA),
+    ),
+  ];
+
+  bool get _sonSayfa => _sayfa == _sayfalar.length - 1;
+
+  Future<void> _bitir() async {
+    await TanitimEkrani.goruldueIsaretle();
+    widget.onTamamlandi();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Atla düğmesi
+            Align(
+              alignment: Alignment.centerRight,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                child: TextButton(
+                  onPressed: _bitir,
+                  child: Text('Atla', style: TextStyle(color: Colors.grey.shade500, fontWeight: FontWeight.w600)),
+                ),
+              ),
+            ),
+            Expanded(
+              child: PageView.builder(
+                controller: _controller,
+                itemCount: _sayfalar.length,
+                onPageChanged: (i) => setState(() => _sayfa = i),
+                itemBuilder: (context, i) {
+                  final s = _sayfalar[i];
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 36),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(36),
+                          decoration: BoxDecoration(color: s.renk.withAlpha(20), shape: BoxShape.circle),
+                          child: Icon(s.ikon, size: 80, color: s.renk),
+                        ),
+                        const SizedBox(height: 36),
+                        Text(s.baslik,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: Color(0xFF1A1A2E))),
+                        const SizedBox(height: 16),
+                        Text(s.aciklama,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontSize: 15, height: 1.6, color: Colors.grey.shade600)),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+            // Sayfa noktaları
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(_sayfalar.length, (i) {
+                final aktif = i == _sayfa;
+                return AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  width: aktif ? 24 : 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: aktif ? AppTema.ana : Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                );
+              }),
+            ),
+            // İleri / Başla düğmesi
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTema.ana,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                  onPressed: () {
+                    if (_sonSayfa) {
+                      _bitir();
+                    } else {
+                      _controller.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
+                    }
+                  },
+                  child: Text(_sonSayfa ? 'Hadi Başlayalım!' : 'İleri',
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

@@ -103,7 +103,7 @@ class YardimDiyalogu extends StatelessWidget {
                 controller: scrollController,
                 padding: const EdgeInsets.all(20),
                 itemCount: bolumler.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 18),
+                separatorBuilder: (_, _) => const SizedBox(height: 18),
                 itemBuilder: (_, i) => _BolumKart(bolum: bolumler[i]),
               ),
             ),

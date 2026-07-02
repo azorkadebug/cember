@@ -5,6 +5,7 @@ import 'firebase_options.dart';
 import 'screens/giris_ekrani.dart';
 import 'screens/profil_ekrani.dart';
 import 'screens/siniflar_ekrani.dart';
+import 'screens/tanitim_ekrani.dart';
 import 'services/analytics_service.dart';
 import 'services/firestore_service.dart';
 import 'services/mac_durumu.dart';
@@ -56,9 +57,40 @@ class AuthWrapper extends StatelessWidget {
           MacDurumu().yukle(); // localStorage'dan aktif maçı yükle
           return _ProfilKontrol(uid: snapshot.data!.uid);
         }
-        return const GirisEkrani();
+        return const _TanitimVeyaGiris();
       },
     );
+  }
+}
+
+/// Giriş yapılmamışsa: ilk açılışta tanıtım carousel'i, sonrasında giriş ekranı.
+class _TanitimVeyaGiris extends StatefulWidget {
+  const _TanitimVeyaGiris();
+
+  @override
+  State<_TanitimVeyaGiris> createState() => _TanitimVeyaGirisState();
+}
+
+class _TanitimVeyaGirisState extends State<_TanitimVeyaGiris> {
+  bool? _goruldu; // null = kontrol ediliyor
+
+  @override
+  void initState() {
+    super.initState();
+    TanitimEkrani.goruldueMu().then((v) {
+      if (mounted) setState(() => _goruldu = v);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_goruldu == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator(color: AppTema.ana)));
+    }
+    if (!_goruldu!) {
+      return TanitimEkrani(onTamamlandi: () => setState(() => _goruldu = true));
+    }
+    return const GirisEkrani();
   }
 }
 

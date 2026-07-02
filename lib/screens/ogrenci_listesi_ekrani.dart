@@ -80,7 +80,6 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
   late final FirestoreService _db;
   int secilenTakimSayisi = 2;
   List<String> formaRenkleri = ['Kırmızı', 'Mavi', 'Sarı', 'Yeşil', 'Siyah', 'Beyaz', 'Turuncu', 'Lacivert'];
-  bool _renkleriYuklendi = false;
   String? _sinifAd;
   List<KontrolKalemi> _kontrolKalemleri = [];
   final _random = Random();
@@ -117,25 +116,18 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
       final data = await _db.sinifBilgisiGetir(widget.sinifId);
       final ad = (data?['ad'] as String?)?.trim();
       final kalemler = _kontrolKalemleriCoz(data);
-      if (data != null && data['formaRenkleri'] != null) {
-        if (mounted) setState(() {
-          if (ad != null && ad.isNotEmpty) _sinifAd = ad;
-          _kontrolKalemleri = kalemler;
-          formaRenkleri = List<String>.from(data['formaRenkleri']);
-          _renkleriYuklendi = true;
-        });
-      } else {
-        if (mounted) setState(() {
-          if (ad != null && ad.isNotEmpty) _sinifAd = ad;
-          _kontrolKalemleri = kalemler;
-          formaRenkleri = ['Kırmızı', 'Mavi', 'Sarı', 'Yeşil', 'Siyah', 'Beyaz', 'Turuncu', 'Lacivert'];
-          _renkleriYuklendi = true;
-        });
-      }
+      if (!mounted) return;
+      setState(() {
+        if (ad != null && ad.isNotEmpty) _sinifAd = ad;
+        _kontrolKalemleri = kalemler;
+        formaRenkleri = data != null && data['formaRenkleri'] != null
+            ? List<String>.from(data['formaRenkleri'])
+            : ['Kırmızı', 'Mavi', 'Sarı', 'Yeşil', 'Siyah', 'Beyaz', 'Turuncu', 'Lacivert'];
+      });
     } catch (_) {
-      if (mounted) setState(() {
+      if (!mounted) return;
+      setState(() {
         formaRenkleri = ['Kırmızı', 'Mavi', 'Sarı', 'Yeşil', 'Siyah', 'Beyaz', 'Turuncu', 'Lacivert'];
-        _renkleriYuklendi = true;
       });
     }
   }
@@ -192,7 +184,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                     YardimBolumu(
                       ikon: Icons.bolt_rounded,
                       baslik: 'Puan (50-150)',
-                      aciklama: 'Her öğrenciye yetenek puanı verebilirsin. AI takım dağıtımı bu puanları kullanarak adil takımlar kurar — yüksek puanlı oyuncuları dengeli dağıtır (snake draft). Varsayılan 100; spor yeteneğine göre 70-130 arası ayarla.',
+                      aciklama: 'Her öğrenciye seviye puanı verebilirsin. AI takım dağıtımı bu puanları kullanarak adil takımlar kurar — yüksek puanlı öğrencileri dengeli dağıtır (snake draft). Varsayılan 100; yetenek/katılım seviyesine göre 70-130 arası ayarla.',
                       renk: Color(0xFFFFB300),
                     ),
                     YardimBolumu(
@@ -204,13 +196,13 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                     YardimBolumu(
                       ikon: Icons.checklist_rounded,
                       baslik: 'Yoklama',
-                      aciklama: 'Öğrenciye dokunarak "burada/yok" olarak işaretle. Yalnızca burada olanlar takım dağıtımında ve maçta yer alır.',
+                      aciklama: 'Üstteki ✓ simgesiyle tarihli yoklama al — kontrol kalemleriyle (kitap, forma, boya…) birlikte kaydedilir. Öğrenciye dokunarak da hızlıca "burada/yok" işaretleyebilirsin; yalnızca burada olanlar takım dağıtımında yer alır.',
                       renk: Color(0xFF00897B),
                     ),
                     YardimBolumu(
                       ikon: Icons.sports_score_rounded,
                       baslik: 'AI Takım Oluştur',
-                      aciklama: 'Üstte "Maç Başlat" → AI Takım Dağılımı. Snake draft algoritması: önce kızları, sonra erkekleri puana göre sıralayıp en az kişili takıma yerleştirir. Element çatışmalarını otomatik önler. Sonuç: max 1 kişi farkı + denk puanlar.',
+                      aciklama: 'Alttaki "AI Takım Kur" düğmesi ile öğrencileri adil gruplara ayır — oyun, yarışma veya grup çalışması için. Snake draft algoritması: önce kızları, sonra erkekleri puana göre sıralayıp en az kişili takıma yerleştirir. Element çatışmalarını otomatik önler. Sonuç: max 1 kişi farkı + denk puanlar.',
                       renk: Color(0xFF43A047),
                     ),
                     YardimBolumu(
@@ -221,8 +213,8 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                     ),
                     YardimBolumu(
                       ikon: Icons.assignment_late_rounded,
-                      baslik: 'Disiplin kayıtları',
-                      aciklama: 'Her öğrenci için sarı kart, kıyafet eksik, ayakkabı eksik sayaçları + sağlık notları + rozetler tutulur. Sezon boyu birikim sağlar.',
+                      baslik: 'Kontrol kalemleri',
+                      aciklama: 'Branşına göre kontrol kalemleri tanımla (forma, kitap, boya, enstrüman…): günlük ✓/✗ veya sezon boyu sayaç. Üstteki ayar simgesinden düzenle. Sağlık notları + rozetler de öğrenci kartında tutulur.',
                       renk: Color(0xFF8E24AA),
                     ),
                   ],
@@ -398,7 +390,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
             ),
             const SizedBox(width: 10),
             const Expanded(
-              child: Text("Maç devam ediyor",
+              child: Text("Etkinlik devam ediyor",
                   style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13)),
             ),
             Container(
@@ -789,7 +781,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
           child: ListView.separated(
             shrinkWrap: true,
             itemCount: o.saglikNotlari.length,
-            separatorBuilder: (_, __) => const Divider(height: 1),
+            separatorBuilder: (_, _) => const Divider(height: 1),
             itemBuilder: (_, i) {
               final kayit = o.saglikNotlari[o.saglikNotlari.length - 1 - i];
               return ListTile(
@@ -1638,7 +1630,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                             const SizedBox(height: 2),
                             Text(t.isim, textAlign: TextAlign.center,
                                 style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13)),
-                            Text("${t.renkAdi}  •  ${t.oyuncular.length} kişi  •  (${t.oyuncular.fold<int>(0, (sum, o) => sum + (efektifPuan[o.id] ?? o.puan))} puan)",
+                            Text("${t.renkAdi}  •  ${t.oyuncular.length} kişi  •  (${t.oyuncular.fold<int>(0, (toplam, o) => toplam + (efektifPuan[o.id] ?? o.puan))} puan)",
                                 style: TextStyle(color: Colors.white.withAlpha(200), fontSize: 10)),
                           ]),
                         ),

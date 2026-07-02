@@ -29,7 +29,7 @@ class AnalyticsService {
   static Future<void> profilTamamlandi({String? sehir, String? brans}) async {
     await _analytics.logEvent(name: 'profil_tamamlandi', parameters: {
       if (sehir != null && sehir.isNotEmpty) 'sehir': sehir,
-      if (brans != null) 'brans': brans,
+      'brans': ?brans,
     });
   }
 

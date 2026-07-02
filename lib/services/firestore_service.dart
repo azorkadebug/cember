@@ -24,11 +24,6 @@ class FirestoreService {
         .get();
   }
 
-  /// Sınıf adındaki / karakteri Firestore doc ID'sinde kullanılamaz (legacy).
-  /// Yeni sınıflar artık auto-id ile oluşturuluyor (aşağıya bakın), ama eski
-  /// belgeler hâlâ name-based ID kullanıyor olabilir.
-  static String _safeDocId(String ad) => ad.replaceAll('/', '-');
-
   /// Yeni sınıf oluştur. Firestore'un otomatik ID'sini kullanır — sınıf
   /// adını doc ID yapmak yerine `ad` field'ında saklar.
   ///

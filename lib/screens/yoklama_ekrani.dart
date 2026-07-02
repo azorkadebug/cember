@@ -75,7 +75,8 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
           );
         }
       }
-      if (mounted) setState(() {
+      if (!mounted) return;
+      setState(() {
         _ogrenciler = ogrenciler;
         _yukleniyor = false;
       });
@@ -197,7 +198,7 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
                     child: ListView.separated(
                       padding: const EdgeInsets.fromLTRB(12, 12, 12, 100),
                       itemCount: _ogrenciler.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 8),
+                      separatorBuilder: (_, _) => const SizedBox(height: 8),
                       itemBuilder: (_, i) => _ogrenciKarti(_ogrenciler[i]),
                     ),
                   ),

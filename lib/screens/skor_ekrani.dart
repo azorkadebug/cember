@@ -289,7 +289,7 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin {
                 YardimBolumu(
                   ikon: Icons.timer_rounded,
                   baslik: 'Timer (kronometre)',
-                  aciklama: 'Başlat/Durdur düğmesi ile zamanı kontrol et. Hazır süreler (0:30, 1:00, 2:00, 3:00, 5:00, 10:00) ile maç periyotlarını hızlıca ayarla. Sıfırla butonu zamanı 0:00\'a getirir.',
+                  aciklama: 'Başlat/Durdur düğmesi ile zamanı kontrol et. Hazır süreler (0:30, 1:00, 2:00, 3:00, 5:00, 10:00) ile periyotları hızlıca ayarla. Sıfırla butonu zamanı 0:00\'a getirir.',
                   renk: Color(0xFF1976D2),
                 ),
                 YardimBolumu(
@@ -300,14 +300,14 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin {
                 ),
                 YardimBolumu(
                   ikon: Icons.flag_circle_rounded,
-                  baslik: 'Maçı sonlandır',
-                  aciklama: 'Sol üstteki geri ok ile maçı bitirip sınıf ekranına dön. Skor + zaman kayıtlı kalmaz (henüz); yenisini başlatınca sıfırdan.',
+                  baslik: 'Etkinliği sonlandır',
+                  aciklama: 'Sol üstteki geri ok ile etkinliği bitirip sınıf ekranına dön. Skor + zaman kayıtlı kalmaz (henüz); yenisini başlatınca sıfırdan.',
                   renk: Color(0xFF8E24AA),
                 ),
                 YardimBolumu(
                   ikon: Icons.tips_and_updates_rounded,
                   baslik: 'Önerilen kullanım',
-                  aciklama: 'Basketbol için 10 dk timer + 0\'a sayma. Voleybol için süre yok, sadece skor (25 puan vb.). Futbol/futsal için 5-10 dk yarı + ceza sistemi.',
+                  aciklama: 'Basketbol için 10 dk timer + 0\'a sayma. Voleybol için süre yok, sadece skor (25 puan vb.). Futbol/futsal için 5-10 dk yarı + ceza sistemi. Bilgi yarışması/münazara için sadece skor da yeter.',
                   renk: Color(0xFFFB8C00),
                 ),
               ],

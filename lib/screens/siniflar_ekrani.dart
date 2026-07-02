@@ -88,19 +88,19 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
                 YardimBolumu(
                   ikon: Icons.add_circle_outline_rounded,
                   baslik: 'Yeni sınıf oluştur',
-                  aciklama: 'Sağ alttaki "+" düğmesi → sınıf adı yaz (örn. 7-A, 6-B). Forma renkleri otomatik atanır, sınıf kartına dokunarak değiştirebilirsin.',
+                  aciklama: 'Sağ alttaki "+" düğmesi → sınıf adı yaz (örn. 7-A, 6-B) ve branşını seç. Kontrol kalemleri (forma, kitap, boya…) branşa göre otomatik gelir; takım renkleri de otomatik atanır.',
                   renk: Color(0xFF43A047),
                 ),
                 YardimBolumu(
                   ikon: Icons.touch_app_rounded,
                   baslik: 'Sınıfa giriş',
-                  aciklama: 'Sınıf kartına dokun → o sınıfın öğrenci listesi açılır. Yoklama alabilir, öğrenci ekleyebilir, maç başlatabilirsin.',
+                  aciklama: 'Sınıf kartına dokun → o sınıfın öğrenci listesi açılır. Yoklama alabilir, öğrenci ekleyebilir, takım kurup etkinlik başlatabilirsin.',
                   renk: Color(0xFF1976D2),
                 ),
                 YardimBolumu(
                   ikon: Icons.sports_kabaddi_rounded,
-                  baslik: 'Sınıflar Arası Maç',
-                  aciklama: 'İki farklı sınıfı karşı karşıya getir (örn. 7-A vs 7-B). Her sınıf bir takım olur, skor tablosu açılır.',
+                  baslik: 'Sınıflar Arası Yarışma',
+                  aciklama: 'İki farklı sınıfı karşı karşıya getir (örn. 7-A vs 7-B) — maç, bilgi yarışması, münazara… Her sınıf bir takım olur, skor tablosu açılır.',
                   renk: Color(0xFFC77B46),
                 ),
                 YardimBolumu(
@@ -111,7 +111,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
                 ),
                 YardimBolumu(
                   ikon: Icons.palette_rounded,
-                  baslik: 'Forma renkleri',
+                  baslik: 'Takım renkleri',
                   aciklama: 'Her sınıfa 8 takım rengi atanır (kırmızı, mavi, sarı, yeşil, siyah, beyaz, turuncu, lacivert). Takım oluştururken bu renklerden seçilir. Renk paletini sınıfa dokunarak özelleştirebilirsin.',
                   renk: Color(0xFF8E24AA),
                 ),
@@ -196,17 +196,39 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
                 }
                 if (snapshot.data!.docs.isEmpty) {
                   return Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.class_outlined, size: 80, color: Colors.grey.shade300),
-                        const SizedBox(height: 16),
-                        Text("Henüz sınıf eklenmedi",
-                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.grey.shade500)),
-                        const SizedBox(height: 8),
-                        Text("Sağ alttaki + butonuyla başlayın",
-                            style: TextStyle(color: Colors.grey.shade400)),
-                      ],
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.class_outlined, size: 72, color: Colors.grey.shade300),
+                          const SizedBox(height: 16),
+                          Text("Hoş geldin! 👋",
+                              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: Colors.grey.shade600)),
+                          const SizedBox(height: 6),
+                          Text("Üç adımda hazırsın:",
+                              style: TextStyle(color: Colors.grey.shade500)),
+                          const SizedBox(height: 20),
+                          Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [BoxShadow(color: Colors.black.withAlpha(10), blurRadius: 10, offset: const Offset(0, 2))],
+                            ),
+                            child: Column(children: [
+                              _bosAdim(1, Icons.add_circle_outline_rounded, "Sınıfını ekle",
+                                  "Sağ alttaki + düğmesi → ad + branş seç"),
+                              const SizedBox(height: 14),
+                              _bosAdim(2, Icons.person_add_alt_rounded, "Öğrencileri ekle",
+                                  "Tek tek veya toplu liste olarak"),
+                              const SizedBox(height: 14),
+                              _bosAdim(3, Icons.fact_check_rounded, "Yoklamanı al",
+                                  "Kontrol kalemleri branşına göre hazır"),
+                            ]),
+                          ),
+                        ],
+                      ),
                     ),
                   );
                 }
@@ -229,8 +251,8 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
             backgroundColor: const Color(0xFF1A1A2E),
             foregroundColor: Colors.white,
             elevation: 4,
-            icon: const Icon(Icons.sports_rounded),
-            label: const Text("Sınıflar Arası Maç", style: TextStyle(fontWeight: FontWeight.w700)),
+            icon: const Icon(Icons.emoji_events_rounded),
+            label: const Text("Sınıflar Arası Yarışma", style: TextStyle(fontWeight: FontWeight.w700)),
           ),
           const SizedBox(height: 12),
           FloatingActionButton.extended(
@@ -245,6 +267,28 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
         ],
       ),
     );
+  }
+
+  /// Boş durum kartındaki tek bir adım satırı (1-2-3 yönlendirmesi).
+  Widget _bosAdim(int no, IconData ikon, String baslik, String aciklama) {
+    return Row(children: [
+      Container(
+        width: 34, height: 34,
+        decoration: BoxDecoration(color: AppTema.ana.withAlpha(20), shape: BoxShape.circle),
+        child: Center(
+          child: Text("$no", style: const TextStyle(color: AppTema.ana, fontWeight: FontWeight.w800, fontSize: 15)),
+        ),
+      ),
+      const SizedBox(width: 12),
+      Expanded(
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(baslik, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+          const SizedBox(height: 2),
+          Text(aciklama, style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
+        ]),
+      ),
+      Icon(ikon, color: Colors.grey.shade300, size: 22),
+    ]);
   }
 
   Widget _sinifKarti(BuildContext context, QueryDocumentSnapshot doc) {
@@ -390,7 +434,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
                 }
               },
               child: Text(
-                mac.duraklatildi ? "Maç duraklatıldı" : "Maç devam ediyor",
+                mac.duraklatildi ? "Etkinlik duraklatıldı" : "Etkinlik devam ediyor",
                 style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13),
               ),
             ),
@@ -440,10 +484,10 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
             child: Icon(Icons.stop_rounded, color: Colors.red.shade700),
           ),
           const SizedBox(width: 12),
-          const Text("Maçı Bitir", style: TextStyle(fontWeight: FontWeight.w700)),
+          const Text("Etkinliği Bitir", style: TextStyle(fontWeight: FontWeight.w700)),
         ]),
         content: Text(
-          "Maçı tamamen bitirmek istediğinize emin misiniz? Skorlar sıfırlanacak.",
+          "Etkinliği tamamen bitirmek istediğinize emin misiniz? Skorlar sıfırlanacak.",
           style: TextStyle(color: Colors.grey.shade700, height: 1.5),
         ),
         actions: [
@@ -731,7 +775,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
               child: const Icon(Icons.sports_rounded, color: Colors.indigo),
             ),
             const SizedBox(width: 12),
-            const Text("Sınıflar Arası Maç", style: TextStyle(fontWeight: FontWeight.w700)),
+            const Text("Sınıflar Arası Yarışma", style: TextStyle(fontWeight: FontWeight.w700)),
           ]),
           content: Column(mainAxisSize: MainAxisSize.min, children: [
             // Sınıf 1
@@ -769,7 +813,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
                   siniflar.firstWhere((s) => s['id'] == sinif2Id)['ad'] as String,
                 );
               },
-              label: const Text("Maçı Başlat", style: TextStyle(fontWeight: FontWeight.w700)),
+              label: const Text("Yarışmayı Başlat", style: TextStyle(fontWeight: FontWeight.w700)),
             ),
           ],
         ),
@@ -790,7 +834,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
         Text(etiket, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.grey.shade600)),
         const SizedBox(height: 6),
         DropdownButtonFormField<String>(
-          value: secilenId,
+          initialValue: secilenId,
           isExpanded: true,
           decoration: InputDecoration(
             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
