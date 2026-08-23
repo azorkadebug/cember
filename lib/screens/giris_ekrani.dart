@@ -2,6 +2,7 @@ import 'dart:io' show Platform;
 import 'dart:math' as math;
 import '../tema.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import '../services/analytics_service.dart';
@@ -14,6 +15,11 @@ class GirisEkrani extends StatefulWidget {
 }
 
 class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin {
+  /// pubspec.yaml'daki sürüm. `--dart-define=APP_VERSION=...` ile
+  /// derleme sırasında geçilebilir; verilmezse buradaki değer kullanılır.
+  static const String _surum =
+      String.fromEnvironment('APP_VERSION', defaultValue: 'v1.1.1');
+
   final _emailCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
   final _authService = AuthService();
@@ -48,9 +54,13 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
     setState(() => _loading = true);
     try {
       await _authService.signInWithGoogle();
-      AnalyticsService.girisYapildi('google');
+      unawaited(AnalyticsService.girisYapildi('google'));
     } catch (e) {
-      if (mounted) _hataGoster("Google Hatası: $e");
+      // Ham hata metni gösterilmiyor: iç detay sızdırıyor ve Firebase'in
+      // İngilizce mesajları kullanıcı numaralandırmaya izin veriyor.
+      if (mounted && !AuthService.iptalMi(e)) {
+        _hataGoster(AuthService.hataMesaji(e));
+      }
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -60,9 +70,11 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
     setState(() => _loading = true);
     try {
       await _authService.signInWithApple();
-      AnalyticsService.girisYapildi('apple');
+      unawaited(AnalyticsService.girisYapildi('apple'));
     } catch (e) {
-      if (mounted) _hataGoster("Apple Hatası: $e");
+      if (mounted && !AuthService.iptalMi(e)) {
+        _hataGoster(AuthService.hataMesaji(e));
+      }
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -86,22 +98,53 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
     try {
       if (_kayitModu) {
         await _authService.signUpWithEmail(_emailCtrl.text, _passCtrl.text);
-        AnalyticsService.girisYapildi('email_kayit');
+        unawaited(AnalyticsService.girisYapildi('email_kayit'));
+        if (mounted) {
+          _bilgiGoster(
+              "Hesabın oluşturuldu. E-posta adresine doğrulama bağlantısı gönderdik.");
+        }
       } else {
         await _authService.signInWithEmail(_emailCtrl.text, _passCtrl.text);
-        AnalyticsService.girisYapildi('email');
+        unawaited(AnalyticsService.girisYapildi('email'));
       }
     } catch (e) {
-      if (mounted) _hataGoster(e.toString().split('] ').last);
+      if (mounted) _hataGoster(AuthService.hataMesaji(e));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  Future<void> _sifremiUnuttum() async {
+    final email = _emailCtrl.text.trim();
+    if (email.isEmpty) {
+      _hataGoster("Önce e-posta adresini yaz, sonra bağlantıya dokun.");
+      return;
+    }
+    setState(() => _loading = true);
+    await _authService.sifreSifirla(email);
+    if (!mounted) return;
+    setState(() => _loading = false);
+    // Adresin kayıtlı olup olmadığına bakılmaksızın AYNI mesaj gösteriliyor —
+    // aksi hâlde hangi e-postaların sistemde olduğu öğrenilebilir.
+    _bilgiGoster(
+        "Bu adres kayıtlıysa şifre sıfırlama bağlantısı gönderildi. Gelen kutunu kontrol et.");
   }
 
   void _hataGoster(String mesaj) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(mesaj),
       backgroundColor: Colors.red.shade700,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      margin: const EdgeInsets.all(16),
+    ));
+  }
+
+  void _bilgiGoster(String mesaj) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(mesaj),
+      backgroundColor: AppTema.ana,
+      duration: const Duration(seconds: 5),
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       margin: const EdgeInsets.all(16),
@@ -197,6 +240,9 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
                       TextField(
                         controller: _emailCtrl,
                         keyboardType: TextInputType.emailAddress,
+                        autofillHints: const [AutofillHints.email],
+                        maxLength: 254,
+                        buildCounter: _sayacGizle,
                         decoration: _inputDeco("E-Posta", Icons.email_outlined),
                       ),
                       const SizedBox(height: 14),
@@ -204,7 +250,17 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
                       TextField(
                         controller: _passCtrl,
                         obscureText: _obscurePass,
+                        maxLength: 128,
+                        buildCounter: _sayacGizle,
+                        autofillHints: _kayitModu
+                            ? const [AutofillHints.newPassword]
+                            : const [AutofillHints.password],
                         decoration: _inputDeco("Şifre", Icons.lock_outline_rounded).copyWith(
+                          helperText: _kayitModu
+                              ? "En az 10 karakter, harf ve rakam içermeli"
+                              : null,
+                          helperStyle: TextStyle(
+                              color: Colors.grey.shade500, fontSize: 11.5),
                           suffixIcon: IconButton(
                             icon: Icon(_obscurePass ? Icons.visibility_off_rounded : Icons.visibility_rounded,
                                 color: Colors.grey.shade400, size: 20),
@@ -212,7 +268,22 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
                           ),
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      if (!_kayitModu)
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton(
+                            onPressed: _loading ? null : _sifremiUnuttum,
+                            style: TextButton.styleFrom(
+                              foregroundColor: AppTema.ana,
+                              padding: const EdgeInsets.symmetric(vertical: 4),
+                              minimumSize: const Size(0, 32),
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                            child: const Text("Şifremi unuttum",
+                                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                          ),
+                        ),
+                      const SizedBox(height: 18),
                       // Submit
                       SizedBox(
                         width: double.infinity,
@@ -263,7 +334,9 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
                         child: _socialBtn(Icons.g_mobiledata, "Google ile Giriş", Colors.red, _googleGiris),
                       ),
                       const SizedBox(height: 24),
-                      Text("v1.0.0", style: TextStyle(color: Colors.grey.shade300, fontSize: 11)),
+                      // Elle yazılan sürüm numarası güncellenmeyi unutuyordu
+                      // (pubspec 1.1.0 iken ekranda hâlâ v1.0.0 yazıyordu).
+                      Text(_surum, style: TextStyle(color: Colors.grey.shade300, fontSize: 11)),
                     ],
                   ),
                     ),
@@ -299,6 +372,13 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
       ),
     );
   }
+
+  /// maxLength sayacını gizler — sınır var ama ekranda "0/254" görünmesin.
+  static Widget? _sayacGizle(BuildContext context,
+          {required int currentLength,
+          required bool isFocused,
+          required int? maxLength}) =>
+      null;
 
   InputDecoration _inputDeco(String hint, IconData icon) {
     return InputDecoration(

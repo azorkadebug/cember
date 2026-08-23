@@ -89,11 +89,27 @@ class Ogrenci {
     }
   }
 
+  /// Alan üst sınırları. Firestore doküman limiti 1 MiB; sınırsız serbest
+  /// metin ve sınırsız büyüyen liste, dokümanı bir noktadan sonra
+  /// güncellenemez hâle getirir.
+  static const int adMaxUzunluk = 60;
+  static const int notMaxUzunluk = 500;
+  static const int saglikNotuMaxUzunluk = 1000;
+  static const int saglikNotuMaxAdet = 50;
+  static const int rozetMaxAdet = 50;
+
+  static String _kirp(String s, int maks) =>
+      s.length <= maks ? s : s.substring(0, maks);
+
   Map<String, dynamic> toMap() {
-    final s = SifrelemeService.instance;
     return {
-      'ad': s.sifrele(ad),
-      'puan': puan,
+      // Düz metin. Eskiden AES-CBC ile şifreleniyordu, ama anahtar
+      // kullanıcının UID'sinden türetiliyordu ve aynı UID sınıf
+      // dokümanında `ownerId` alanında düz metin duruyor — yani şifreli
+      // kaydı okuyabilen anahtarı da elde ediyordu. Koruma Firestore
+      // kurallarından geliyor. Ayrıntı: sifreleme_service.dart
+      'ad': _kirp(ad, adMaxUzunluk),
+      'puan': puan.clamp(0, 9999),
       // Eski PE alanları geriye dönük uyumluluk için yeni haritadan senkronlanır
       // (v1.0/1.0.1 iOS istemcileri bu alanları okuyor).
       'ayakkabiEksik': kalemSayaclari['ayakkabi'] ?? ayakkabiEksik,
@@ -101,29 +117,35 @@ class Ogrenci {
       'sariKart': kalemSayaclari['sari_kart'] ?? sariKart,
       'saglikDurumu': saglikDurumu,
       'kalemSayaclari': kalemSayaclari,
-      'not': s.sifrele(not),
+      'not': _kirp(not, notMaxUzunluk),
       'isMale': isMale,
       'buradaMi': buradaMi,
-      'sifrelendi': true,
+      // Artık şifrelenmiyor. Bayrak açıkça false yazılıyor ki eski
+      // istemciler (v1.0/1.0.1) bu kaydı çözmeye çalışmasın.
+      'sifrelendi': false,
       if (element != null) 'element': element,
-      'saglikNotlari': saglikNotlari,
-      'rozetler': rozetler,
+      'saglikNotlari': _sonN(saglikNotlari, saglikNotuMaxAdet),
+      'rozetler': _sonN(rozetler, rozetMaxAdet),
     };
   }
 
+  /// Listenin son [n] kaydı — sınırsız birikmeyi engeller.
+  static List<Map<String, dynamic>> _sonN(
+          List<Map<String, dynamic>> liste, int n) =>
+      liste.length <= n ? liste : liste.sublist(liste.length - n);
+
   factory Ogrenci.fromMap(String id, Map<String, dynamic> map) {
-    final s = SifrelemeService.instance;
-    final sifrelendi = map['sifrelendi'] == true;
+    // `sifrelendi: true` olan ESKİ kayıtlar çözülür; yeni kayıtlar düz metin.
     return Ogrenci(
       id: id,
-      ad: sifrelendi ? s.coz(map['ad'] ?? '') : (map['ad'] ?? ''),
+      ad: SifrelemeService.alanCoz(map, 'ad'),
       puan: map['puan'] ?? 100,
       buradaMi: map['buradaMi'] ?? true,
       ayakkabiEksik: map['ayakkabiEksik'] ?? 0,
       kiyafetEksik: map['kiyafetEksik'] ?? 0,
       sariKart: map['sariKart'] ?? 0,
       saglikDurumu: map['saglikDurumu'] ?? 0,
-      not: sifrelendi ? s.coz(map['not'] ?? '') : (map['not'] ?? ''),
+      not: SifrelemeService.alanCoz(map, 'not'),
       isMale: map['isMale'] ?? true,
       element: map['element'],
       saglikNotlari: (map['saglikNotlari'] as List<dynamic>?)

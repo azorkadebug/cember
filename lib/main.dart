@@ -52,10 +52,15 @@ class AuthWrapper extends StatelessWidget {
               body: Center(child: CircularProgressIndicator()));
         }
         if (snapshot.hasData) {
-          SifrelemeService.initialize(snapshot.data!.uid);
-          AnalyticsService.setUserId(snapshot.data!.uid);
-          MacDurumu().yukle(); // localStorage'dan aktif maçı yükle
-          return _ProfilKontrol(uid: snapshot.data!.uid);
+          final uid = snapshot.data!.uid;
+          // Eski (sifrelendi:true) kayıtları çözebilmek için — yeni
+          // yazmalar düz metin.
+          SifrelemeService.initialize(uid);
+          AnalyticsService.setUserId(uid);
+          // Yarım kalan maç YALNIZCA bu kullanıcının kaydından yüklenir;
+          // isimler yerelden değil Firestore'dan tazelenir.
+          MacDurumu().yukle(uid);
+          return _ProfilKontrol(uid: uid);
         }
         return const _TanitimVeyaGiris();
       },
@@ -108,6 +113,7 @@ class _ProfilKontrol extends StatefulWidget {
 class _ProfilKontrolState extends State<_ProfilKontrol> {
   bool _kontrol = true;
   bool _profilTamam = false;
+  bool _hata = false;
 
   @override
   void initState() {
@@ -116,12 +122,15 @@ class _ProfilKontrolState extends State<_ProfilKontrol> {
   }
 
   Future<void> _kontrolEt() async {
+    if (!_kontrol) setState(() { _kontrol = true; _hata = false; });
     try {
       final var_ = await FirestoreService(uid: widget.uid).profilVarMi();
       if (mounted) setState(() { _profilTamam = var_; _kontrol = false; });
     } catch (_) {
-      // Firestore erişim hatası olursa profil ekranını atla
-      if (mounted) setState(() { _profilTamam = true; _kontrol = false; });
+      // Hata durumunda profili "tamam" sayıp devam etmek fail-open bir
+      // desendi: bağlantı yokken kullanıcı profilsiz ana ekrana düşüp boş
+      // durumla karşılaşıyordu. Artık açıkça tekrar deneme sunuluyor.
+      if (mounted) setState(() { _hata = true; _kontrol = false; });
     }
   }
 
@@ -129,6 +138,35 @@ class _ProfilKontrolState extends State<_ProfilKontrol> {
   Widget build(BuildContext context) {
     if (_kontrol) {
       return const Scaffold(body: Center(child: CircularProgressIndicator(color: AppTema.ana)));
+    }
+    if (_hata) {
+      return Scaffold(
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.wifi_off_rounded, size: 48, color: Colors.grey.shade400),
+                const SizedBox(height: 16),
+                const Text("Bağlantı kurulamadı",
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+                const SizedBox(height: 8),
+                Text("İnternet bağlantını kontrol edip tekrar dene.",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.grey.shade600)),
+                const SizedBox(height: 24),
+                FilledButton.icon(
+                  style: FilledButton.styleFrom(backgroundColor: AppTema.ana),
+                  onPressed: _kontrolEt,
+                  icon: const Icon(Icons.refresh_rounded),
+                  label: const Text("Tekrar dene"),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
     }
     if (!_profilTamam) {
       // Direkt ProfilEkrani; callback ile profil tamamlanınca state güncellenir.

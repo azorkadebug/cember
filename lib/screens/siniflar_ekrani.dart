@@ -1,5 +1,7 @@
 import '../tema.dart';
+import 'dart:async';
 import 'package:flutter/material.dart';
+import '../widgets/girdi.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/analytics_service.dart';
 import '../services/auth_service.dart';
@@ -23,6 +25,21 @@ class SiniflarEkrani extends StatefulWidget {
 class _SiniflarEkraniState extends State<SiniflarEkrani> {
   FirestoreService get _db => FirestoreService(uid: AuthService().uid);
   bool _migrationYapildi = false;
+
+  /// Sınıf kartlarındaki "N öğrenci" sayacının akışları, sınıf id'sine göre
+  /// önbelleklenir.
+  ///
+  /// Eskiden akış doğrudan `build()` içinde kuruluyordu: `stream:` her
+  /// yeniden çizimde yeni bir nesne olduğu için StreamBuilder aboneliği
+  /// iptal edip yeniden kuruyor, her yeniden abonelik koleksiyonun
+  /// tamamını Firestore'dan tekrar okuyordu. 10 sınıf × 30 öğrenci, her
+  /// setState'te 300 okuma demekti — Spark planında günlük kota gün
+  /// ortasında tükenebiliyordu.
+  final Map<String, Stream<QuerySnapshot>> _ogrenciSayaclari = {};
+
+  Stream<QuerySnapshot> _ogrenciSayisiAkisi(String sinifId) =>
+      _ogrenciSayaclari.putIfAbsent(
+          sinifId, () => _db.ogrencilerStream(sinifId));
 
   @override
   void initState() {
@@ -382,8 +399,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
                           Text(ad, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
                           const SizedBox(height: 4),
                           StreamBuilder<QuerySnapshot>(
-                            stream: FirestoreService(uid: AuthService().uid)
-                                .ogrencilerStream(docId),
+                            stream: _ogrenciSayisiAkisi(docId),
                             builder: (context, snap) {
                               final count = snap.hasData ? snap.data!.docs.length : 0;
                               return Text("$count öğrenci",
@@ -535,6 +551,8 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
           controller: c,
           autofocus: true,
           textCapitalization: TextCapitalization.characters,
+          maxLength: GirdiSiniri.sinifAdi,
+          buildCounter: gizliSayac,
           decoration: InputDecoration(
             hintText: 'Örn: 8/B',
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
@@ -602,6 +620,8 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
                 controller: c,
                 autofocus: true,
                 textCapitalization: TextCapitalization.characters,
+                maxLength: GirdiSiniri.sinifAdi,
+                buildCounter: gizliSayac,
                 decoration: InputDecoration(
                   hintText: 'Örn: 8/B',
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
@@ -687,7 +707,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
               Navigator.pop(context);
               try {
                 await _db.sinifEkle(ad, brans: secilenBrans);
-                AnalyticsService.sinifOlusturuldu();
+                unawaited(AnalyticsService.sinifOlusturuldu());
               } catch (e) {
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -818,7 +838,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
           ],
         ),
       ),
-    );
+    ).ignore();
   }
 
   Widget _macSinifSecici(String etiket, List<Map<String, dynamic>> siniflar, String secilenId, String secilenRenk,
@@ -904,12 +924,12 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
     ];
 
     MacDurumu().macBaslat(sinif1Id, takimlar);
-    AnalyticsService.macBasladi(takimSayisi: 2, oyuncuSayisi: gelenler1.length + gelenler2.length);
+    unawaited(AnalyticsService.macBasladi(takimSayisi: 2, oyuncuSayisi: gelenler1.length + gelenler2.length));
 
     if (mounted) {
       Navigator.push(context, MaterialPageRoute(
         builder: (_) => SkorEkrani(takimlar: takimlar),
-      ));
+      )).ignore();
     }
   }
 

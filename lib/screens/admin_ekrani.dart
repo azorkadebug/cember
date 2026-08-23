@@ -21,13 +21,23 @@ class _AdminEkraniState extends State<AdminEkrani> {
 
   String? _hata;
 
+  /// Panel yalnızca sayım/dağılım gösteriyor; sınırsız çekmek gereksiz.
+  /// Kullanıcı sayısı bunu aşarsa sayımlar bir Cloud Function'ın yazdığı
+  /// özet dokümanından okunmalı — o zaman `users` üzerinde list yetkisi
+  /// hiç gerekmez.
+  static const int _maxKullanici = 1000;
+
   Future<void> _yukle() async {
     try {
-      final snap = await FirebaseFirestore.instance.collection('users').get();
+      final snap = await FirebaseFirestore.instance
+          .collection('users')
+          .limit(_maxKullanici)
+          .get();
       _kullanicilar = snap.docs.map((d) => {'id': d.id, ...d.data()}).toList();
       _hata = null;
-    } catch (e) {
-      _hata = e.toString();
+    } catch (_) {
+      // Ham istisna gösterilmiyor — iç yapı sızdırıyor.
+      _hata = 'Kullanıcı listesi yüklenemedi.';
     }
     if (mounted) setState(() => _yukleniyor = false);
   }
@@ -59,7 +69,7 @@ class _AdminEkraniState extends State<AdminEkrani> {
           : _hata != null
           ? Center(child: Padding(
               padding: const EdgeInsets.all(32),
-              child: Text("Hata: $_hata", style: TextStyle(color: Colors.red.shade700), textAlign: TextAlign.center),
+              child: Text(_hata!, style: TextStyle(color: Colors.red.shade700), textAlign: TextAlign.center),
             ))
           : RefreshIndicator(
               onRefresh: () async {

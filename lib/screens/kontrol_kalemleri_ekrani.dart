@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/girdi.dart';
 import '../tema.dart';
 import '../models/kontrol_kalemi.dart';
 import '../services/firestore_service.dart';
@@ -72,6 +73,8 @@ class _KontrolKalemleriEkraniState extends State<KontrolKalemleriEkrani> {
                 controller: adCtrl,
                 autofocus: true,
                 textCapitalization: TextCapitalization.sentences,
+                maxLength: GirdiSiniri.kalemAdi,
+                buildCounter: gizliSayac,
                 decoration: InputDecoration(
                   hintText: 'Örn: Kitap, Boya, Sarı Kart...',
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),

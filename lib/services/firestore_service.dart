@@ -45,18 +45,34 @@ class FirestoreService {
     });
   }
 
-  Future<void> sinifSil(String sinifId) async {
-    final batch = _db.batch();
-    final ogrencilerSnap = await _db
-        .collection('siniflar')
-        .doc(sinifId)
-        .collection('ogrenciler')
-        .get();
-    for (var doc in ogrencilerSnap.docs) {
-      batch.delete(doc.reference);
+  /// Firestore batch sınırı 500 — güvenli tarafta 450'lik parçalar.
+  static const int _batchBoyutu = 450;
+
+  /// Bir alt koleksiyonun tamamını parçalar hâlinde siler.
+  ///
+  /// Firestore'da üst dokümanı silmek alt koleksiyonlarını SİLMEZ; tek tek
+  /// temizlenmezlerse yetim kalırlar. Üstelik yetkilendirme kuralı üst
+  /// dokümanın `ownerId`'sine baktığı için üst silindikten sonra bu
+  /// kayıtlar okunamaz ama silinemez hâle gelir.
+  Future<void> _altKoleksiyonuSil(CollectionReference<Map<String, dynamic>> col) async {
+    final snap = await col.get();
+    for (var i = 0; i < snap.docs.length; i += _batchBoyutu) {
+      final batch = _db.batch();
+      final son = (i + _batchBoyutu < snap.docs.length)
+          ? i + _batchBoyutu
+          : snap.docs.length;
+      for (var j = i; j < son; j++) {
+        batch.delete(snap.docs[j].reference);
+      }
+      await batch.commit();
     }
-    batch.delete(_db.collection('siniflar').doc(sinifId));
-    await batch.commit();
+  }
+
+  Future<void> sinifSil(String sinifId) async {
+    final sinifRef = _db.collection('siniflar').doc(sinifId);
+    await _altKoleksiyonuSil(sinifRef.collection('ogrenciler'));
+    await _altKoleksiyonuSil(sinifRef.collection('yoklamalar'));
+    await sinifRef.delete();
   }
 
   Future<Map<String, dynamic>?> sinifBilgisiGetir(String sinifId) async {
@@ -104,7 +120,10 @@ class FirestoreService {
       'tarih': tarihKey,
       'guncellendi': FieldValue.serverTimestamp(),
       'kayitlar': kayitlar,
-    });
+    },
+            // merge: aynı sınıfı iki cihazdan işaretlerken son yazanın
+            // diğerinin kayıtlarını silmesini engeller.
+            SetOptions(merge: true));
   }
 
   /// Bir öğrencinin geçmiş yoklama kayıtlarını (tarih sıralı) getirir.
@@ -148,16 +167,6 @@ class FirestoreService {
         .snapshots();
   }
 
-  Future<bool> ogrenciVarMi(String sinifId, String ad) async {
-    final snap = await _db
-        .collection('siniflar')
-        .doc(sinifId)
-        .collection('ogrenciler')
-        .where('ad', isEqualTo: ad)
-        .get();
-    return snap.docs.isNotEmpty;
-  }
-
   Future<void> ogrenciEkle(String sinifId, Ogrenci ogrenci) async {
     await _db
         .collection('siniflar')
@@ -166,24 +175,115 @@ class FirestoreService {
         .add(ogrenci.toMap());
   }
 
-  /// Birden fazla öğrenciyi tek batch'te ekler (max 500).
+  /// Birden fazla öğrenciyi ekler. Firestore'un 500'lük batch sınırı
+  /// aşılmasın diye parçalara bölünür — tek batch'te gönderilirse 500'ü
+  /// aşan girişte hiçbir kayıt yazılmaz.
   Future<void> ogrencilerTopluEkle(String sinifId, List<Ogrenci> ogrenciler) async {
-    final batch = _db.batch();
     final col = _db.collection('siniflar').doc(sinifId).collection('ogrenciler');
-    for (final o in ogrenciler) {
-      batch.set(col.doc(), o.toMap());
+    for (var i = 0; i < ogrenciler.length; i += _batchBoyutu) {
+      final batch = _db.batch();
+      final son = (i + _batchBoyutu < ogrenciler.length)
+          ? i + _batchBoyutu
+          : ogrenciler.length;
+      for (var j = i; j < son; j++) {
+        batch.set(col.doc(), ogrenciler[j].toMap());
+      }
+      await batch.commit();
     }
-    await batch.commit();
   }
 
-  /// Sınıftaki mevcut öğrenci adlarını döndürür.
+  /// Sınıftaki mevcut öğrenci adlarını döndürür (mükerrer kontrolü için).
+  ///
+  /// Eski kayıtlar şifreli yazılmıştı; ham `ad` alanını okumak şifreli
+  /// metni düz metinle karşılaştırmak demekti ve mükerrer kontrolü
+  /// sessizce hiç çalışmıyordu. `Ogrenci.fromMap` bayrağa göre çözüyor.
   Future<Set<String>> mevcutOgrenciAdlari(String sinifId) async {
-    final snap = await _db
-        .collection('siniflar')
-        .doc(sinifId)
-        .collection('ogrenciler')
-        .get();
-    return snap.docs.map((d) => (d.data()['ad'] as String? ?? '').trim()).toSet();
+    final ogrenciler = await ogrencileriGetir(sinifId);
+    return ogrenciler.map((o) => o.ad.trim()).where((a) => a.isNotEmpty).toSet();
+  }
+
+  DocumentReference<Map<String, dynamic>> _ogrenciRef(
+          String sinifId, String ogrenciId) =>
+      _db
+          .collection('siniflar')
+          .doc(sinifId)
+          .collection('ogrenciler')
+          .doc(ogrenciId);
+
+  /// Tek bir alanı günceller — tüm dokümanı geri yazmaz.
+  ///
+  /// Öğrencinin "burada mı" durumu gibi tek alanlık değişikliklerde tüm
+  /// dokümanı yazmak, aynı sınıfı ikinci bir cihazdan yöneten öğretmenin
+  /// o sırada girdiği puan/sayaç/not değişikliklerini siler.
+  Future<void> buradaMiGuncelle(
+      String sinifId, String ogrenciId, bool buradaMi) async {
+    await _ogrenciRef(sinifId, ogrenciId).update({'buradaMi': buradaMi});
+  }
+
+  /// Rozet ekler/çıkarır. `arrayUnion`/`arrayRemove` sunucu tarafında
+  /// çalıştığı için listenin tamamını geri yazmaya gerek kalmaz.
+  Future<void> rozetEkle(
+      String sinifId, String ogrenciId, Map<String, dynamic> rozet) async {
+    await _ogrenciRef(sinifId, ogrenciId)
+        .update({'rozetler': FieldValue.arrayUnion([rozet])});
+  }
+
+  Future<void> rozetSil(
+      String sinifId, String ogrenciId, Map<String, dynamic> rozet) async {
+    await _ogrenciRef(sinifId, ogrenciId)
+        .update({'rozetler': FieldValue.arrayRemove([rozet])});
+  }
+
+  /// Kontrol kalemi sayaçlarını FARK olarak uygular.
+  ///
+  /// Oku-değiştir-yaz yerine işlem (transaction) kullanılıyor: iki cihazdan
+  /// aynı anda sarı kart verildiğinde ikisi de sayılır, son yazan diğerini
+  /// silmez. 0-999 kırpması ve eski PE alanlarının (sariKart, kiyafetEksik,
+  /// ayakkabiEksik) yansıtılması sunucudan okunan güncel değer üzerinden
+  /// yapılır — v1.0/1.0.1 istemcileri hâlâ o alanları okuyor.
+  Future<void> kalemSayaclariniUygula(
+    String sinifId,
+    String ogrenciId,
+    Map<String, int> farklar, {
+    List<Map<String, dynamic>>? saglikNotlari,
+  }) async {
+    final temizFarklar = Map<String, int>.from(farklar)
+      ..removeWhere((_, v) => v == 0);
+    if (temizFarklar.isEmpty && saglikNotlari == null) return;
+
+    final ref = _ogrenciRef(sinifId, ogrenciId);
+    await _db.runTransaction((tx) async {
+      final snap = await tx.get(ref);
+      final data = snap.data() ?? <String, dynamic>{};
+
+      final mevcut = <String, int>{};
+      final raw = data['kalemSayaclari'];
+      if (raw is Map) {
+        raw.forEach((k, v) => mevcut[k.toString()] = (v as num?)?.toInt() ?? 0);
+      }
+
+      temizFarklar.forEach((id, delta) {
+        final yeni = ((mevcut[id] ?? 0) + delta).clamp(0, 999);
+        if (yeni == 0) {
+          mevcut.remove(id);
+        } else {
+          mevcut[id] = yeni;
+        }
+      });
+
+      tx.update(ref, {
+        'kalemSayaclari': mevcut,
+        // Geriye dönük uyumluluk alanları
+        'sariKart': mevcut['sari_kart'] ?? 0,
+        'kiyafetEksik': mevcut['kiyafet'] ?? 0,
+        'ayakkabiEksik': mevcut['ayakkabi'] ?? 0,
+        if (saglikNotlari != null)
+          'saglikNotlari': saglikNotlari.length > Ogrenci.saglikNotuMaxAdet
+              ? saglikNotlari
+                  .sublist(saglikNotlari.length - Ogrenci.saglikNotuMaxAdet)
+              : saglikNotlari,
+      });
+    });
   }
 
   Future<void> ogrenciGuncelle(String sinifId, Ogrenci ogrenci) async {
@@ -215,7 +315,11 @@ class FirestoreService {
         .toList();
   }
 
-  /// Şifrelenmemiş öğrenci verilerini tespit edip şifreler
+  /// Eski şifreli kayıtları (`sifrelendi: true`) düz metne göç ettirir.
+  ///
+  /// Yön v1.1.1'de tersine döndü: şifreleme koruma sağlamadığı hâlde
+  /// sunucu tarafı sorguları bozuyordu (bkz. sifreleme_service.dart).
+  /// Göç, kayıt okunurken çözülüp düz metin geri yazılarak yapılıyor.
   Future<int> sifrelemeyiMigrate(String sinifId) async {
     final snap = await _db
         .collection('siniflar')
@@ -226,8 +330,8 @@ class FirestoreService {
     final batch = _db.batch();
     for (var doc in snap.docs) {
       final data = doc.data();
-      if (data['sifrelendi'] != true) {
-        // Eski veriyi oku (şifresiz), model üzerinden şifreli yaz
+      if (data['sifrelendi'] == true) {
+        // Şifreli veriyi çöz, model üzerinden düz metin yaz
         final ogrenci = Ogrenci.fromMap(doc.id, data);
         batch.update(doc.reference, ogrenci.toMap());
         sayac++;
@@ -247,20 +351,10 @@ class FirestoreService {
         .get();
 
     for (final sinif in siniflar.docs) {
-      final ogrenciler = await sinif.reference.collection('ogrenciler').get();
-
-      // Firestore batch sınırı 500 — chunk'lara böl
-      for (var i = 0; i < ogrenciler.docs.length; i += 450) {
-        final batch = _db.batch();
-        final son = (i + 450 < ogrenciler.docs.length)
-            ? i + 450
-            : ogrenciler.docs.length;
-        for (var j = i; j < son; j++) {
-          batch.delete(ogrenciler.docs[j].reference);
-        }
-        await batch.commit();
-      }
-
+      await _altKoleksiyonuSil(sinif.reference.collection('ogrenciler'));
+      // Yoklama kayıtları da silinmeli — yoksa öğrencilerin devamsızlık ve
+      // ceza kayıtları hesap silindikten sonra veritabanında kalır.
+      await _altKoleksiyonuSil(sinif.reference.collection('yoklamalar'));
       await sinif.reference.delete();
     }
 

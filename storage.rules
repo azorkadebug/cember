@@ -1,0 +1,21 @@
+rules_version = '2';
+
+// Çember Firebase Storage kuralları.
+//
+// Uygulama Storage KULLANMIYOR (`firebase_storage` paketi bile yok), ama
+// projede bir bucket tanımlı. Firebase Console'un varsayılan şablonu
+// `allow read, write: if request.auth != null` şeklindedir — kayıt serbest
+// olduğu için bu, herhangi bir Çember kullanıcısının bucket'a dosya
+// yükleyip okuyabilmesi demektir (ücretsiz barındırma, kötü amaçlı içerik
+// dağıtımı, maliyet şişirme).
+//
+// Bu yüzden bucket tümüyle kapalı. Storage gerçekten kullanılacaksa
+// buraya kullanıcı bazlı yol kuralları yazılmalı.
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

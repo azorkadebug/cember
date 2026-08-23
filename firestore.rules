@@ -1,26 +1,150 @@
 rules_version = '2';
 
+// Çember — Firestore güvenlik kuralları
+//
+// TASARIM NOTU: Alan beyaz listesi (`hasOnly`) BİLEREK kullanılmıyor.
+// App Store'da v1.0/1.0.1 istemcileri canlı; listede olmayan bir alan
+// yazdıklarında yazma sessizce reddedilir ve öğretmen veri kaybeder.
+// Burada tip ve boyut sınırları uygulanıyor, alan kilidi eski istemciler
+// tükendiğinde emülatör testleriyle birlikte eklenmeli.
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-      // Admin tüm profilleri okuyabilir
-      allow read: if request.auth != null && request.auth.uid == 'A1Xyb80fR7NQ6KuwBt6NUa5p2743';
+
+    // ---------- Yardımcılar ----------
+
+    function girisYapti() {
+      return request.auth != null;
     }
 
+    // Admin: custom claim önce denenir (`setCustomUserClaims(uid, {admin:true})`),
+    // claim atanana kadar UID sabiti geriye dönük uyumluluk için duruyor.
+    function adminMi() {
+      return girisYapti() && (
+        request.auth.token.admin == true ||
+        request.auth.uid == 'A1Xyb80fR7NQ6KuwBt6NUa5p2743'
+      );
+    }
+
+    function sinifSahibiyim(sinifId) {
+      return girisYapti()
+        && exists(/databases/$(database)/documents/siniflar/$(sinifId))
+        && get(/databases/$(database)/documents/siniflar/$(sinifId)).data.ownerId
+           == request.auth.uid;
+    }
+
+    function metinSiniri(veri, alan, maks) {
+      return !(alan in veri)
+        || (veri[alan] is string && veri[alan].size() <= maks);
+    }
+
+    function listeSiniri(veri, alan, maks) {
+      return !(alan in veri)
+        || (veri[alan] is list && veri[alan].size() <= maks);
+    }
+
+    function haritaSiniri(veri, alan, maks) {
+      return !(alan in veri)
+        || (veri[alan] is map && veri[alan].size() <= maks);
+    }
+
+    // ---------- Öğretmen profilleri ----------
+
+    match /users/{userId} {
+      allow get: if girisYapti() && (request.auth.uid == userId || adminMi());
+
+      // Koleksiyonun tamamını listelemek yalnızca admin panelinde gerekiyor.
+      allow list: if adminMi();
+
+      allow create, update: if girisYapti()
+        && request.auth.uid == userId
+        && metinSiniri(request.resource.data, 'ad', 100)
+        && metinSiniri(request.resource.data, 'okul', 120)
+        && metinSiniri(request.resource.data, 'sehir', 60)
+        && metinSiniri(request.resource.data, 'brans', 60)
+        // E-posta token'daki adresle eşleşmeli — admin panelinde sahte
+        // adres gösterilmesini engeller. Apple gizli e-posta aktarımında
+        // token.email null olabildiği için boş değere izin veriliyor.
+        && (!('email' in request.resource.data)
+            || request.resource.data.email == ''
+            || request.resource.data.email == request.auth.token.email);
+
+      allow delete: if girisYapti() && request.auth.uid == userId;
+    }
+
+    // ---------- Sınıflar ----------
+
     match /siniflar/{sinifId} {
-      allow read, write: if request.auth != null && request.auth.uid == resource.data.ownerId;
-      allow create: if request.auth != null && request.resource.data.ownerId == request.auth.uid;
+
+      // Sorgu MUTLAKA where('ownerId','==',uid) içermeli — kural bir filtre
+      // değildir, filtresiz list sorgusu tümüyle reddedilir.
+      allow get, list: if girisYapti()
+        && resource.data.ownerId == request.auth.uid;
+
+      allow create: if girisYapti()
+        && request.resource.data.ownerId == request.auth.uid
+        && metinSiniri(request.resource.data, 'ad', 60)
+        && metinSiniri(request.resource.data, 'brans', 40)
+        && listeSiniri(request.resource.data, 'kontrolKalemleri', 30)
+        && listeSiniri(request.resource.data, 'formaRenkleri', 20);
+
+      // ownerId DEĞİŞMEZ. Eski kural `write` idi ve update yolunda yalnızca
+      // mevcut dokümanın ownerId'sine bakıyordu; yeni değer kontrol
+      // edilmediği için bir kullanıcı kendi sınıfını (öğrencileriyle
+      // birlikte) başka bir öğretmenin UID'sine devredebiliyordu.
+      allow update: if girisYapti()
+        && resource.data.ownerId == request.auth.uid
+        && request.resource.data.ownerId == resource.data.ownerId
+        && metinSiniri(request.resource.data, 'ad', 60)
+        && metinSiniri(request.resource.data, 'brans', 40)
+        && listeSiniri(request.resource.data, 'kontrolKalemleri', 30)
+        && listeSiniri(request.resource.data, 'formaRenkleri', 20);
+
+      allow delete: if girisYapti()
+        && resource.data.ownerId == request.auth.uid;
+
+      // ---------- Öğrenciler ----------
 
       match /ogrenciler/{ogrenciId} {
-        allow read, write: if request.auth != null
-          && get(/databases/$(database)/documents/siniflar/$(sinifId)).data.ownerId == request.auth.uid;
+        allow read: if sinifSahibiyim(sinifId);
+
+        allow create, update: if sinifSahibiyim(sinifId)
+          // Eski kayıtlar şifreli (base64) yazıldığı için ad alanına
+          // düz metinden geniş pay bırakılıyor.
+          && metinSiniri(request.resource.data, 'ad', 400)
+          && metinSiniri(request.resource.data, 'not', 4000)
+          && (!('puan' in request.resource.data)
+              || (request.resource.data.puan is int
+                  && request.resource.data.puan >= 0
+                  && request.resource.data.puan <= 9999))
+          && haritaSiniri(request.resource.data, 'kalemSayaclari', 30)
+          && listeSiniri(request.resource.data, 'saglikNotlari', 50)
+          && listeSiniri(request.resource.data, 'rozetler', 50);
+
+        allow delete: if sinifSahibiyim(sinifId);
       }
 
+      // ---------- Yoklamalar ----------
+
       match /yoklamalar/{tarihId} {
-        allow read, write: if request.auth != null
-          && get(/databases/$(database)/documents/siniflar/$(sinifId)).data.ownerId == request.auth.uid;
+        allow read: if sinifSahibiyim(sinifId);
+
+        allow create, update: if sinifSahibiyim(sinifId)
+          && metinSiniri(request.resource.data, 'tarih', 20)
+          && haritaSiniri(request.resource.data, 'kayitlar', 200);
+
+        allow delete: if sinifSahibiyim(sinifId);
       }
+
+      // Tanımlanmamış alt koleksiyonlar açıkça reddedilir.
+      match /{digerKoleksiyon}/{belge=**} {
+        allow read, write: if false;
+      }
+    }
+
+    // Kök seviyede tanımlanmamış her yol reddedilir.
+    match /{yol=**} {
+      allow read, write: if false;
     }
   }
 }

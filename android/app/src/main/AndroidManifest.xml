@@ -1,8 +1,17 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- allowBackup=false: uygulamanın yerel verisi (Firebase oturum
+         token'ları, önbelleğe alınmış öğrenci kayıtları) Google Drive
+         yedeğine ve `adb backup` çıktısına çıkmasın. Öğrenci verisi
+         işleyen bir uygulamada cihaz yedeğinden veri çıkarımı gerçek
+         bir senaryodur. -->
     <application
-        android:label="cember"
+        android:label="Çember"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:allowBackup="false"
+        android:fullBackupContent="false"
+        android:dataExtractionRules="@xml/data_extraction_rules">
         <activity
             android:name=".MainActivity"
             android:exported="true"

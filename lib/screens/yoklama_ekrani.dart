@@ -48,10 +48,9 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
   Future<void> _yukle() async {
     setState(() => _yukleniyor = true);
     try {
-      final snap = await _db.ogrencilerStream(widget.sinifId).first;
-      final ogrenciler = snap.docs
-          .map((d) => Ogrenci.fromMap(d.id, d.data() as Map<String, dynamic>))
-          .toList()
+      // Akış açıp ilk olayı beklemek yerine tek seferlik okuma — dinleyici
+      // kurup hemen iptal etmek gereksiz maliyet.
+      final ogrenciler = (await _db.ogrencileriGetir(widget.sinifId))
         ..sort((a, b) => a.gorunenAd.toLowerCase().compareTo(b.gorunenAd.toLowerCase()));
       final yoklama = await _db.yoklamaGetir(widget.sinifId, _tarihKey);
       final kayitlarRaw = (yoklama?['kayitlar'] as Map?) ?? {};

@@ -1,6 +1,7 @@
 import '../tema.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../widgets/girdi.dart';
 import 'package:flutter/services.dart';
 import '../models/ogrenci.dart';
 import '../services/mac_durumu.dart';
@@ -220,7 +221,8 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin {
           const SizedBox(width: 8),
           Expanded(
             child: Text.rich(TextSpan(children: [
-              TextSpan(text: oyuncu.ad, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+              // gorunenAd: demo modunda gerçek ad ekranda görünmemeli
+              TextSpan(text: oyuncu.gorunenAd, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
               TextSpan(text: " oyuna dönebilir!", style: TextStyle(color: Colors.white.withAlpha(180))),
             ])),
           ),
@@ -430,7 +432,7 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin {
                 ),
                 const SizedBox(width: 6),
                 Expanded(
-                  child: Text(c.oyuncu.ad,
+                  child: Text(c.oyuncu.gorunenAd,
                       style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 12),
                       overflow: TextOverflow.ellipsis),
                 ),
@@ -589,6 +591,8 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin {
           controller: c,
           autofocus: true,
           textCapitalization: TextCapitalization.words,
+          maxLength: GirdiSiniri.ogrenciAdi,
+          buildCounter: gizliSayac,
           decoration: InputDecoration(
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: AppTema.ana, width: 2)),

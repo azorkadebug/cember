@@ -1,5 +1,7 @@
 import '../tema.dart';
+import 'dart:async';
 import 'package:flutter/material.dart';
+import '../widgets/girdi.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/analytics_service.dart';
 import '../services/auth_service.dart';
@@ -22,7 +24,9 @@ class ProfilEkrani extends StatefulWidget {
 }
 
 class _ProfilEkraniState extends State<ProfilEkrani> {
-  final _db = FirestoreService(uid: AuthService().uid);
+  // late: alan başlatıcısı olarak çalışırsa, hesap silme/çıkış sırasında
+  // oturum kapanmışken bu widget yeniden kurulduğunda hata fırlatır.
+  late final _db = FirestoreService(uid: AuthService().uid);
   final _adCtrl = TextEditingController();
   final _okulCtrl = TextEditingController();
   final _sehirCtrl = TextEditingController();
@@ -94,7 +98,7 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
     });
 
     if (widget.ilkKayit) {
-      AnalyticsService.profilTamamlandi(sehir: _sehirCtrl.text.trim(), brans: _brans);
+      unawaited(AnalyticsService.profilTamamlandi(sehir: _sehirCtrl.text.trim(), brans: _brans));
     }
 
     if (mounted) {
@@ -169,7 +173,7 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
                   YardimBolumu(
                     ikon: Icons.privacy_tip_rounded,
                     baslik: 'Gizlilik politikası',
-                    aciklama: 'KVKK uyumlu. Verilerin Firebase\'de şifreli saklanır; sadece sen kendi sınıflarını görebilirsin. Detay: cemberapp-2a101.web.app/privacy.html',
+                    aciklama: 'KVKK uyumlu. Verilerin Google Firebase altyapısında, şifreli bağlantı üzerinden saklanır; güvenlik kuralları sayesinde sınıflarını yalnızca sen görebilirsin. Detay: cemberapp-2a101.web.app/privacy.html',
                     renk: Color(0xFF8E24AA),
                   ),
                 ],
@@ -384,6 +388,8 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
                   controller: ctrl,
                   autofocus: true,
                   textCapitalization: TextCapitalization.characters,
+                  maxLength: GirdiSiniri.onayKelimesi,
+                  buildCounter: gizliSayac,
                   onChanged: (_) => setLocalState(() {}),
                   decoration: InputDecoration(
                     hintText: 'SIL',
@@ -415,7 +421,105 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
     );
   }
 
+  /// Silme yetkisini HİÇBİR VERİ SİLMEDEN önce tazeler.
+  ///
+  /// Eski akış önce Firestore verisini siliyor, sonra `deleteAccount()`
+  /// çağırıyordu. Firebase, son girişin üzerinden ~5 dakika geçmişse
+  /// `requires-recent-login` fırlatır — ki kullanıcı uygulamayı açıp
+  /// profile gidip iki onay diyaloğunu geçtiğinde oturum neredeyse her
+  /// zaman eskidir. Sonuç: veri gidiyor, hesap kalıyordu.
+  Future<bool> _silmeYetkisiniTazele() async {
+    final auth = AuthService();
+    try {
+      await auth.yenidenDogrula();
+      return true;
+    } on FirebaseAuthException catch (e) {
+      if (e.code != 'reauth-password-required') {
+        if (mounted) _hataGoster(AuthService.hataMesaji(e));
+        return false;
+      }
+    } catch (e) {
+      if (AuthService.iptalMi(e)) return false;
+      if (mounted) _hataGoster(AuthService.hataMesaji(e));
+      return false;
+    }
+
+    // E-posta/şifre hesabı: şifreyi sor.
+    if (!mounted) return false;
+    final sifre = await _sifreSor();
+    if (sifre == null || !mounted) return false;
+    try {
+      await auth.yenidenDogrulaSifreIle(sifre);
+      return true;
+    } catch (e) {
+      if (mounted) _hataGoster(AuthService.hataMesaji(e));
+      return false;
+    }
+  }
+
+  Future<String?> _sifreSor() {
+    final ctrl = TextEditingController();
+    return showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text("Şifreni doğrula"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "Güvenlik için hesabını silmeden önce şifreni bir kez daha girmen gerekiyor.",
+              style: TextStyle(fontSize: 14, height: 1.4),
+            ),
+            const SizedBox(height: 14),
+            TextField(
+              controller: ctrl,
+              autofocus: true,
+              obscureText: true,
+              maxLength: 128,
+              buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
+              decoration: InputDecoration(
+                hintText: 'Şifren',
+                filled: true,
+                fillColor: Colors.grey.shade100,
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text("Vazgeç"),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red.shade700,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () => Navigator.pop(ctx, ctrl.text),
+            child: const Text("Doğrula"),
+          ),
+        ],
+      ),
+    ).then((v) {
+      ctrl.dispose();
+      return (v == null || v.isEmpty) ? null : v;
+    });
+  }
+
   Future<void> _hesapSilmeYurut() async {
+    // 1) Önce yetkiyi tazele — bu aşamada hiçbir veri silinmedi, kullanıcı
+    //    vazgeçer veya doğrulama başarısız olursa kayıpsız çıkılır.
+    final yetki = await _silmeYetkisiniTazele();
+    if (!yetki || !mounted) return;
+
     // Yükleme göstergesi
     showDialog(
       context: context,
@@ -440,13 +544,17 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
           ),
         ),
       ),
-    );
+    ).ignore();
 
     try {
-      // Önce Firestore verileri (sınıflar, öğrenciler, profil)
+      // 2) Firestore verileri (sınıflar, öğrenciler, yoklamalar, profil).
+      //    Oturum hâlâ açık olmalı — kurallar `request.auth` istiyor.
       await _db.tumVerileriSil();
-      // Sonra Auth hesabı (signOut tetikler → AuthWrapper login'e yönlendirir)
+      // 3) Auth hesabı. Oturum az önce tazelendiği için
+      //    `requires-recent-login` beklenmiyor.
       await AuthService().deleteAccount();
+      // Yerel maç kaydı, demo eşlemesi ve Firestore önbelleğini de temizle.
+      await AuthService().signOut();
 
       if (mounted) {
         // Loader'ı kapat + navigation stack'ini temizle (siniflar > profil > dialog).
@@ -461,13 +569,14 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
       if (mounted) Navigator.of(context, rootNavigator: true).pop();
       if (!mounted) return;
       if (e.code == 'requires-recent-login') {
+        // Yetki adımı geçildiği için buraya normalde düşülmez.
         _yenidenGirisHatasiGoster();
       } else {
-        _hataGoster('Hesap silinemedi: ${e.message ?? e.code}');
+        _hataGoster(AuthService.hataMesaji(e));
       }
     } catch (e) {
       if (mounted) Navigator.of(context, rootNavigator: true).pop();
-      if (mounted) _hataGoster('Hesap silinemedi: $e');
+      if (mounted) _hataGoster(AuthService.hataMesaji(e));
     }
   }
 
@@ -520,6 +629,8 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
         TextField(
           controller: ctrl,
           textCapitalization: TextCapitalization.words,
+          maxLength: GirdiSiniri.profilAlani,
+          buildCounter: gizliSayac,
           decoration: InputDecoration(
             prefixIcon: Icon(icon, color: AppTema.anaAcik, size: 20),
             filled: true,

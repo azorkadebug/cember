@@ -46,3 +46,30 @@ app.*.map.json
 
 # Firebase CLI hosting cache
 .firebase/
+
+# Kural testleri (test-rules/) bağımlılıkları
+node_modules/
+test-rules/package-lock.json
+
+# --- Sırlar ve imzalama materyali ---
+# Bunlar bugün repoda YOK; buradaki amaç `git add -A` ile yanlışlıkla
+# commit'lenmelerini önlemek. Sızan bir imzalama anahtarı geri alınamaz.
+*.jks
+*.keystore
+*.p8
+*.p12
+*.pem
+*.mobileprovision
+key.properties
+.env
+.env.*
+
+# Firebase istemci yapılandırmaları. Bunlar sır DEĞİL (istemcide zaten
+# açıktalar), ama takip dışı kalmaları temiz olur.
+**/google-services.json
+**/GoogleService-Info.plist
+
+# Mağaza notları — App Store/Play inceleme hesabı bilgisi içerebilir.
+# Kimlik bilgileri App Store Connect'in "App Review Information"
+# alanında durmalı, repoda değil.
+store/NEREDE_KALDIK.md

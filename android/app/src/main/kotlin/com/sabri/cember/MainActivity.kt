@@ -1,4 +1,4 @@
-package com.example.cember
+package com.sabri.cember
 
 import io.flutter.embedding.android.FlutterActivity
 

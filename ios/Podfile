@@ -1,5 +1,9 @@
-# Uncomment this line to define a global platform for your project
-# platform :ios, '13.0'
+# Minimum iOS sürümü.
+# Firebase iOS SDK 12.x (firebase_core 4.13+) iOS 15'i desteklemiyor;
+# platform belirtilmezse CocoaPods 15.6 varsayıp "requires a higher minimum
+# iOS deployment version" hatası veriyor. Bu değeri değiştirirken
+# ios/Runner.xcodeproj içindeki IPHONEOS_DEPLOYMENT_TARGET'ı da güncelle.
+platform :ios, '16.0'
 
 # CocoaPods analytics sends network stats synchronously affecting flutter build latency.
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'

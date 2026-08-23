@@ -1,6 +1,8 @@
 import '../tema.dart';
 import 'dart:math';
+import 'dart:async';
 import 'package:flutter/material.dart';
+import '../widgets/girdi.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/ogrenci.dart';
 import '../models/kontrol_kalemi.dart';
@@ -78,6 +80,20 @@ class OgrenciListesiEkrani extends StatefulWidget {
 
 class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
   late final FirestoreService _db;
+
+  /// Öğrenci akışları bir kez kurulur. `build()` içinde `_db.ogrencilerStream(...)`
+  /// çağırmak her yeniden çizimde yeni bir Stream nesnesi üretiyordu;
+  /// StreamBuilder de aboneliği iptal edip yeniden kuruyor ve koleksiyonun
+  /// tamamı Firestore'dan tekrar okunuyordu.
+  ///
+  /// Başlık istatistiği ile liste ayrı akışlar kullanıyor (bugünkü davranış
+  /// korunuyor); ikisini tek akışta birleştirmek okuma sayısını yarıya
+  /// indirir ama build ağacının yeniden düzenlenmesi gerekir.
+  late final Stream<QuerySnapshot> _ogrencilerAkisiBaslik =
+      _db.ogrencilerStream(widget.sinifId);
+  late final Stream<QuerySnapshot> _ogrencilerAkisiListe =
+      _db.ogrencilerStream(widget.sinifId);
+
   int secilenTakimSayisi = 2;
   List<String> formaRenkleri = ['Kırmızı', 'Mavi', 'Sarı', 'Yeşil', 'Siyah', 'Beyaz', 'Turuncu', 'Lacivert'];
   String? _sinifAd;
@@ -237,7 +253,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                       const SizedBox(height: 4),
                       // Kompakt istatistik satırı
                       StreamBuilder<QuerySnapshot>(
-                        stream: _db.ogrencilerStream(widget.sinifId),
+                        stream: _ogrencilerAkisiBaslik,
                         builder: (context, snapshot) {
                           final total = snapshot.hasData ? snapshot.data!.docs.length : 0;
                           final present = snapshot.hasData
@@ -409,7 +425,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
 
   Widget _bulutListeInsaEt() {
     return StreamBuilder<QuerySnapshot>(
-      stream: _db.ogrencilerStream(widget.sinifId),
+      stream: _ogrencilerAkisiListe,
       builder: (context, snapshot) {
         if (!snapshot.hasData) return const Center(child: CircularProgressIndicator(color: AppTema.ana));
         List<Ogrenci> liste = snapshot.data!.docs
@@ -431,9 +447,12 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
         }
         // Alfabetik sıralama
         liste.sort((a, b) => a.ad.toLowerCase().compareTo(b.ad.toLowerCase()));
-        // Arama filtresi
+        // Arama filtresi — ekranda görünen ada göre. Demo modunda gerçek ada
+        // göre aramak, kullanıcının gördüğü isimle sonuç bulamamasına yol açar.
         if (_aramaMetni.isNotEmpty) {
-          liste = liste.where((o) => o.ad.toLowerCase().contains(_aramaMetni)).toList();
+          liste = liste
+              .where((o) => o.gorunenAd.toLowerCase().contains(_aramaMetni))
+              .toList();
         }
         return _listeInsaEt(liste);
       },
@@ -453,7 +472,9 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
             direction: DismissDirection.startToEnd,
             confirmDismiss: (_) async {
               o.buradaMi = !o.buradaMi;
-              _save(o);
+              // Tek alan yazılıyor: tüm dokümanı geri yazmak, ikinci bir
+              // cihazdan o sırada girilen puan/sayaç değişikliklerini siler.
+              unawaited(_db.buradaMiGuncelle(widget.sinifId, o.id, o.buradaMi));
               return false; // Kartı silme, sadece toggle
             },
             background: Container(
@@ -597,6 +618,10 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
   }
 
   void _durumPopUp(Ogrenci o) {
+    // Diyalog açılırkenki sayaçlar. Kaydederken mutlak değer değil FARK
+    // gönderiliyor: iki cihazdan aynı anda sarı kart verildiğinde ikisi de
+    // sayılsın, son yazan diğerini silmesin.
+    final baslangicSayaclar = Map<String, int>.from(o.kalemSayaclari);
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
@@ -644,7 +669,25 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
-                onPressed: () { _save(o); Navigator.pop(context); },
+                onPressed: () {
+                  final farklar = <String, int>{};
+                  final tumIdler = {
+                    ...baslangicSayaclar.keys,
+                    ...o.kalemSayaclari.keys,
+                  };
+                  for (final id in tumIdler) {
+                    final fark =
+                        (o.kalemSayaclari[id] ?? 0) - (baslangicSayaclar[id] ?? 0);
+                    if (fark != 0) farklar[id] = fark;
+                  }
+                  unawaited(_db.kalemSayaclariniUygula(
+                    widget.sinifId,
+                    o.id,
+                    farklar,
+                    saglikNotlari: o.saglikNotlari,
+                  ));
+                  Navigator.pop(context);
+                },
                 child: const Text("Kaydet", style: TextStyle(fontWeight: FontWeight.w700)),
               ),
             ),
@@ -734,8 +777,13 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
           controller: notCtrl,
           autofocus: true,
           textCapitalization: TextCapitalization.sentences,
+          maxLength: GirdiSiniri.saglikNotu,
+          buildCounter: gizliSayac,
           decoration: InputDecoration(
-            hintText: "Örn: tırnak batması, epilepsi...",
+            hintText: "Örn: derse katılamaz, dikkat edilmeli...",
+            helperText: "Teşhis/hastalık adı yazma — yalnızca derste ne yapman gerektiğini not al.",
+            helperMaxLines: 2,
+            helperStyle: const TextStyle(fontSize: 11.5),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           ),
@@ -859,8 +907,9 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                   onTap: () {
                     final now = DateTime.now();
                     final tarih = "${now.day.toString().padLeft(2, '0')}.${now.month.toString().padLeft(2, '0')}.${now.year}";
-                    o.rozetler.add({'rozet': e.key, 'tarih': tarih});
-                    _save(o);
+                    final rozet = {'rozet': e.key, 'tarih': tarih};
+                    o.rozetler.add(rozet);
+                    unawaited(_db.rozetEkle(widget.sinifId, o.id, rozet));
                     parentSetState(() {});
                     Navigator.pop(ctx);
                   },
@@ -907,7 +956,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
             onPressed: () {
               o.rozetler.remove(rozet);
-              _save(o);
+              unawaited(_db.rozetSil(widget.sinifId, o.id, rozet));
               parentSetState(() {});
               Navigator.pop(ctx);
             },
@@ -931,6 +980,8 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
           content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
             TextField(
               controller: adC,
+              maxLength: GirdiSiniri.ogrenciAdi,
+              buildCounter: gizliSayac,
               decoration: InputDecoration(
                 labelText: "İsim",
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -947,6 +998,8 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
             const SizedBox(height: 16),
             TextField(
               controller: pC,
+              maxLength: GirdiSiniri.puanBasamak,
+              buildCounter: gizliSayac,
               decoration: InputDecoration(
                 labelText: "Yetenek Puanı",
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -957,6 +1010,8 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
             const SizedBox(height: 12),
             TextField(
               controller: nC,
+              maxLength: GirdiSiniri.ogrenciNotu,
+              buildCounter: gizliSayac,
               decoration: InputDecoration(
                 labelText: "Özel Not",
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -1159,6 +1214,8 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                               controller: satir.adCtrl,
                               onTap: scrollToRow,
                               textCapitalization: TextCapitalization.words,
+                              maxLength: GirdiSiniri.ogrenciAdi,
+                              buildCounter: gizliSayac,
                               decoration: InputDecoration(
                                 hintText: "Ad Soyad",
                                 hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
@@ -1210,6 +1267,8 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                               onTap: scrollToRow,
                               keyboardType: TextInputType.number,
                               textAlign: TextAlign.center,
+                              maxLength: GirdiSiniri.puanBasamak,
+                              buildCounter: gizliSayac,
                               decoration: InputDecoration(
                                 hintText: "100",
                                 hintStyle: TextStyle(color: Colors.grey.shade400, fontWeight: FontWeight.w600),
@@ -1239,9 +1298,17 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                         padding: const EdgeInsets.symmetric(vertical: 8),
                         child: Center(
                           child: TextButton.icon(
-                            onPressed: () => setSheetState(() => satirlar.add(TopluOgrenciSatiri())),
+                            // Üst sınır: tek seferde çok fazla satır hem UI'ı
+                            // dondurur hem Firestore batch sınırını zorlar.
+                            onPressed: satirlar.length >= GirdiSiniri.topluEklemeMaxSatir
+                                ? null
+                                : () => setSheetState(() => satirlar.add(TopluOgrenciSatiri())),
                             icon: const Icon(Icons.add_rounded, size: 20),
-                            label: const Text("Satır Ekle", style: TextStyle(fontWeight: FontWeight.w600)),
+                            label: Text(
+                                satirlar.length >= GirdiSiniri.topluEklemeMaxSatir
+                                    ? "Satır sınırına ulaşıldı (${GirdiSiniri.topluEklemeMaxSatir})"
+                                    : "Satır Ekle",
+                                style: const TextStyle(fontWeight: FontWeight.w600)),
                             style: TextButton.styleFrom(
                               foregroundColor: AppTema.ana,
                               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
@@ -1300,7 +1367,28 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
     });
   }
 
-  Future<void> _topluKaydet(List<TopluOgrenciSatiri> satirlar, BuildContext sheetContext) async {
+  /// Toplu ekleme. Bu metot `onPressed` içinden await edilmeden çağrılıyor;
+  /// gövdesi try/catch ile sarılmazsa bir hata (ağ kopması, kural reddi)
+  /// sessizce yutulur ve kullanıcı ne başarı ne hata mesajı görür.
+  Future<void> _topluKaydet(
+      List<TopluOgrenciSatiri> satirlar, BuildContext sheetContext) async {
+    try {
+      await _topluKaydetYurut(satirlar, sheetContext);
+    } catch (_) {
+      if (sheetContext.mounted) Navigator.pop(sheetContext);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: const Text("Öğrenciler eklenemedi. Bağlantını kontrol edip tekrar dene."),
+          backgroundColor: Colors.red.shade700,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        ));
+      }
+    }
+  }
+
+  Future<void> _topluKaydetYurut(
+      List<TopluOgrenciSatiri> satirlar, BuildContext sheetContext) async {
     int eklenen = 0;
     int atlanan = 0;
 
@@ -1418,6 +1506,8 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
               const SizedBox(height: 16),
               TextField(
                 controller: c,
+                maxLength: GirdiSiniri.renkAdi,
+                buildCounter: gizliSayac,
                 decoration: InputDecoration(hintText: "Yeni Renk Ekle (Örn: Mor)",
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
               ),
@@ -1562,7 +1652,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
       ));
     }
 
-    AnalyticsService.takimKuruldu(takimSayisi: secilenTakimSayisi, oyuncuSayisi: gelenler.length);
+    unawaited(AnalyticsService.takimKuruldu(takimSayisi: secilenTakimSayisi, oyuncuSayisi: gelenler.length));
 
     showModalBottomSheet(
       context: context,
@@ -1707,6 +1797,6 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
           ),
         ]),
       ),
-    );
+    ).ignore();
   }
 }

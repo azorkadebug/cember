@@ -110,7 +110,7 @@ Secondary: Productivity
 
 ```
 Username/Email: demo@cember.org
-Password:       Cember2026!
+Password:       <App Store Connect → App Review Information alanında>
 
 Notes for the App Review Team:
   - This is a demo account with pre-populated test data.
