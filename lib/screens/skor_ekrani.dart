@@ -105,7 +105,14 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin {
       _pulseCtrl.reset();
       setState(() => _timerCalisiyor = false);
     } else {
-      if (_kalanSaniye <= 0) return;
+      // Süre seçilmeden BAŞLAT'a basınca burada sessizce return ediliyordu:
+      // düğme etkin görünüyor, basılıyor, hiçbir şey olmuyordu. Artık
+      // varsayılan 1 dakikayla başlıyor.
+      if (_kalanSaniye <= 0) {
+        _toplamSaniye = 60;
+        _kalanSaniye = 60;
+        _timerBitti = false;
+      }
       _pulseCtrl.repeat(reverse: true);
       setState(() => _timerCalisiyor = true);
       _timer = Timer.periodic(const Duration(seconds: 1), (t) {
@@ -136,7 +143,7 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF16213E),
+        backgroundColor: AppTema.panelKoyu2,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(children: [
           Icon(Icons.front_hand_rounded, color: Colors.red.shade400, size: 22),
@@ -205,7 +212,7 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF16213E),
+        backgroundColor: AppTema.panelKoyu2,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(children: [
           Container(
@@ -260,9 +267,9 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin {
         Navigator.pop(context, 'geridon');
       },
       child: Scaffold(
-      backgroundColor: const Color(0xFF1A1A2E),
+      backgroundColor: AppTema.panelKoyu1,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1A1A2E),
+        backgroundColor: AppTema.panelKoyu1,
         foregroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
@@ -366,7 +373,10 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin {
                 const SizedBox(height: 6),
                 // Ceza butonu
                 Material(
-                  color: cezaSayisi > 0 ? Colors.red.withAlpha(180) : Colors.white.withAlpha(50),
+                  // Yarı saydam beyaz zemin, takım renginin üzerinde beyaz
+                  // metinle 2,7:1 kontrast veriyordu (aktif kırmızı hâlinden
+                  // bile kötü). İki durum da opak koyu zemine alındı.
+                  color: cezaSayisi > 0 ? const Color(0xFF8E1F1A) : Colors.black.withAlpha(115),
                   borderRadius: BorderRadius.circular(10),
                   child: InkWell(
                     borderRadius: BorderRadius.circular(10),
@@ -402,7 +412,11 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin {
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: onTap,
-        child: Padding(padding: const EdgeInsets.all(8), child: Icon(icon, color: Colors.white, size: 22)),
+        // 38x38'di; maç temposunda ayakta, tek elle basılıyor — 44'e çıktı.
+        child: SizedBox(
+          width: 44, height: 44,
+          child: Icon(icon, color: Colors.white, size: 22),
+        ),
       ),
     );
   }
@@ -416,7 +430,12 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin {
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: Colors.red.withAlpha(40)),
       ),
-      child: Column(
+      // Üçten fazla ceza aynı anda olursa şerit sınırsız büyüyüp altındaki
+      // takım listesini eziyordu; artık kendi içinde kayıyor.
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxHeight: 132),
+        child: SingleChildScrollView(
+          child: Column(
         children: _cezalar.map((c) {
           final t = widget.takimlar[c.takimIndex];
           final progress = c.kalanSaniye / 120;
@@ -447,7 +466,7 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin {
                       valueColor: AlwaysStoppedAnimation(
                         c.kalanSaniye <= 10 ? Colors.red : Colors.red.shade300,
                       ),
-                      minHeight: 3,
+                      minHeight: 7,
                     ),
                   ),
                 ),
@@ -463,17 +482,27 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin {
                 ),
                 const SizedBox(width: 4),
                 // İptal butonu
-                GestureDetector(
+                InkWell(
                   onTap: () {
                     c.timer.cancel();
                     setState(() => _cezalar.remove(c));
                   },
-                  child: Icon(Icons.close_rounded, color: Colors.white.withAlpha(100), size: 16),
+                  customBorder: const CircleBorder(),
+                  child: Semantics(
+                    label: '${c.oyuncu.gorunenAd} cezasını iptal et',
+                    button: true,
+                    child: SizedBox(
+                      width: 44, height: 44,
+                      child: Icon(Icons.close_rounded, color: Colors.white.withAlpha(160), size: 18),
+                    ),
+                  ),
                 ),
               ],
             ),
           );
         }).toList(),
+          ),
+        ),
       ),
     );
   }
@@ -490,7 +519,7 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin {
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF16213E),
+        color: AppTema.panelKoyu2,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: Colors.white.withAlpha(15)),
       ),
@@ -567,13 +596,23 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 3),
       child: Material(
-        color: secili ? AppTema.ana.withAlpha(40) : Colors.white.withAlpha(10),
+        // Seçili hâl koyu lacivert zeminde AppTema.ana (charcoal) metinle
+        // neredeyse okunmuyordu; artık açık zemin + koyu metin ile net.
+        color: secili ? Colors.white.withAlpha(235) : Colors.white.withAlpha(28),
         borderRadius: BorderRadius.circular(10),
         child: InkWell(
           borderRadius: BorderRadius.circular(10), onTap: () => _sureAyarla(saniye),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            child: Text(label, style: TextStyle(color: secili ? AppTema.ana : Colors.white60, fontWeight: FontWeight.w700, fontSize: 12)),
+          // Yükseklik ~27px'di; dokunma hedefi 44'e çıkarıldı.
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 44, minWidth: 52),
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                child: Text(label, style: TextStyle(
+                  color: secili ? AppTema.panelKoyu1 : Colors.white70,
+                  fontWeight: FontWeight.w700, fontSize: 13)),
+              ),
+            ),
           ),
         ),
       ),
@@ -676,7 +715,7 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin {
                 return Container(
                   margin: EdgeInsets.only(left: i == 0 ? 0 : 4, right: i == widget.takimlar.length - 1 ? 0 : 4),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF16213E), borderRadius: BorderRadius.circular(16),
+                    color: AppTema.panelKoyu2, borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: uzerindeHover ? t.renk : t.renk.withAlpha(60), width: uzerindeHover ? 2 : 1),
                   ),
                   child: Column(

@@ -33,6 +33,9 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
   String _brans = 'Beden Eğitimi';
   bool _yukleniyor = true;
   bool _kaydediliyor = false;
+  /// Kaydedilmemiş değişiklik var mı — geri tuşunda uyarmak için.
+  /// Eskiden PopScope yalnızca ilk kayıt akışını koruyordu.
+  bool _kirli = false;
 
   static const _branslar = [
     'Beden Eğitimi',
@@ -62,6 +65,10 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
       _okulCtrl.text = data['okul'] ?? '';
       _sehirCtrl.text = data['sehir'] ?? '';
       _brans = data['brans'] ?? 'Beden Eğitimi';
+    }
+    // Ön doldurma bittikten SONRA dinle, yoksa açılışta kirli görünür.
+    for (final c in [_adCtrl, _okulCtrl, _sehirCtrl]) {
+      c.addListener(_kirliIsaretle);
     }
     // İlk kayıt akışında Ad Soyad'ı sırayla şu kaynaklardan pre-fill et.
     // Apple Guideline 4: Sign in with Apple sonrası bu bilgi REQUIRED olamaz —
@@ -102,7 +109,7 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
     }
 
     if (mounted) {
-      setState(() => _kaydediliyor = false);
+      setState(() { _kaydediliyor = false; _kirli = false; });
       if (widget.ilkKayit) {
         // Callback varsa onu kullan (main.dart'tan çağrı, nested Navigator yok)
         // Yoksa eski davranış: pop ile sinyal ver (backward compat)
@@ -123,6 +130,31 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
     }
   }
 
+  void _kirliIsaretle() {
+    if (!_kirli && mounted) setState(() => _kirli = true);
+  }
+
+  /// Kaydedilmemiş değişiklikle çıkmadan önce sorar.
+  Future<bool> _cikisOnayi() async {
+    final cikilsin = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Kaydedilmemiş değişiklikler'),
+        content: const Text('Profilinde yaptığın değişiklikler kaydedilmedi. Çıkarsan kaybolacak.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Vazgeç')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Kaydetmeden çık',
+                style: TextStyle(color: AppTema.tehlike, fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+    return cikilsin ?? false;
+  }
+
   @override
   void dispose() {
     _adCtrl.dispose();
@@ -134,7 +166,15 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: !widget.ilkKayit,
+      // İlk kayıt akışında geri tuşu zaten kapalı; normal düzenlemede ise
+      // yalnızca kaydedilmemiş değişiklik varsa araya giriyoruz.
+      canPop: !widget.ilkKayit && !_kirli,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop || widget.ilkKayit) return;
+        if (await _cikisOnayi() && mounted) {
+          if (context.mounted) Navigator.pop(context);
+        }
+      },
       child: Scaffold(
         backgroundColor: Colors.grey.shade100,
         appBar: AppBar(
@@ -214,21 +254,36 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
                         const SizedBox(height: 16),
                         Text("Branş", style: TextStyle(color: Colors.grey.shade700, fontWeight: FontWeight.w600, fontSize: 13)),
                         const SizedBox(height: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(color: Colors.grey.shade200),
+                        // Çıplak DropdownButton, diğer alanların prefixIcon +
+                        // OutlineInputBorder desenine uymuyordu; odak durumu
+                        // da yoktu. Artık _buildField ile aynı görünüyor.
+                        DropdownButtonFormField<String>(
+                          initialValue: _brans,
+                          isExpanded: true,
+                          borderRadius: BorderRadius.circular(14),
+                          decoration: InputDecoration(
+                            prefixIcon: Icon(Icons.school_rounded, color: AppTema.ana, size: 20),
+                            filled: true,
+                            fillColor: Colors.white,
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide(color: Colors.grey.shade200),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide(color: Colors.grey.shade200),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: const BorderSide(color: AppTema.ana, width: 2),
+                            ),
                           ),
-                          child: DropdownButton<String>(
-                            value: _brans,
-                            isExpanded: true,
-                            underline: const SizedBox(),
-                            borderRadius: BorderRadius.circular(14),
-                            items: _branslar.map((b) => DropdownMenuItem(value: b, child: Text(b))).toList(),
-                            onChanged: (val) => setState(() => _brans = val!),
-                          ),
+                          items: _branslar.map((b) => DropdownMenuItem(value: b, child: Text(b))).toList(),
+                          onChanged: (val) => setState(() {
+                            _brans = val!;
+                            _kirli = true;
+                          }),
                         ),
                         const SizedBox(height: 32),
                         SizedBox(

@@ -94,7 +94,12 @@ class _TanitimEkraniState extends State<TanitimEkrani> {
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
                 child: TextButton(
                   onPressed: _bitir,
-                  child: Text('Atla', style: TextStyle(color: Colors.grey.shade500, fontWeight: FontWeight.w600)),
+                  style: TextButton.styleFrom(
+                    minimumSize: const Size(64, 44),
+                  ),
+                  // grey.shade500 beyaz üzerinde 2,8:1 veriyordu.
+                  child: const Text('Atla',
+                      style: TextStyle(color: AppTema.metinIkincil, fontWeight: FontWeight.w600)),
                 ),
               ),
             ),
@@ -105,11 +110,14 @@ class _TanitimEkraniState extends State<TanitimEkrani> {
                 onPageChanged: (i) => setState(() => _sayfa = i),
                 itemBuilder: (context, i) {
                   final s = _sayfalar[i];
+                  // İçerik bloğu, Expanded'ın verdiği tüm alanın ortasına
+                  // hizalanınca üstte yarım ekran ölü alan kalıyordu.
+                  // Oranlı Spacer'larla denge yukarı çekildi (2 üst / 3 alt).
                   return Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 36),
                     child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
+                        const Spacer(flex: 2),
                         Container(
                           padding: const EdgeInsets.all(36),
                           decoration: BoxDecoration(color: s.renk.withAlpha(20), shape: BoxShape.circle),
@@ -118,11 +126,12 @@ class _TanitimEkraniState extends State<TanitimEkrani> {
                         const SizedBox(height: 36),
                         Text(s.baslik,
                             textAlign: TextAlign.center,
-                            style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: Color(0xFF1A1A2E))),
+                            style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: AppTema.panelKoyu1)),
                         const SizedBox(height: 16),
                         Text(s.aciklama,
                             textAlign: TextAlign.center,
-                            style: TextStyle(fontSize: 15, height: 1.6, color: Colors.grey.shade600)),
+                            style: const TextStyle(fontSize: 15, height: 1.6, color: AppTema.metinIkincil)),
+                        const Spacer(flex: 3),
                       ],
                     ),
                   );

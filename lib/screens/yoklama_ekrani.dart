@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../tema.dart';
 import '../models/ogrenci.dart';
 import '../models/kontrol_kalemi.dart';
@@ -30,13 +31,20 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
   DateTime _tarih = DateTime.now();
   List<Ogrenci> _ogrenciler = [];
   final Map<String, _Kayit> _kayitlar = {};
+  /// Kontrol kalemi çipleri açık olan öğrenciler. Kartlar varsayılan olarak
+  /// tek satır — 30 kişilik sınıfta ekranda 6-7 öğrenci yerine 15+ görünsün.
+  final Set<String> _acik = {};
 
   // Sadece günlük kalemler ızgarada gösterilir (sayaç kalemleri öğrenci kartından).
   List<KontrolKalemi> get _gunlukKalemler =>
       widget.kalemler.where((k) => k.tip == KalemTipi.gunluk).toList();
 
+  /// Firestore doküman anahtarı — ISO kalmalı, sıralanabilir olsun diye.
   String get _tarihKey =>
       '${_tarih.year}-${_tarih.month.toString().padLeft(2, '0')}-${_tarih.day.toString().padLeft(2, '0')}';
+
+  /// Ekranda gösterilen hâli: "23 Ağustos 2026".
+  String get _tarihEtiketi => DateFormat('d MMMM yyyy', 'tr').format(_tarih);
 
   @override
   void initState() {
@@ -98,7 +106,7 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
       if (mounted) {
         setState(() => _kaydediyor = false);
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('$_tarihKey yoklaması kaydedildi'),
+          content: Text('$_tarihEtiketi yoklaması kaydedildi'),
           backgroundColor: Colors.green.shade700,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -117,7 +125,36 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
     }
   }
 
-  void _tumuGeldi() {
+  /// Listede işaretlenmiş bir "Yok" ya da eksik kalem var mı?
+  /// Varsa sıfırlamak veri siliyor demektir; yoksa zaten temiz, sormaya gerek yok.
+  bool get _isaretVar => _ogrenciler.any((o) {
+        final k = _kayitlar[o.id];
+        if (k == null) return false;
+        return !k.geldi || k.kalemler.values.any((v) => v == false);
+      });
+
+  Future<void> _tumuGeldi() async {
+    // Eskiden tek dokunuşla, onay sormadan o günün tüm yoklaması siliniyordu.
+    if (_isaretVar) {
+      final onay = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Text('Yoklama sıfırlansın mı?'),
+          content: const Text(
+              'Bu dersteki tüm "Yok" işaretleri ve eksik kalemler silinip herkes "Geldi" olarak işaretlenecek.'),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Vazgeç')),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Sıfırla',
+                  style: TextStyle(color: AppTema.tehlike, fontWeight: FontWeight.w700)),
+            ),
+          ],
+        ),
+      );
+      if (onay != true) return;
+    }
     setState(() {
       for (final o in _ogrenciler) {
         _kayitlar[o.id] = _Kayit(
@@ -152,19 +189,29 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
       appBar: AppBar(
         backgroundColor: AppTema.ana,
         foregroundColor: Colors.white,
-        title: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('Yoklama${widget.sinifAd != null ? ' • ${widget.sinifAd}' : ''}',
-              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17)),
-          GestureDetector(
-            onTap: _tarihSec,
-            child: Row(mainAxisSize: MainAxisSize.min, children: [
-              Text(buGun ? 'Bugün ($_tarihKey)' : _tarihKey,
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w400)),
-              const SizedBox(width: 4),
-              const Icon(Icons.expand_more_rounded, size: 16),
-            ]),
-          ),
-        ]),
+        title: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Yoklama${widget.sinifAd != null ? ' • ${widget.sinifAd}' : ''}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17)),
+            GestureDetector(
+              onTap: _tarihSec,
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                Flexible(
+                  child: Text(buGun ? 'Bugün — $_tarihEtiketi' : _tarihEtiketi,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w400)),
+                ),
+                const SizedBox(width: 4),
+                const Icon(Icons.expand_more_rounded, size: 16),
+              ]),
+            ),
+          ],
+        ),
         actions: [
           IconButton(icon: const Icon(Icons.calendar_today_rounded, size: 20), onPressed: _tarihSec),
         ],
@@ -188,14 +235,18 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
                         onPressed: _tumuGeldi,
                         icon: const Icon(Icons.refresh_rounded, size: 18),
                         label: const Text('Yeni Ders / Tümü Geldi'),
-                        style: TextButton.styleFrom(foregroundColor: AppTema.ana),
+                        // Yıkıcı bir toplu işlem — sıradan bir metin düğmesi
+                        // gibi görünmesin.
+                        style: TextButton.styleFrom(foregroundColor: AppTema.uyari),
                       ),
                     ]),
                   ),
                   const Divider(height: 1),
                   Expanded(
                     child: ListView.separated(
-                      padding: const EdgeInsets.fromLTRB(12, 12, 12, 100),
+                      // FAB yüksekliği (56) + kenar boşlukları + tampon.
+                      // 100 iken Kaydet düğmesi son kartın rozetini örtüyordu.
+                      padding: const EdgeInsets.fromLTRB(12, 12, 12, 140),
                       itemCount: _ogrenciler.length,
                       separatorBuilder: (_, _) => const SizedBox(height: 8),
                       itemBuilder: (_, i) => _ogrenciKarti(_ogrenciler[i]),
@@ -219,63 +270,120 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
   Widget _ogrenciKarti(Ogrenci o) {
     final kayit = _kayitlar[o.id] ??= _Kayit(kalemler: {for (final k in _gunlukKalemler) k.id: true});
     final geldi = kayit.geldi;
+    // Kalemler yalnızca gelen öğrenci için anlamlı.
+    final kalemlerVar = geldi && _gunlukKalemler.isNotEmpty;
+    final acik = _acik.contains(o.id);
+    final eksikSayisi = kalemlerVar
+        ? _gunlukKalemler.where((k) => (kayit.kalemler[k.id] ?? true) == false).length
+        : 0;
+
     return Container(
-      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
         border: Border(left: BorderSide(color: geldi ? Colors.green : Colors.red.shade300, width: 4)),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          Expanded(child: Text(o.gorunenAd, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15))),
-          GestureDetector(
-            onTap: () => setState(() => kayit.geldi = !kayit.geldi),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-              decoration: BoxDecoration(
-                color: geldi ? Colors.green.shade50 : Colors.red.shade50,
-                borderRadius: BorderRadius.circular(10),
+        InkWell(
+          onTap: kalemlerVar
+              ? () => setState(() => acik ? _acik.remove(o.id) : _acik.add(o.id))
+              : null,
+          borderRadius: BorderRadius.circular(14),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
+            child: Row(children: [
+              Expanded(
+                child: Text(o.gorunenAd,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
               ),
-              child: Row(mainAxisSize: MainAxisSize.min, children: [
-                Icon(geldi ? Icons.check_circle_rounded : Icons.cancel_rounded,
-                    size: 16, color: geldi ? Colors.green : Colors.red),
-                const SizedBox(width: 6),
-                Text(geldi ? 'Geldi' : 'Yok',
-                    style: TextStyle(fontWeight: FontWeight.w700, color: geldi ? Colors.green.shade800 : Colors.red.shade700)),
-              ]),
-            ),
-          ),
-        ]),
-        if (geldi && _gunlukKalemler.isNotEmpty) ...[
-          const SizedBox(height: 10),
-          Wrap(
-            spacing: 8, runSpacing: 8,
-            children: _gunlukKalemler.map((k) {
-              final getirdi = kayit.kalemler[k.id] ?? true;
-              return GestureDetector(
-                onTap: () => setState(() => kayit.kalemler[k.id] = !getirdi),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+              // Katlıyken de eksik bilgisi kaybolmasın.
+              if (!acik && eksikSayisi > 0) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: getirdi ? Colors.green.shade50 : Colors.red.shade50,
+                    color: AppTema.tehlikeZemin,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text('$eksikSayisi eksik',
+                      style: const TextStyle(
+                          fontSize: 12, fontWeight: FontWeight.w700, color: AppTema.tehlike)),
+                ),
+                const SizedBox(width: 8),
+              ],
+              GestureDetector(
+                onTap: () => setState(() => kayit.geldi = !kayit.geldi),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                  decoration: BoxDecoration(
+                    color: geldi ? Colors.green.shade50 : Colors.red.shade50,
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: getirdi ? Colors.green.shade200 : Colors.red.shade200),
+                    border: Border.all(color: geldi ? Colors.green.shade200 : Colors.red.shade200),
                   ),
                   child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    Icon(kalemIkonu(k.ikon), size: 15, color: getirdi ? Colors.green.shade700 : Colors.red.shade400),
+                    Icon(geldi ? Icons.check_circle_rounded : Icons.cancel_rounded,
+                        size: 16, color: geldi ? AppTema.basari : Colors.red),
                     const SizedBox(width: 6),
-                    Text(k.ad, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600,
-                        color: getirdi ? Colors.green.shade800 : Colors.red.shade700)),
-                    const SizedBox(width: 4),
-                    Icon(getirdi ? Icons.check_rounded : Icons.close_rounded,
-                        size: 14, color: getirdi ? Colors.green : Colors.red),
+                    Text(geldi ? 'Geldi' : 'Yok',
+                        style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: geldi ? AppTema.basari : Colors.red.shade700)),
                   ]),
                 ),
-              );
-            }).toList(),
+              ),
+              // Kalemi olmayan kartta ok gösterme — açılacak bir şey yok.
+              SizedBox(
+                width: 32,
+                child: kalemlerVar
+                    ? AnimatedRotation(
+                        turns: acik ? 0.5 : 0,
+                        duration: const Duration(milliseconds: 180),
+                        child: const Icon(Icons.expand_more_rounded,
+                            size: 22, color: AppTema.metinUcuncul),
+                      )
+                    : null,
+              ),
+            ]),
           ),
-        ],
+        ),
+        AnimatedCrossFade(
+          duration: const Duration(milliseconds: 180),
+          crossFadeState: acik && kalemlerVar
+              ? CrossFadeState.showSecond
+              : CrossFadeState.showFirst,
+          firstChild: const SizedBox(width: double.infinity),
+          secondChild: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+            child: Wrap(
+              spacing: 8, runSpacing: 8,
+              children: _gunlukKalemler.map((k) {
+                final getirdi = kayit.kalemler[k.id] ?? true;
+                return GestureDetector(
+                  onTap: () => setState(() => kayit.kalemler[k.id] = !getirdi),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: getirdi ? Colors.green.shade50 : Colors.red.shade50,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: getirdi ? Colors.green.shade200 : Colors.red.shade200),
+                    ),
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      Icon(kalemIkonu(k.ikon), size: 15,
+                          color: getirdi ? Colors.green.shade700 : Colors.red.shade400),
+                      const SizedBox(width: 6),
+                      Text(k.ad, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600,
+                          color: getirdi ? AppTema.basari : Colors.red.shade700)),
+                      const SizedBox(width: 4),
+                      Icon(getirdi ? Icons.check_rounded : Icons.close_rounded,
+                          size: 14, color: getirdi ? AppTema.basari : Colors.red),
+                    ]),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        ),
       ]),
     );
   }

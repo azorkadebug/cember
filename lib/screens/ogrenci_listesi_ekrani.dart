@@ -155,14 +155,21 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
       body: NestedScrollView(
         headerSliverBuilder: (context, innerBoxIsScrolled) => [
           SliverAppBar(
-            expandedHeight: 120,
+            // 120 iken flexibleSpace'teki büyük başlık, 56px'lik toolbar
+            // şeridiyle aynı yüksekliğe düşüp aksiyon ikonlarının üstüne
+            // çiziliyordu. Başlık artık Column'un başındaki SizedBox ile
+            // şeridin ALTINA itiliyor; expandedHeight de ona göre büyüdü.
+            expandedHeight: 160,
             floating: false,
             pinned: true,
             backgroundColor: AppTema.ana,
             foregroundColor: Colors.white,
             centerTitle: true,
             title: innerBoxIsScrolled
-                ? Text(_sinifAd ?? '', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18))
+                ? Text(_sinifAd ?? '',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18))
                 : null,
             actions: [
               IconButton(
@@ -172,18 +179,6 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                   builder: (_) => YoklamaEkrani(sinifId: widget.sinifId, sinifAd: _sinifAd, kalemler: _kontrolKalemleri),
                 )),
               ),
-              IconButton(
-                icon: const Icon(Icons.tune_rounded),
-                tooltip: 'Kontrol Kalemleri',
-                onPressed: () async {
-                  final yeni = await Navigator.push<List<KontrolKalemi>>(context, MaterialPageRoute(
-                    builder: (_) => KontrolKalemleriEkrani(sinifId: widget.sinifId, kalemler: _kontrolKalemleri),
-                  ));
-                  if (yeni != null && mounted) setState(() => _kontrolKalemleri = yeni);
-                },
-              ),
-              IconButton(icon: const Icon(Icons.group_add_rounded), onPressed: _hizliSinifEkleDialog, tooltip: 'Hızlı Öğrenci Ekle'),
-              IconButton(icon: const Icon(Icons.palette_outlined), onPressed: _renkYonetimi, tooltip: 'Takım Renkleri'),
               IconButton(
                 icon: const Icon(Icons.help_outline_rounded),
                 tooltip: 'Yardım',
@@ -236,6 +231,51 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                   ],
                 ),
               ),
+              // Beş ikon dar ekranda başlıkla yarışıyordu; üçü taşır menüye
+              // alındı. Yoklama ve Yardım en sık kullanılanlar, dışarıda kaldı.
+              PopupMenuButton<String>(
+                icon: const Icon(Icons.more_vert_rounded),
+                tooltip: 'Daha fazla',
+                onSelected: (secim) async {
+                  switch (secim) {
+                    case 'kalemler':
+                      final yeni = await Navigator.push<List<KontrolKalemi>>(context, MaterialPageRoute(
+                        builder: (_) => KontrolKalemleriEkrani(sinifId: widget.sinifId, kalemler: _kontrolKalemleri),
+                      ));
+                      if (yeni != null && mounted) setState(() => _kontrolKalemleri = yeni);
+                    case 'hizliEkle':
+                      _hizliSinifEkleDialog();
+                    case 'renkler':
+                      _renkYonetimi();
+                  }
+                },
+                itemBuilder: (_) => const [
+                  PopupMenuItem(
+                    value: 'kalemler',
+                    child: ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: Icon(Icons.tune_rounded),
+                      title: Text('Kontrol Kalemleri'),
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'hizliEkle',
+                    child: ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: Icon(Icons.group_add_rounded),
+                      title: Text('Hızlı Öğrenci Ekle'),
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'renkler',
+                    child: ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: Icon(Icons.palette_outlined),
+                      title: Text('Takım Renkleri'),
+                    ),
+                  ),
+                ],
+              ),
             ],
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
@@ -249,7 +289,19 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      Text(_sinifAd ?? '', style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w900, letterSpacing: 1)),
+                      // Aksiyon ikonlarının şeridini boş bırakır — başlık
+                      // artık onların altından başlıyor.
+                      const SizedBox(height: kToolbarHeight),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Text(
+                          _sinifAd ?? '',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w900, letterSpacing: 1),
+                        ),
+                      ),
                       const SizedBox(height: 4),
                       // Kompakt istatistik satırı
                       StreamBuilder<QuerySnapshot>(
@@ -394,7 +446,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
         margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(colors: [Color(0xFF1A1A2E), Color(0xFF16213E)]),
+          gradient: const LinearGradient(colors: AppTema.panelGradient),
           borderRadius: BorderRadius.circular(12),
           boxShadow: [BoxShadow(color: Colors.black.withAlpha(20), blurRadius: 8, offset: const Offset(0, 2))],
         ),
@@ -460,6 +512,19 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
   }
 
   Widget _listeInsaEt(List<Ogrenci> liste) {
+    // 1440 px'te satırlar 1900 px uzunluğa yayılıyordu: solda isim, sağ uçta
+    // tek bir onay ikonu, arada kocaman boşluk. Center DEĞİL Align — bkz.
+    // profil_ekrani.dart'taki iPad kaydırma notu.
+    return Align(
+      alignment: Alignment.topCenter,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: AppTema.icerikMaxGenislik),
+        child: _liste(liste),
+      ),
+    );
+  }
+
+  Widget _liste(List<Ogrenci> liste) {
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
       itemCount: liste.length,
@@ -486,11 +551,13 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
               ),
               child: Row(
                 children: [
+                  // green.shade700, green.shade100 zemin üzerinde 3,1:1
+                  // veriyordu; AppTema.basari (green900) 5,9:1.
                   Icon(o.buradaMi ? Icons.cancel_rounded : Icons.check_circle_rounded,
-                      color: o.buradaMi ? Colors.red.shade700 : Colors.green.shade700),
+                      color: o.buradaMi ? Colors.red.shade900 : AppTema.basari),
                   const SizedBox(width: 8),
                   Text(o.buradaMi ? "Yok Say" : "Geldi",
-                      style: TextStyle(fontWeight: FontWeight.w700, color: o.buradaMi ? Colors.red.shade700 : Colors.green.shade700)),
+                      style: TextStyle(fontWeight: FontWeight.w700, color: o.buradaMi ? Colors.red.shade900 : AppTema.basari)),
                 ],
               ),
             ),
@@ -504,12 +571,17 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                 onTap: () => _ogrenciDuzenle(o),
                 child: Row(
                   children: [
-                    Container(
-                      width: 3.5,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: o.isMale ? Colors.blue.shade400 : Colors.pink.shade400,
-                        borderRadius: BorderRadius.circular(2),
+                    // Cinsiyet yalnızca renkle gösteriliyordu; ekran
+                    // okuyucu için etiket eklendi.
+                    Semantics(
+                      label: o.isMale ? 'Erkek öğrenci' : 'Kız öğrenci',
+                      child: Container(
+                        width: 3.5,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: o.isMale ? Colors.blue.shade400 : Colors.pink.shade400,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
                       ),
                     ),
                     Expanded(child: Padding(
@@ -984,6 +1056,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
               buildCounter: gizliSayac,
               decoration: InputDecoration(
                 labelText: "İsim",
+                floatingLabelBehavior: FloatingLabelBehavior.always,
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: AppTema.ana, width: 2)),
               ),
@@ -1002,6 +1075,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
               buildCounter: gizliSayac,
               decoration: InputDecoration(
                 labelText: "Yetenek Puanı",
+                floatingLabelBehavior: FloatingLabelBehavior.always,
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: AppTema.ana, width: 2)),
               ),
@@ -1014,6 +1088,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
               buildCounter: gizliSayac,
               decoration: InputDecoration(
                 labelText: "Özel Not",
+                floatingLabelBehavior: FloatingLabelBehavior.always,
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: AppTema.ana, width: 2)),
               ),
@@ -1058,12 +1133,13 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                 ...ElementSistemi.semboller.entries.map((e) {
                   final secili = o.element == e.key;
                   return Padding(
-                    padding: const EdgeInsets.only(right: 6),
+                    padding: const EdgeInsets.only(right: 4),
                     child: GestureDetector(
                       onTap: () => setDialogState(() => o.element = secili ? null : e.key),
+                      // 40x40'tı, Material'ın önerdiği 44'ün altındaydı.
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 200),
-                        width: 40, height: 40,
+                        width: 44, height: 44,
                         decoration: BoxDecoration(
                           color: secili ? AppTema.ana.withAlpha(25) : Colors.grey.shade100,
                           borderRadius: BorderRadius.circular(10),
@@ -1117,7 +1193,11 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: selected ? color : Colors.grey.shade300, width: selected ? 2 : 1),
         ),
-        child: Text(label, style: TextStyle(color: selected ? color : Colors.grey, fontWeight: selected ? FontWeight.w700 : FontWeight.normal)),
+        // Seçili olmayan taraf gri metin + gri zemin + gri kenarlıkla
+        // okunmuyordu.
+        child: Text(label, style: TextStyle(
+            color: selected ? color : AppTema.metinIkincil,
+            fontWeight: selected ? FontWeight.w700 : FontWeight.w500)),
       ),
     );
   }
@@ -1708,9 +1788,14 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                     ),
                     child: Column(
                       children: [
-                        // Takım başlığı
+                        // Takım başlığı. Eskiden Container genişlik almadığı
+                        // için içeriğe göre büzülüyordu: bant karta yaslanmıyor,
+                        // yatay iç boşluk kalmıyor, iki takımın bandı farklı
+                        // genişlikte duruyordu. Uzun takım adlarında
+                        // ("X-Men Yok Biz Varız") satır da kırılıyordu.
                         Container(
-                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
                           decoration: BoxDecoration(
                             gradient: LinearGradient(colors: [t.renk.withAlpha(180), t.renk]),
                             borderRadius: const BorderRadius.only(topLeft: Radius.circular(14), topRight: Radius.circular(14)),
@@ -1719,9 +1804,12 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                             Icon(Icons.shield_rounded, color: Colors.white, size: 22),
                             const SizedBox(height: 2),
                             Text(t.isim, textAlign: TextAlign.center,
+                                maxLines: 1, overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13)),
                             Text("${t.renkAdi}  •  ${t.oyuncular.length} kişi  •  (${t.oyuncular.fold<int>(0, (toplam, o) => toplam + (efektifPuan[o.id] ?? o.puan))} puan)",
-                                style: TextStyle(color: Colors.white.withAlpha(200), fontSize: 10)),
+                                textAlign: TextAlign.center,
+                                maxLines: 1, overflow: TextOverflow.ellipsis,
+                                style: TextStyle(color: Colors.white.withAlpha(230), fontSize: 10)),
                           ]),
                         ),
                         // Oyuncu listesi
@@ -1774,7 +1862,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
               height: 54,
               child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1A1A2E),
+                  backgroundColor: AppTema.panelKoyu1,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   elevation: 4,

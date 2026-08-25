@@ -26,6 +26,9 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
   bool _loading = false;
   bool _obscurePass = true;
   bool _kayitModu = false;
+  // Boş alan uyarısı doğrudan alanın altında gösterilir (SnackBar kaybolup gidiyordu).
+  String? _emailHata;
+  String? _sifreHata;
   late AnimationController _fadeCtrl;
   late AnimationController _slideCtrl;
   late Animation<Offset> _slideAnim;
@@ -90,11 +93,22 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
       !kIsWeb && (Platform.isIOS || Platform.isMacOS);
 
   Future<void> _emailGirisKayit() async {
-    if (_emailCtrl.text.isEmpty || _passCtrl.text.isEmpty) {
-      _hataGoster("Lütfen e-posta ve şifre girin.");
+    // Eskiden sadece geçici bir SnackBar çıkıyordu; hangi alanın eksik
+    // olduğu alanın üzerinde görünmüyordu.
+    final emailBos = _emailCtrl.text.trim().isEmpty;
+    final sifreBos = _passCtrl.text.isEmpty;
+    if (emailBos || sifreBos) {
+      setState(() {
+        _emailHata = emailBos ? "E-posta adresini yaz" : null;
+        _sifreHata = sifreBos ? "Şifreni yaz" : null;
+      });
       return;
     }
-    setState(() => _loading = true);
+    setState(() {
+      _emailHata = null;
+      _sifreHata = null;
+      _loading = true;
+    });
     try {
       if (_kayitModu) {
         await _authService.signUpWithEmail(_emailCtrl.text, _passCtrl.text);
@@ -176,32 +190,52 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
               child: SafeArea(
                 child: FadeTransition(
                   opacity: _fadeCtrl,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        width: 110,
-                        height: 110,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(28),
-                          boxShadow: [
-                            BoxShadow(color: Colors.black.withAlpha(60), blurRadius: 24, offset: const Offset(0, 10)),
-                          ],
+                  // Klavye açıkken üst bölüm de orantılı olarak sıkışıyor ama
+                  // içindeki 110px logo + iki metin sabit yükseklikteydi —
+                  // kısa cihazlarda taşma riski vardı. Klavye açıldığında
+                  // logo küçülüyor, alt başlık gizleniyor; forma da yer açılıyor.
+                  child: LayoutBuilder(builder: (context, c) {
+                    final klavyeAcik = MediaQuery.viewInsetsOf(context).bottom > 0;
+                    final logoBoyut = klavyeAcik ? 64.0 : 110.0;
+                    return Column(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: logoBoyut,
+                          height: logoBoyut,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(klavyeAcik ? 18 : 28),
+                            boxShadow: [
+                              BoxShadow(color: Colors.black.withAlpha(60), blurRadius: 24, offset: const Offset(0, 10)),
+                            ],
+                          ),
+                          child: Padding(
+                            padding: EdgeInsets.all(klavyeAcik ? 10 : 18),
+                            child: const _CemberLogo(),
+                          ),
                         ),
-                        child: const Padding(
-                          padding: EdgeInsets.all(18),
-                          child: _CemberLogo(),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      const Text("ÇEMBER",
-                          style: TextStyle(fontSize: 30, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: 6)),
-                      const SizedBox(height: 6),
-                      Text("Sınıf Yönetimi Asistanı",
-                          style: TextStyle(color: Colors.white.withAlpha(180), fontSize: 13, letterSpacing: 1.5)),
-                    ],
-                  ),
+                        SizedBox(height: klavyeAcik ? 10 : 20),
+                        Text("ÇEMBER",
+                            style: TextStyle(
+                                fontSize: klavyeAcik ? 22 : 30,
+                                fontWeight: FontWeight.w900,
+                                color: Colors.white,
+                                letterSpacing: 6)),
+                        if (!klavyeAcik) ...[
+                          const SizedBox(height: 6),
+                          Text("Sınıf Yönetimi Asistanı",
+                              style: TextStyle(
+                                  // withAlpha(180) gradyanın açık ucunda 3,6:1
+                                  // veriyordu; 220 ile AA eşiğini geçiyor.
+                                  color: Colors.white.withAlpha(220),
+                                  fontSize: 13,
+                                  letterSpacing: 1.5)),
+                        ],
+                      ],
+                    );
+                  }),
                 ),
               ),
             ),
@@ -243,7 +277,7 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
                         autofillHints: const [AutofillHints.email],
                         maxLength: 254,
                         buildCounter: _sayacGizle,
-                        decoration: _inputDeco("E-Posta", Icons.email_outlined),
+                        decoration: _inputDeco("E-Posta", Icons.email_outlined).copyWith(errorText: _emailHata),
                       ),
                       const SizedBox(height: 14),
                       // Password
@@ -256,6 +290,7 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
                             ? const [AutofillHints.newPassword]
                             : const [AutofillHints.password],
                         decoration: _inputDeco("Şifre", Icons.lock_outline_rounded).copyWith(
+                          errorText: _sifreHata,
                           helperText: _kayitModu
                               ? "En az 10 karakter, harf ve rakam içermeli"
                               : null,
@@ -276,8 +311,10 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
                             style: TextButton.styleFrom(
                               foregroundColor: AppTema.ana,
                               padding: const EdgeInsets.symmetric(vertical: 4),
-                              minimumSize: const Size(0, 32),
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              // 32px dokunma hedefi, şifre kurtarma gibi
+                              // kritik bir işlev için fazla küçüktü.
+                              minimumSize: const Size(0, 44),
+                              tapTargetSize: MaterialTapTargetSize.padded,
                             ),
                             child: const Text("Şifremi unuttum",
                                 style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
@@ -309,7 +346,7 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
                         Expanded(child: Divider(color: Colors.grey.shade300)),
                         Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: Text("veya devam et", style: TextStyle(color: Colors.grey.shade400, fontSize: 12))),
+                            child: Text("veya devam et", style: TextStyle(color: AppTema.metinUcuncul, fontSize: 12))),
                         Expanded(child: Divider(color: Colors.grey.shade300)),
                       ]),
                       const SizedBox(height: 24),
@@ -336,7 +373,8 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
                       const SizedBox(height: 24),
                       // Elle yazılan sürüm numarası güncellenmeyi unutuyordu
                       // (pubspec 1.1.0 iken ekranda hâlâ v1.0.0 yazıyordu).
-                      Text(_surum, style: TextStyle(color: Colors.grey.shade300, fontSize: 11)),
+                      // grey.shade300 beyaz üzerinde 1,3:1 — pratikte görünmüyordu.
+                      Text(_surum, style: TextStyle(color: AppTema.metinUcuncul, fontSize: 11)),
                     ],
                   ),
                     ),

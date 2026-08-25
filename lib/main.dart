@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:intl/intl.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'firebase_options.dart';
@@ -14,6 +17,10 @@ import 'tema.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // DateFormat('… MMMM …', 'tr') ay adlarını buradan alır; çağrılmazsa
+  // intl yalnızca en_US tanır ve LocaleDataException atar.
+  Intl.defaultLocale = 'tr';
+  await initializeDateFormatting('tr');
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const CemberApp());
 }
@@ -25,15 +32,25 @@ class CemberApp extends StatelessWidget {
     return MaterialApp(
       title: 'Çember',
       debugShowCheckedModeBanner: false,
+      // Bunlar olmadan Material'ın yerleşik metinleri İngilizce kalıyordu:
+      // geri tuşu ipucu "Back", tarih seçici, kopyala/yapıştır menüsü.
+      locale: const Locale('tr'),
+      supportedLocales: const [Locale('tr')],
+      localizationsDelegates: GlobalMaterialLocalizations.delegates,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
             seedColor: AppTema.ana, primary: AppTema.ana),
         useMaterial3: true,
+        textTheme: AppTema.textTheme,
         cardTheme: const CardThemeData(
             elevation: 2,
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.all(Radius.circular(12)))),
       ),
+      // Uygulama bilinçli olarak tek temada: skor tablosu kendi koyu
+      // paletini kuruyor, geri kalanı açık. Sistem karanlık moddayken
+      // yarısı dönüp yarısı kalmasın diye açıkça sabitlendi.
+      themeMode: ThemeMode.light,
       navigatorObservers: [AnalyticsService.observer],
       home: const AuthWrapper(),
     );

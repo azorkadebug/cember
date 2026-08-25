@@ -20,6 +20,9 @@ class _KontrolKalemleriEkraniState extends State<KontrolKalemleriEkrani> {
   late final FirestoreService _db;
   late List<KontrolKalemi> _kalemler;
   bool _kaydediyor = false;
+  /// Ekleme/silme/düzenleme/sıralama sonrası true. Geri tuşunda kaydedilmemiş
+  /// değişiklik uyarısı vermek için — eskiden geri ok her şeyi sessizce atıyordu.
+  bool _kirli = false;
 
   static const _ikonSecenekleri = [
     'check', 'shirt', 'shoe', 'card', 'brush', 'palette',
@@ -132,6 +135,7 @@ class _KontrolKalemleriEkraniState extends State<KontrolKalemleriEkrani> {
                 final ad = adCtrl.text.trim();
                 if (ad.isEmpty) return;
                 setState(() {
+                  _kirli = true;
                   if (mevcut == null) {
                     _kalemler.add(KontrolKalemi(
                       id: 'k_${DateTime.now().microsecondsSinceEpoch}',
@@ -168,8 +172,44 @@ class _KontrolKalemleriEkraniState extends State<KontrolKalemleriEkrani> {
     );
   }
 
+  /// Geri çıkmadan önce kaydedilmemiş değişiklik varsa sorar.
+  Future<bool> _cikisOnayi() async {
+    final cikilsin = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Kaydedilmemiş değişiklikler'),
+        content: const Text('Kalemlerde yaptığın değişiklikler kaydedilmedi. Çıkarsan kaybolacak.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Vazgeç'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Kaydetmeden çık', style: TextStyle(color: AppTema.tehlike, fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+    return cikilsin ?? false;
+  }
+
   @override
   Widget build(BuildContext context) {
+    return PopScope(
+      canPop: !_kirli,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        if (await _cikisOnayi() && mounted) {
+          if (context.mounted) Navigator.pop(context);
+        }
+      },
+      child: _govde(),
+    );
+  }
+
+  Widget _govde() {
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
       appBar: AppBar(
@@ -202,7 +242,13 @@ class _KontrolKalemleriEkraniState extends State<KontrolKalemleriEkrani> {
           : ReorderableListView.builder(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
               itemCount: _kalemler.length,
+              // Flutter masaüstü/web'de kendi sürükleme tutamağını satırın
+              // sağına otomatik bindiriyordu; aşağıdaki elle eklenen ikonla
+              // üst üste iki tutamak görünüyor, üstelik elle eklenen olan
+              // hiçbir listener'a sarılı olmadığı için çalışmıyordu.
+              buildDefaultDragHandles: false,
               onReorder: (eski, yeni) => setState(() {
+                _kirli = true;
                 if (yeni > eski) yeni--;
                 final k = _kalemler.removeAt(eski);
                 _kalemler.insert(yeni, k);
@@ -223,13 +269,24 @@ class _KontrolKalemleriEkraniState extends State<KontrolKalemleriEkrani> {
                     ),
                     title: Text(k.ad, style: const TextStyle(fontWeight: FontWeight.w700)),
                     subtitle: Text(k.tip == KalemTipi.sayac ? 'Sayaç' : 'Günlük ✓/✗',
-                        style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
+                        style: const TextStyle(color: AppTema.metinIkincil, fontSize: 12)),
                     trailing: Row(mainAxisSize: MainAxisSize.min, children: [
                       IconButton(
-                        icon: Icon(Icons.delete_outline_rounded, color: Colors.red.shade300),
-                        onPressed: () => setState(() => _kalemler.removeAt(i)),
+                        icon: Icon(Icons.delete_outline_rounded, color: Colors.red.shade400),
+                        tooltip: 'Kalemi sil',
+                        onPressed: () => setState(() {
+                          _kirli = true;
+                          _kalemler.removeAt(i);
+                        }),
                       ),
-                      Icon(Icons.drag_handle_rounded, color: Colors.grey.shade400),
+                      // Tek ve gerçekten sürükleyen tutamak.
+                      ReorderableDragStartListener(
+                        index: i,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+                          child: Icon(Icons.drag_handle_rounded, color: Colors.grey.shade500),
+                        ),
+                      ),
                     ]),
                   ),
                 );

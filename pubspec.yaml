@@ -9,6 +9,13 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  # Material'ın yerleşik metinleri (geri ipucu, tarih seçici, kopyala/yapıştır
+  # menüsü) aksi halde İngilizce kalıyor.
+  flutter_localizations:
+    sdk: flutter
+  # Tarihleri Türkçe göstermek için — ekranda ISO (2026-08-23) yerine
+  # "23 Ağustos 2026".
+  intl: any
   cupertino_icons: ^1.0.8
   firebase_core: ^4.5.0
   firebase_auth: ^6.2.0
