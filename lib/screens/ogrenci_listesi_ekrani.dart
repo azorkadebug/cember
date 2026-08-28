@@ -622,16 +622,21 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                                 ),
                               ),
                             // Not boşken hiç görünmüyordu, "buraya not
-                            // eklenebilir" bilgisi listede hiç yoktu — artık
-                            // dolu/boş fark etmeksizin her zaman görünüyor ve
-                            // tek başına tıklanabilir (Sabri'nin isteği,
-                            // 2026-08-28).
+                            // eklenebilir" bilgisi listede hiç yoktu — bir
+                            // ikon her zaman görünüyor ki tıklanabildiği
+                            // belli olsun. AMA notun İÇERİĞİ listede
+                            // GÖSTERİLMİYOR — ders sırasında ekran başkasına
+                            // görünebilir, sadece "not var/yok" durumu ve
+                            // sabit "Not" etiketi var (Sabri'nin isteği,
+                            // 2026-08-28: önceki sürüm notu metin olarak
+                            // gösteriyordu, mahremiyet sorunu).
                             GestureDetector(
                               onTap: () => _notHizliDuzenle(o),
                               behavior: HitTestBehavior.opaque,
                               child: Padding(
                                 padding: const EdgeInsets.only(top: 3),
                                 child: Row(
+                                  mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Icon(
                                       o.not.isNotEmpty ? Icons.sticky_note_2_rounded : Icons.note_add_outlined,
@@ -639,16 +644,12 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                                       color: o.not.isNotEmpty ? Colors.amber.shade800 : Colors.grey.shade400,
                                     ),
                                     const SizedBox(width: 3),
-                                    Expanded(
-                                      child: Text(
-                                        o.not.isNotEmpty ? o.not : "Not ekle",
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(
-                                          color: o.not.isNotEmpty ? Colors.grey.shade600 : Colors.grey.shade400,
-                                          fontSize: 11,
-                                          fontStyle: o.not.isEmpty ? FontStyle.italic : FontStyle.normal,
-                                        ),
+                                    Text(
+                                      o.not.isNotEmpty ? "Not" : "Not ekle",
+                                      style: TextStyle(
+                                        color: o.not.isNotEmpty ? Colors.grey.shade600 : Colors.grey.shade400,
+                                        fontSize: 11,
+                                        fontStyle: o.not.isEmpty ? FontStyle.italic : FontStyle.normal,
                                       ),
                                     ),
                                   ],
@@ -1083,17 +1084,24 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
           const SizedBox(width: 8),
           Flexible(child: Text(o.gorunenAd, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16))),
         ]),
-        content: TextField(
-          controller: nC,
-          maxLength: GirdiSiniri.ogrenciNotu,
-          buildCounter: gizliSayac,
-          autofocus: true,
-          maxLines: 3,
-          decoration: InputDecoration(
-            labelText: "Özel Not",
-            floatingLabelBehavior: FloatingLabelBehavior.always,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: AppTema.ana, width: 2)),
+        // minLines=maxLines: sabit yükseklikte kutu — yoksa 1 satırdan
+        // başlayıp yazdıkça büyüyor, pencere her tuşta yeniden boyutlanıp
+        // titriyordu (Sabri'nin isteği, 2026-08-28).
+        content: SizedBox(
+          width: 320,
+          child: TextField(
+            controller: nC,
+            maxLength: GirdiSiniri.ogrenciNotu,
+            buildCounter: gizliSayac,
+            autofocus: true,
+            minLines: 3,
+            maxLines: 3,
+            decoration: InputDecoration(
+              labelText: "Özel Not",
+              floatingLabelBehavior: FloatingLabelBehavior.always,
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: AppTema.ana, width: 2)),
+            ),
           ),
         ),
         actions: [
