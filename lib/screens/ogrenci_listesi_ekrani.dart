@@ -621,9 +621,40 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                                   style: const TextStyle(fontSize: 12),
                                 ),
                               ),
-                            if (o.not.isNotEmpty)
-                              Text(o.not, maxLines: 1, overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(color: Colors.grey.shade500, fontSize: 11)),
+                            // Not boşken hiç görünmüyordu, "buraya not
+                            // eklenebilir" bilgisi listede hiç yoktu — artık
+                            // dolu/boş fark etmeksizin her zaman görünüyor ve
+                            // tek başına tıklanabilir (Sabri'nin isteği,
+                            // 2026-08-28).
+                            GestureDetector(
+                              onTap: () => _notHizliDuzenle(o),
+                              behavior: HitTestBehavior.opaque,
+                              child: Padding(
+                                padding: const EdgeInsets.only(top: 3),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      o.not.isNotEmpty ? Icons.sticky_note_2_rounded : Icons.note_add_outlined,
+                                      size: 13,
+                                      color: o.not.isNotEmpty ? Colors.amber.shade800 : Colors.grey.shade400,
+                                    ),
+                                    const SizedBox(width: 3),
+                                    Expanded(
+                                      child: Text(
+                                        o.not.isNotEmpty ? o.not : "Not ekle",
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          color: o.not.isNotEmpty ? Colors.grey.shade600 : Colors.grey.shade400,
+                                          fontSize: 11,
+                                          fontStyle: o.not.isEmpty ? FontStyle.italic : FontStyle.normal,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -1037,6 +1068,52 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
         ],
       ),
     );
+  }
+
+  // Tam "Öğrenci Düzenle" penceresini açmadan hızlıca not eklemek/düzenlemek
+  // için (2026-08-28) — sınıf listesindeki not satırından tetiklenir.
+  void _notHizliDuzenle(Ogrenci o) {
+    final nC = TextEditingController(text: o.not);
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(children: [
+          const Icon(Icons.sticky_note_2_rounded, color: Colors.amber, size: 22),
+          const SizedBox(width: 8),
+          Flexible(child: Text(o.gorunenAd, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16))),
+        ]),
+        content: TextField(
+          controller: nC,
+          maxLength: GirdiSiniri.ogrenciNotu,
+          buildCounter: gizliSayac,
+          autofocus: true,
+          maxLines: 3,
+          decoration: InputDecoration(
+            labelText: "Özel Not",
+            floatingLabelBehavior: FloatingLabelBehavior.always,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: AppTema.ana, width: 2)),
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("İptal")),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTema.ana, foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            ),
+            onPressed: () {
+              o.not = nC.text;
+              _save(o);
+              Navigator.pop(ctx);
+            },
+            child: const Text("Kaydet", style: TextStyle(fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    ).then((_) => nC.dispose());
   }
 
   void _ogrenciDuzenle(Ogrenci o) {
