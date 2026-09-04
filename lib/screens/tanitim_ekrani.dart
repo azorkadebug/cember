@@ -139,7 +139,10 @@ class _TanitimEkraniState extends State<TanitimEkrani> {
               ),
             ),
             // Sayfa noktaları
-            Row(
+            Semantics(
+              label: 'Sayfa ${_sayfa + 1} / ${_sayfalar.length}',
+              excludeSemantics: true,
+              child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: List.generate(_sayfalar.length, (i) {
                 final aktif = i == _sayfa;
@@ -154,6 +157,7 @@ class _TanitimEkraniState extends State<TanitimEkrani> {
                   ),
                 );
               }),
+              ),
             ),
             // İleri / Başla düğmesi
             Padding(

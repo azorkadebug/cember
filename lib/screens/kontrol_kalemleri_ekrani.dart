@@ -96,7 +96,7 @@ class _KontrolKalemleriEkraniState extends State<KontrolKalemleriEkrani> {
                 tip == KalemTipi.gunluk
                     ? 'Her ders "getirdi mi?" olarak işaretlenir (kitap, boya...).'
                     : 'Sezon boyu birikir (sarı kart, olumsuz davranış...).',
-                style: TextStyle(color: Colors.grey.shade500, fontSize: 11),
+                style: const TextStyle(color: AppTema.metinIkincil, fontSize: 12),
               ),
               const SizedBox(height: 16),
               Text('İkon', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.grey.shade700, fontSize: 13)),
@@ -232,14 +232,20 @@ class _KontrolKalemleriEkraniState extends State<KontrolKalemleriEkrani> {
                 child: Column(mainAxisSize: MainAxisSize.min, children: [
                   Icon(Icons.checklist_rounded, size: 64, color: Colors.grey.shade300),
                   const SizedBox(height: 16),
-                  Text('Henüz kalem yok', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.grey.shade500)),
+                  const Text('Henüz kalem yok', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppTema.metinIkincil)),
                   const SizedBox(height: 6),
-                  Text('Aşağıdaki "Kalem Ekle" ile branşına uygun kalemler ekle\n(kitap, boya, forma, sarı kart...).',
-                      textAlign: TextAlign.center, style: TextStyle(color: Colors.grey.shade400)),
+                  const Text('Aşağıdaki "Kalem Ekle" ile branşına uygun kalemler ekle\n(kitap, boya, forma, sarı kart...).',
+                      textAlign: TextAlign.center, style: TextStyle(color: AppTema.metinUcuncul)),
                 ]),
               ),
             )
-          : ReorderableListView.builder(
+          // 1440 px'te kartlar tam genişlikti; sil/tutamak isimden 1250 px
+          // uzaktaydı (denetim O5).
+          : Align(
+              alignment: Alignment.topCenter,
+              child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: AppTema.icerikMaxGenislik),
+              child: ReorderableListView.builder(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
               itemCount: _kalemler.length,
               // Flutter masaüstü/web'de kendi sürükleme tutamağını satırın
@@ -280,17 +286,23 @@ class _KontrolKalemleriEkraniState extends State<KontrolKalemleriEkrani> {
                         }),
                       ),
                       // Tek ve gerçekten sürükleyen tutamak.
-                      ReorderableDragStartListener(
-                        index: i,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-                          child: Icon(Icons.drag_handle_rounded, color: Colors.grey.shade500),
+                      Semantics(
+                        label: '${k.ad} sırasını değiştirmek için basılı tutup sürükle',
+                        excludeSemantics: true,
+                        child: ReorderableDragStartListener(
+                          index: i,
+                          child: const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+                            child: Icon(Icons.drag_handle_rounded, color: AppTema.metinIkincil),
+                          ),
                         ),
                       ),
                     ]),
                   ),
                 );
               },
+            ),
+              ),
             ),
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: AppTema.ana,

@@ -55,6 +55,47 @@ class AppTema {
     labelSmall:      TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: metinUcuncul),
   );
 
+
+  // ---------------------------------------------------------------
+  // Forma / takım renkleri. Önceden ogrenci_listesi_ekrani (11 kayıt) ve
+  // siniflar_ekrani (8 kayıt) ayrı ayrı kopyalıyordu; "turuncu" ikisinde de
+  // charcoal dönüyordu (2026-09-04 denetimi O7). Tek kaynak burası.
+  // ---------------------------------------------------------------
+  static const List<String> formaRenkAdlari = [
+    'Kırmızı', 'Mavi', 'Sarı', 'Yeşil', 'Siyah', 'Turuncu', 'Mor', 'Lacivert',
+  ];
+
+  static Color formaRengi(String renkAdi) {
+    switch (renkAdi.toLowerCase().trim()) {
+      case 'kırmızı': return const Color(0xFFE53935);
+      case 'mavi': return const Color(0xFF1E88E5);
+      case 'sarı': return const Color(0xFFFFB300);
+      case 'yeşil': return const Color(0xFF43A047);
+      case 'siyah': return const Color(0xFF212121);
+      case 'beyaz': return const Color(0xFFE0E0E0);
+      case 'turuncu': return const Color(0xFFF57C00);
+      case 'mor': return const Color(0xFF8E24AA);
+      case 'pembe': return const Color(0xFFEC407A);
+      case 'lacivert': return const Color(0xFF283593);
+      case 'gri': return const Color(0xFF757575);
+      default: return ana;
+    }
+  }
+
+  /// [zemin] üzerine yazılacak metin için beyaz mı koyu mu daha okunur?
+  /// Sarı/beyaz/gri formalarda beyaz metin 1,5–1,9:1'e düşüyordu (denetim Y4).
+  static Color ustMetin(Color zemin) {
+    final l = zemin.computeLuminance();
+    final beyazKontrast = 1.05 / (l + 0.05);
+    final koyuKontrast = (l + 0.05) / (panelKoyu1.computeLuminance() + 0.05);
+    return beyazKontrast >= koyuKontrast ? Colors.white : panelKoyu1;
+  }
+
+  /// Renkli zeminde düğme/vurgu dolgusu: metin rengine göre saydam beyaz
+  /// ya da saydam siyah.
+  static Color ustDolgu(Color zemin) =>
+      ustMetin(zemin) == Colors.white ? Colors.white.withAlpha(40) : Colors.black.withAlpha(28);
+
   /// Geniş ekranda (iPad, masaüstü web) içeriğin yayılabileceği azami genişlik.
   /// Sarmalarken `Center` DEĞİL `Align(topCenter)` kullan — bkz.
   /// profil_ekrani.dart'taki iPad kaydırma notu.

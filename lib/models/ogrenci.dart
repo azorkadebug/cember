@@ -42,6 +42,11 @@ class Ogrenci {
   /// Kontrol kalemi değerleri — kalem id'sine göre (yeni branş-bağımsız sistem).
   Map<String, int> kalemSayaclari;
   String? element;
+  /// Takım kurarken hep aynı takıma düşmesi istenen öğrencilerin id'leri
+  /// (karşılıklı — A, B'nin listesindeyse B de A'nın listesindedir).
+  /// Element sisteminden bağımsız: elementler kavgalı öğrencileri AYIRMAK
+  /// için, bu ise tam tersi bir ihtiyaç için (Sabri'nin isteği, 2026-08-31).
+  List<String> eslesenIdler;
   List<Map<String, dynamic>> saglikNotlari;
   List<Map<String, dynamic>> rozetler;
 
@@ -68,10 +73,12 @@ class Ogrenci {
     this.not = "",
     this.isMale = true,
     this.element,
+    List<String>? eslesenIdler,
     List<Map<String, dynamic>>? saglikNotlari,
     List<Map<String, dynamic>>? rozetler,
     Map<String, int>? kalemSayaclari,
-  }) : saglikNotlari = saglikNotlari ?? [],
+  }) : eslesenIdler = eslesenIdler ?? [],
+       saglikNotlari = saglikNotlari ?? [],
        rozetler = rozetler ?? [],
        kalemSayaclari = kalemSayaclari ?? {};
 
@@ -124,6 +131,10 @@ class Ogrenci {
       // istemciler (v1.0/1.0.1) bu kaydı çözmeye çalışmasın.
       'sifrelendi': false,
       if (element != null) 'element': element,
+      // element'in aksine koşulsuz yazılıyor: boş liste de gerçek bir
+      // değerdir ve son eşi kaldırıldığında Firestore'daki eski değeri
+      // silmesi gerekir (update() olmayan alanı değiştirmeden bırakır).
+      'eslesenIdler': eslesenIdler,
       'saglikNotlari': _sonN(saglikNotlari, saglikNotuMaxAdet),
       'rozetler': _sonN(rozetler, rozetMaxAdet),
     };
@@ -148,6 +159,9 @@ class Ogrenci {
       not: SifrelemeService.alanCoz(map, 'not'),
       isMale: map['isMale'] ?? true,
       element: map['element'],
+      eslesenIdler: (map['eslesenIdler'] as List<dynamic>?)
+          ?.map((e) => e.toString())
+          .toList(),
       saglikNotlari: (map['saglikNotlari'] as List<dynamic>?)
           ?.map((e) => Map<String, dynamic>.from(e as Map))
           .toList(),

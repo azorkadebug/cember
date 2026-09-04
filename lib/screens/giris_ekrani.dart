@@ -270,20 +270,30 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
                         ),
                       ),
                       const SizedBox(height: 24),
-                      // Email
-                      TextField(
+                      // Email — alan doluyken satır içi etiket semantikten
+                      // düşüyor; Semantics sarmalı adı korur (denetim Y8).
+                      Semantics(
+                        label: 'E-Posta',
+                        child: TextField(
                         controller: _emailCtrl,
                         keyboardType: TextInputType.emailAddress,
+                        textInputAction: TextInputAction.next,
                         autofillHints: const [AutofillHints.email],
                         maxLength: 254,
                         buildCounter: _sayacGizle,
                         decoration: _inputDeco("E-Posta", Icons.email_outlined).copyWith(errorText: _emailHata),
                       ),
+                      ),
                       const SizedBox(height: 14),
                       // Password
-                      TextField(
+                      Semantics(
+                        label: 'Şifre',
+                        child: TextField(
                         controller: _passCtrl,
                         obscureText: _obscurePass,
+                        // Web'de Enter formu göndermiyordu (denetim D2).
+                        textInputAction: TextInputAction.done,
+                        onSubmitted: (_) { if (!_loading) _emailGirisKayit(); },
                         maxLength: 128,
                         buildCounter: _sayacGizle,
                         autofillHints: _kayitModu
@@ -294,14 +304,16 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
                           helperText: _kayitModu
                               ? "En az 10 karakter, harf ve rakam içermeli"
                               : null,
-                          helperStyle: TextStyle(
-                              color: Colors.grey.shade500, fontSize: 11.5),
+                          helperStyle: const TextStyle(
+                              color: AppTema.metinUcuncul, fontSize: 12),
                           suffixIcon: IconButton(
+                            tooltip: _obscurePass ? 'Şifreyi göster' : 'Şifreyi gizle',
                             icon: Icon(_obscurePass ? Icons.visibility_off_rounded : Icons.visibility_rounded,
-                                color: Colors.grey.shade400, size: 20),
+                                color: Colors.grey.shade500, size: 20),
                             onPressed: () => setState(() => _obscurePass = !_obscurePass),
                           ),
                         ),
+                      ),
                       ),
                       if (!_kayitModu)
                         Align(
@@ -324,9 +336,10 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
                       // Submit
                       SizedBox(
                         width: double.infinity,
-                        height: 52,
                         child: ElevatedButton(
                           style: ElevatedButton.styleFrom(
+                            // Sabit height büyütülmüş yazıda kırpıyordu (denetim D8).
+                            minimumSize: const Size.fromHeight(52),
                             backgroundColor: AppTema.ana,
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -346,7 +359,8 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
                         Expanded(child: Divider(color: Colors.grey.shade300)),
                         Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: Text("veya devam et", style: TextStyle(color: AppTema.metinUcuncul, fontSize: 12))),
+                            // Zemin grey.shade100; metinUcuncul burada 4,36:1 kalıyordu.
+                            child: Text("veya devam et", style: TextStyle(color: AppTema.metinIkincil, fontSize: 12))),
                         Expanded(child: Divider(color: Colors.grey.shade300)),
                       ]),
                       const SizedBox(height: 24),
@@ -374,7 +388,7 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
                       // Elle yazılan sürüm numarası güncellenmeyi unutuyordu
                       // (pubspec 1.1.0 iken ekranda hâlâ v1.0.0 yazıyordu).
                       // grey.shade300 beyaz üzerinde 1,3:1 — pratikte görünmüyordu.
-                      Text(_surum, style: TextStyle(color: AppTema.metinUcuncul, fontSize: 11)),
+                      Text(_surum, style: TextStyle(color: AppTema.metinIkincil, fontSize: 11)),
                     ],
                   ),
                     ),
@@ -402,8 +416,9 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
           child: Text(label,
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: active ? Colors.white : Colors.grey.shade500,
-                fontWeight: active ? FontWeight.w700 : FontWeight.w500,
+                // grey.shade500, grey.shade200 zeminde 2,3:1'di (denetim Y7).
+                color: active ? Colors.white : AppTema.metinIkincil,
+                fontWeight: active ? FontWeight.w700 : FontWeight.w600,
                 fontSize: 14,
               )),
         ),
@@ -420,8 +435,12 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
 
   InputDecoration _inputDeco(String hint, IconData icon) {
     return InputDecoration(
-      hintText: hint,
-      hintStyle: TextStyle(color: Colors.grey.shade400),
+      // hintText yazmaya başlayınca kayboluyor ve semantik ad vermiyordu;
+      // labelText + never aynı görünümü korur, ekran okuyucuya adı verir
+      // (denetim Y8).
+      labelText: hint,
+      floatingLabelBehavior: FloatingLabelBehavior.never,
+      labelStyle: TextStyle(color: Colors.grey.shade500),
       prefixIcon: Icon(icon, color: AppTema.anaAcik, size: 20),
       filled: true,
       fillColor: Colors.grey.shade50,

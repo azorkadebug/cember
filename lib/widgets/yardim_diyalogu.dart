@@ -90,7 +90,8 @@ class YardimDiyalogu extends StatelessWidget {
                   ),
                   IconButton(
                     icon: const Icon(Icons.close_rounded),
-                    color: Colors.grey.shade500,
+                    tooltip: 'Kapat',
+                    color: AppTema.metinIkincil,
                     onPressed: () => Navigator.pop(context),
                   ),
                 ],

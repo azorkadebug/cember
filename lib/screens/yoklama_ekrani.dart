@@ -197,7 +197,11 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17)),
-            GestureDetector(
+            Semantics(
+              button: true,
+              label: 'Tarih: $_tarihEtiketi, değiştirmek için dokun',
+              excludeSemantics: true,
+              child: GestureDetector(
               onTap: _tarihSec,
               child: Row(mainAxisSize: MainAxisSize.min, children: [
                 Flexible(
@@ -209,18 +213,24 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
                 const SizedBox(width: 4),
                 const Icon(Icons.expand_more_rounded, size: 16),
               ]),
+              ),
             ),
           ],
         ),
         actions: [
-          IconButton(icon: const Icon(Icons.calendar_today_rounded, size: 20), onPressed: _tarihSec),
+          IconButton(icon: const Icon(Icons.calendar_today_rounded, size: 20), tooltip: 'Tarih seç', onPressed: _tarihSec),
         ],
       ),
       body: _yukleniyor
           ? const Center(child: CircularProgressIndicator())
           : _ogrenciler.isEmpty
-              ? Center(child: Text('Bu sınıfta öğrenci yok.', style: TextStyle(color: Colors.grey.shade500)))
-              : Column(children: [
+              ? const Center(child: Text('Bu sınıfta öğrenci yok.', style: TextStyle(color: AppTema.metinIkincil)))
+              // 1440 px'te isim solda, "Geldi" 1270 px sağdaydı (denetim O5).
+              : Align(
+                  alignment: Alignment.topCenter,
+                  child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: AppTema.icerikMaxGenislik),
+                  child: Column(children: [
                   // Üst özet + "Tümü Geldi"
                   Container(
                     color: Colors.white,
@@ -253,6 +263,8 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
                     ),
                   ),
                 ]),
+                  ),
+                ),
       floatingActionButton: _yukleniyor || _ogrenciler.isEmpty
           ? null
           : FloatingActionButton.extended(
@@ -312,10 +324,16 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
                 ),
                 const SizedBox(width: 8),
               ],
-              GestureDetector(
+              // 85×36 px'ti, toggle rolü yoktu (denetim O11/O9).
+              Semantics(
+                button: true,
+                toggled: geldi,
+                label: geldi ? 'Geldi, yok saymak için dokun' : 'Yok, geldi saymak için dokun',
+                excludeSemantics: true,
+                child: GestureDetector(
                 onTap: () => setState(() => kayit.geldi = !kayit.geldi),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
                   decoration: BoxDecoration(
                     color: geldi ? Colors.green.shade50 : Colors.red.shade50,
                     borderRadius: BorderRadius.circular(10),
@@ -330,6 +348,7 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
                             fontWeight: FontWeight.w700,
                             color: geldi ? AppTema.basari : Colors.red.shade700)),
                   ]),
+                ),
                 ),
               ),
               // Kalemi olmayan kartta ok gösterme — açılacak bir şey yok.
@@ -359,10 +378,15 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
               spacing: 8, runSpacing: 8,
               children: _gunlukKalemler.map((k) {
                 final getirdi = kayit.kalemler[k.id] ?? true;
-                return GestureDetector(
+                return Semantics(
+                  button: true,
+                  toggled: getirdi,
+                  label: '${k.ad} ${getirdi ? "getirdi" : "getirmedi"}',
+                  excludeSemantics: true,
+                  child: GestureDetector(
                   onTap: () => setState(() => kayit.kalemler[k.id] = !getirdi),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
                     decoration: BoxDecoration(
                       color: getirdi ? Colors.green.shade50 : Colors.red.shade50,
                       borderRadius: BorderRadius.circular(10),
@@ -370,14 +394,15 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
                     ),
                     child: Row(mainAxisSize: MainAxisSize.min, children: [
                       Icon(kalemIkonu(k.ikon), size: 15,
-                          color: getirdi ? Colors.green.shade700 : Colors.red.shade400),
+                          color: getirdi ? AppTema.basari : AppTema.tehlike),
                       const SizedBox(width: 6),
                       Text(k.ad, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600,
                           color: getirdi ? AppTema.basari : Colors.red.shade700)),
                       const SizedBox(width: 4),
                       Icon(getirdi ? Icons.check_rounded : Icons.close_rounded,
-                          size: 14, color: getirdi ? AppTema.basari : Colors.red),
+                          size: 14, color: getirdi ? AppTema.basari : AppTema.tehlike),
                     ]),
+                  ),
                   ),
                 );
               }).toList(),

@@ -42,6 +42,20 @@ class CemberApp extends StatelessWidget {
             seedColor: AppTema.ana, primary: AppTema.ana),
         useMaterial3: true,
         textTheme: AppTema.textTheme,
+        // Web/masaüstünde varsayılan "compact" yoğunluk düğmeleri 4-8 px
+        // kısaltıyordu; diyalog düğmeleri 32 px'te kalıyordu (denetim O11).
+        visualDensity: VisualDensity.standard,
+        materialTapTargetSize: MaterialTapTargetSize.padded,
+        textButtonTheme: TextButtonThemeData(
+            style: TextButton.styleFrom(minimumSize: const Size(64, 44))),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+            style: ElevatedButton.styleFrom(minimumSize: const Size(64, 44))),
+        outlinedButtonTheme: OutlinedButtonThemeData(
+            style: OutlinedButton.styleFrom(minimumSize: const Size(64, 44))),
+        snackBarTheme: const SnackBarThemeData(
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.all(Radius.circular(10)))),
         cardTheme: const CardThemeData(
             elevation: 2,
             shape: RoundedRectangleBorder(
@@ -51,6 +65,15 @@ class CemberApp extends StatelessWidget {
       // paletini kuruyor, geri kalanı açık. Sistem karanlık moddayken
       // yarısı dönüp yarısı kalmasın diye açıkça sabitlendi.
       themeMode: ThemeMode.light,
+      // iOS "Daha Büyük Metin" 2x'e kadar çıkıyor; sabit yükseklikli kartlar
+      // ve 44 px'lik düğmeler 1,5 üstünde kırpılıyor (denetim D8).
+      builder: (context, child) {
+        final mq = MediaQuery.of(context);
+        return MediaQuery(
+          data: mq.copyWith(textScaler: mq.textScaler.clamp(maxScaleFactor: 1.5)),
+          child: child ?? const SizedBox.shrink(),
+        );
+      },
       navigatorObservers: [AnalyticsService.observer],
       home: const AuthWrapper(),
     );

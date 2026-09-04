@@ -288,9 +288,9 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
                         const SizedBox(height: 32),
                         SizedBox(
                           width: double.infinity,
-                          height: 52,
                           child: ElevatedButton(
                             style: ElevatedButton.styleFrom(
+                              minimumSize: const Size.fromHeight(52),
                               backgroundColor: AppTema.ana,
                               foregroundColor: Colors.white,
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -307,7 +307,8 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
                           Center(
                             child: Text(
                               AuthService().currentUser?.email ?? '',
-                              style: TextStyle(color: Colors.grey.shade400, fontSize: 12),
+                              // grey.shade400 üzerinde 1,7:1'di (denetim Y7).
+                              style: const TextStyle(color: AppTema.metinIkincil, fontSize: 13),
                             ),
                           ),
                           const SizedBox(height: 48),
@@ -330,9 +331,9 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
                           const SizedBox(height: 14),
                           SizedBox(
                             width: double.infinity,
-                            height: 48,
                             child: OutlinedButton.icon(
                               style: OutlinedButton.styleFrom(
+                                minimumSize: const Size.fromHeight(48),
                                 foregroundColor: Colors.red.shade700,
                                 side: BorderSide(color: Colors.red.shade300),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -681,11 +682,17 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
       children: [
         Text(label, style: TextStyle(color: Colors.grey.shade700, fontWeight: FontWeight.w600, fontSize: 13)),
         const SizedBox(height: 8),
-        TextField(
+        // Görsel etiket ayrı bir Text; ekran okuyucu alanı boş "input" diye
+        // okuyordu (denetim Y8). Satır içi label/hint alan doluyken
+        // semantikten düşüyor; Semantics sarmalı her durumda adı verir.
+        Semantics(
+          label: label,
+          child: TextField(
           controller: ctrl,
           textCapitalization: TextCapitalization.words,
           maxLength: GirdiSiniri.profilAlani,
           buildCounter: gizliSayac,
+          textInputAction: TextInputAction.next,
           decoration: InputDecoration(
             prefixIcon: Icon(icon, color: AppTema.anaAcik, size: 20),
             filled: true,
@@ -693,6 +700,7 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: Colors.grey.shade200)),
             enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: Colors.grey.shade200)),
             focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: AppTema.ana, width: 2)),
+          ),
           ),
         ),
       ],

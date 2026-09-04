@@ -125,7 +125,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
                 YardimBolumu(
                   ikon: Icons.palette_rounded,
                   baslik: 'Takım renkleri',
-                  aciklama: 'Her sınıfa 8 takım rengi atanır (kırmızı, mavi, sarı, yeşil, siyah, beyaz, turuncu, lacivert). Takım oluştururken bu renklerden seçilir. Renk paletini sınıfa dokunarak özelleştirebilirsin.',
+                  aciklama: 'Takım kurarken formalar sırayla renk alır: kırmızı, mavi, sarı, yeşil, siyah, turuncu, mor, lacivert. Sınıfın forma listesini öğrenci ekranındaki ⋮ menüsünden "Takım Renkleri" ile değiştirebilirsin.',
                   renk: Color(0xFF8E24AA),
                 ),
               ],
@@ -226,8 +226,8 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
                           Text("Hoş geldin! 👋",
                               style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: Colors.grey.shade600)),
                           const SizedBox(height: 6),
-                          Text("Üç adımda hazırsın:",
-                              style: TextStyle(color: Colors.grey.shade500)),
+                          const Text("Üç adımda hazırsın:",
+                              style: TextStyle(color: AppTema.metinIkincil)),
                           const SizedBox(height: 20),
                           Container(
                             padding: const EdgeInsets.all(20),
@@ -317,7 +317,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(baslik, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
           const SizedBox(height: 2),
-          Text(aciklama, style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
+          Text(aciklama, style: const TextStyle(color: AppTema.metinIkincil, fontSize: 12)),
         ]),
       ),
       Icon(ikon, color: Colors.grey.shade300, size: 22),
@@ -468,50 +468,61 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
           ),
           const SizedBox(width: 10),
           Expanded(
-            child: GestureDetector(
-              onTap: () {
-                if (mac.takimlar != null) {
-                  Navigator.push(context, MaterialPageRoute(
-                    builder: (_) => OgrenciListesiEkrani(sinifId: mac.sinifId!),
-                  )).then((_) {
-                    // SiniflarEkrani yeniden çizilsin
-                    (context as Element).markNeedsBuild();
-                  });
-                }
-              },
-              child: Text(
-                mac.duraklatildi ? "Etkinlik duraklatıldı" : "Etkinlik devam ediyor",
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13),
+            child: Semantics(
+              button: true,
+              label: '${mac.duraklatildi ? "Etkinlik duraklatıldı" : "Etkinlik devam ediyor"}, etkinliğe dönmek için dokun',
+              excludeSemantics: true,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () {
+                  if (mac.takimlar != null) {
+                    Navigator.push(context, MaterialPageRoute(
+                      builder: (_) => OgrenciListesiEkrani(sinifId: mac.sinifId!),
+                    )).then((_) {
+                      // SiniflarEkrani yeniden çizilsin
+                      (context as Element).markNeedsBuild();
+                    });
+                  }
+                },
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(minHeight: 44),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      mac.duraklatildi ? "Etkinlik duraklatıldı" : "Etkinlik devam ediyor",
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13),
+                    ),
+                  ),
+                ),
               ),
             ),
           ),
-          // Duraklat / Devam Et
-          GestureDetector(
-            onTap: () => mac.duraklatildi ? mac.devamEt() : mac.duraklat(),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.orange.withAlpha(40),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(
-                mac.duraklatildi ? Icons.play_arrow_rounded : Icons.pause_rounded,
-                color: Colors.orange, size: 18,
-              ),
+          // Duraklat / Devam Et ve Durdur: GestureDetector'dı, semantik
+          // ağaçta hiç yoktu ve ~38×30 px'ti (denetim Y6).
+          IconButton(
+            tooltip: mac.duraklatildi ? 'Etkinliğe devam et' : 'Etkinliği duraklat',
+            constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+            style: IconButton.styleFrom(
+              backgroundColor: Colors.orange.withAlpha(40),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
+            icon: Icon(
+              mac.duraklatildi ? Icons.play_arrow_rounded : Icons.pause_rounded,
+              color: Colors.orange, size: 20,
+            ),
+            onPressed: () => mac.duraklatildi ? mac.devamEt() : mac.duraklat(),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 4),
           // Durdur
-          GestureDetector(
-            onTap: () => _macBitirOnay(context),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.red.withAlpha(40),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(Icons.stop_rounded, color: Colors.red.shade400, size: 18),
+          IconButton(
+            tooltip: 'Etkinliği bitir',
+            constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+            style: IconButton.styleFrom(
+              backgroundColor: Colors.red.withAlpha(40),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
+            icon: Icon(Icons.stop_rounded, color: Colors.red.shade300, size: 20),
+            onPressed: () => _macBitirOnay(context),
           ),
         ],
       ),
@@ -693,8 +704,8 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
               Builder(builder: (_) {
                 final kalemler = bransSablonu(secilenBrans).varsayilanKalemler;
                 if (kalemler.isEmpty) {
-                  return Text('Kalem yok — sınıfı oluşturduktan sonra ekleyebilirsin.',
-                      style: TextStyle(color: Colors.grey.shade500, fontSize: 12));
+                  return const Text('Kalem yok — sınıfı oluşturduktan sonra ekleyebilirsin.',
+                      style: TextStyle(color: AppTema.metinIkincil, fontSize: 12));
                 }
                 return Wrap(
                   spacing: 6,
@@ -714,8 +725,8 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
                 );
               }),
               const SizedBox(height: 4),
-              Text('Bu kalemleri sonra değiştirebilirsin.',
-                  style: TextStyle(color: Colors.grey.shade500, fontSize: 11)),
+              const Text('Bu kalemleri sonra değiştirebilirsin.',
+                  style: TextStyle(color: AppTema.metinIkincil, fontSize: 12)),
             ],
           ),
         ),
@@ -780,21 +791,9 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
     return _sinifPaletleri[ad.hashCode.abs() % _sinifPaletleri.length];
   }
 
-  static const _renkSecenekleri = ['Kırmızı', 'Mavi', 'Sarı', 'Yeşil', 'Siyah', 'Turuncu', 'Mor', 'Lacivert'];
+  static const _renkSecenekleri = AppTema.formaRenkAdlari;
 
-  Color _renkBul(String renkAdi) {
-    switch (renkAdi.toLowerCase().trim()) {
-      case 'kırmızı': return Colors.red;
-      case 'mavi': return Colors.blue;
-      case 'sarı': return Colors.amber.shade600;
-      case 'yeşil': return Colors.green;
-      case 'siyah': return Colors.black87;
-      case 'turuncu': return AppTema.ana;
-      case 'mor': return Colors.purple;
-      case 'lacivert': return Colors.indigo;
-      default: return AppTema.ana;
-    }
-  }
+  Color _renkBul(String renkAdi) => AppTema.formaRengi(renkAdi);
 
   void _siniflarArasiMacDialog(BuildContext context) async {
     final snapshot = await _db.siniflarGetir();
@@ -838,7 +837,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
             // Sınıf 1
             _macSinifSecici("Ev Sahibi", siniflar, sinif1Id!, renk1, (id) => setDialogState(() => sinif1Id = id), (r) => setDialogState(() => renk1 = r)),
             const SizedBox(height: 8),
-            const Text("VS", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 20, color: Colors.grey)),
+            const Text("VS", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 20, color: AppTema.metinIkincil)),
             const SizedBox(height: 8),
             // Sınıf 2
             _macSinifSecici("Deplasman", siniflar, sinif2Id!, renk2, (id) => setDialogState(() => sinif2Id = id), (r) => setDialogState(() => renk2 = r)),
@@ -855,7 +854,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               ),
               icon: const Icon(Icons.sports_rounded, size: 20),
-              onPressed: () {
+              onPressed: () async {
                 if (sinif1Id == sinif2Id) {
                   ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
                     content: const Text("Aynı sınıfı seçemezsiniz."),
@@ -864,11 +863,33 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
                   ));
                   return;
                 }
-                Navigator.pop(ctx);
-                _siniflarArasiMacBaslat(sinif1Id!, sinif2Id!, renk1, renk2,
+                // Süren etkinlik onaysız eziliyordu (denetim O2).
+                if (MacDurumu().aktif) {
+                  final onay = await showDialog<bool>(
+                    context: ctx,
+                    builder: (c) => AlertDialog(
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      title: const Text('Süren etkinlik silinsin mi?'),
+                      content: const Text('Devam eden etkinliğin skoru ve süresi silinip yarışma başlatılacak.'),
+                      actions: [
+                        TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Vazgeç')),
+                        TextButton(
+                          onPressed: () => Navigator.pop(c, true),
+                          style: TextButton.styleFrom(foregroundColor: AppTema.tehlike),
+                          child: const Text('Yarışmayı başlat'),
+                        ),
+                      ],
+                    ),
+                  );
+                  if (onay != true) return;
+                }
+                // Diyalog hata durumunda ("hazır öğrenci yok") açık kalır;
+                // eskiden kapanıp kullanıcıyı baştan seçtiriyordu (denetim O8).
+                final basladi = await _siniflarArasiMacBaslat(sinif1Id!, sinif2Id!, renk1, renk2,
                   siniflar.firstWhere((s) => s['id'] == sinif1Id)['ad'] as String,
                   siniflar.firstWhere((s) => s['id'] == sinif2Id)['ad'] as String,
                 );
+                if (basladi && ctx.mounted) Navigator.pop(ctx);
               },
               label: const Text("Yarışmayı Başlat", style: TextStyle(fontWeight: FontWeight.w700)),
             ),
@@ -939,7 +960,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
     );
   }
 
-  void _siniflarArasiMacBaslat(String sinif1Id, String sinif2Id, String renk1, String renk2, String ad1, String ad2) async {
+  Future<bool> _siniflarArasiMacBaslat(String sinif1Id, String sinif2Id, String renk1, String renk2, String ad1, String ad2) async {
     final ogrenciler1 = await _db.ogrencileriGetir(sinif1Id);
     final ogrenciler2 = await _db.ogrencileriGetir(sinif2Id);
 
@@ -954,7 +975,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ));
       }
-      return;
+      return false;
     }
 
     final takimlar = [
@@ -982,6 +1003,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
         builder: (_) => SkorEkrani(takimlar: takimlar),
       )).ignore();
     }
+    return true;
   }
 
   void _sinifSilOnay(BuildContext context, String sinifId) {

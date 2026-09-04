@@ -161,6 +161,7 @@ class MacDurumu extends ChangeNotifier {
                           'isMale': o.isMale,
                           'buradaMi': o.buradaMi,
                           if (o.element != null) 'element': o.element,
+                          if (o.eslesenIdler.isNotEmpty) 'eslesenIdler': o.eslesenIdler,
                         })
                     .toList(),
               })
@@ -264,6 +265,10 @@ class MacDurumu extends ChangeNotifier {
                 isMale: o['isMale'] as bool? ?? kayit.isMale,
                 buradaMi: o['buradaMi'] as bool? ?? true,
                 element: o['element'] as String? ?? kayit.element,
+                eslesenIdler: (o['eslesenIdler'] as List<dynamic>?)
+                        ?.map((e) => e.toString())
+                        .toList() ??
+                    kayit.eslesenIdler,
               );
             })
             .whereType<Ogrenci>()
