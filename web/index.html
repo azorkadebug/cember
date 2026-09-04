@@ -42,7 +42,8 @@
     * https://docs.flutter.dev/platform-integration/web/initialization
   -->
   <!-- main.dart.js inene kadar sayfa bembeyazdı; markalı bekleme ekranı
-       ilk Flutter karesinde kaldırılıyor (denetim D7). -->
+       splash.js ile kaldırılıyor (denetim D7). Satır içi <script> KULLANMA:
+       firebase.json'daki CSP engeller. -->
   <style>
     #cember-splash{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
       gap:14px;background:#37474F;color:#fff;font-family:-apple-system,"Segoe UI",Roboto,sans-serif;z-index:9999;
@@ -56,14 +57,7 @@
     <b>ÇEMBER</b>
     <span>Yükleniyor…</span>
   </div>
-  <script>
-    window.addEventListener('flutter-first-frame', function () {
-      var s = document.getElementById('cember-splash');
-      if (!s) return;
-      s.style.opacity = '0';
-      setTimeout(function () { s.remove(); }, 320);
-    });
-  </script>
+  <script src="splash.js"></script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>
