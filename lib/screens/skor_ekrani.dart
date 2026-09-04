@@ -1,8 +1,10 @@
 import '../tema.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
-import '../widgets/girdi.dart';
 import 'package:flutter/services.dart';
+import 'package:audioplayers/audioplayers.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
+import '../widgets/girdi.dart';
 import '../models/ogrenci.dart';
 import '../services/mac_durumu.dart';
 import '../widgets/yardim_diyalogu.dart';
@@ -56,6 +58,12 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin {
   bool _timerBitti = false;
   late AnimationController _pulseCtrl;
   final List<_Ceza> _cezalar = [];
+  /// Sunum modu: tablet/projeksiyon için tam ekran, devasa skor, dokununca
+  /// +1 (Sabri'nin listesi #1, 2026-09-05). Ekran uyanık tutulur.
+  bool _sunum = false;
+  /// Süre bitti uyarısı (tam ekran kırmızı, titreşim, düdük) — iki modda da.
+  bool _alarmGoster = false;
+  final _ses = AudioPlayer();
 
   @override
   void initState() {
@@ -89,6 +97,8 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin {
     _timer?.cancel();
     _pulseCtrl.dispose();
     for (var c in _cezalar) { c.timer.cancel(); }
+    _ses.dispose();
+    if (_sunum) unawaited(WakelockPlus.disable());
     super.dispose();
   }
 
@@ -121,6 +131,7 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin {
           if (_kalanSaniye <= 0) {
             _kalanSaniye = 0; _timerCalisiyor = false; _timerBitti = true;
             t.cancel(); _pulseCtrl.reset();
+            _sureBittiAlarmi();
           }
         });
       });
@@ -136,6 +147,25 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin {
     final m = saniye ~/ 60;
     final s = saniye % 60;
     return "${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}";
+  }
+
+  /// Süre bitince: tam ekran kırmızı katman + titreşim + kısa düdük.
+  /// Eskiden yalnız sayaç kırmızıya dönüyordu; salonda kimse fark etmiyordu.
+  void _sureBittiAlarmi() {
+    setState(() => _alarmGoster = true);
+    _pulseCtrl.repeat(reverse: true);
+    unawaited(_ses.play(AssetSource('sounds/sure_bitti.wav')).catchError((_) {}));
+    unawaited(() async {
+      for (var i = 0; i < 3; i++) {
+        unawaited(HapticFeedback.heavyImpact());
+        await Future<void>.delayed(const Duration(milliseconds: 250));
+      }
+    }());
+  }
+
+  void _sunumuAcKapa() {
+    setState(() => _sunum = !_sunum);
+    unawaited(_sunum ? WakelockPlus.enable() : WakelockPlus.disable());
   }
 
   void _cezaVer(int takimIndex) {
@@ -263,6 +293,8 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin {
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
+        if (_alarmGoster) { setState(() => _alarmGoster = false); return; }
+        if (_sunum) { _sunumuAcKapa(); return; }
         // Süre bilinçli olarak DURDURULMUYOR: dispose'da çıkış zamanı
         // kaydediliyor, "Devam Et" ile dönüşte geçen süre düşülüyor
         // (mac_durumu.dart kalanSaniyeHesapla). Eskiden burada
@@ -271,7 +303,7 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin {
       },
       child: Scaffold(
       backgroundColor: AppTema.panelKoyu1,
-      appBar: AppBar(
+      appBar: _sunum ? null : AppBar(
         backgroundColor: AppTema.panelKoyu1,
         foregroundColor: Colors.white,
         elevation: 0,
@@ -284,6 +316,11 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin {
         title: const Text("Skor Tablosu", style: TextStyle(fontWeight: FontWeight.w800, letterSpacing: 1)),
         actions: [
           IconButton(
+            icon: const Icon(Icons.fullscreen_rounded),
+            tooltip: 'Sunum modu',
+            onPressed: _sunumuAcKapa,
+          ),
+          IconButton(
             icon: const Icon(Icons.help_outline_rounded),
             tooltip: 'Yardım',
             onPressed: () => YardimDiyalogu.goster(
@@ -295,6 +332,12 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin {
                   baslik: 'Skor +/-',
                   aciklama: 'Her takımın altındaki "+" ve "−" düğmeleri ile skoru artır/azalt. Yanlış basarsan "−" ile geri al.',
                   renk: Color(0xFF43A047),
+                ),
+                YardimBolumu(
+                  ikon: Icons.fullscreen_rounded,
+                  baslik: 'Sunum modu',
+                  aciklama: 'Sağ üstteki tam ekran simgesi tabloyu salondan okunur hâle getirir: takım adı ve skor devasa, süre altta. Takımın alanına dokununca +1, basılı tutunca −1. Ekran uyanık kalır. Süre bitince tam ekran kırmızı uyarı, titreşim ve düdük.',
+                  renk: Color(0xFF00897B),
                 ),
                 YardimBolumu(
                   ikon: Icons.timer_rounded,
@@ -325,25 +368,31 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin {
           ),
         ],
       ),
-      // 1440 px'te 700 px'lik kartların ortasında 44 px'lik düğmeler
-      // kalıyordu; masaüstü/iPad'de gövde 720'ye sınırlı (Center değil
-      // Align — iPad kaydırma notu, tema.dart).
-      body: Align(
-        alignment: Alignment.topCenter,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: AppTema.icerikMaxGenislik),
-          child: Column(
-            children: [
-              Padding(padding: const EdgeInsets.fromLTRB(16, 8, 16, 8), child: _skorPaneli()),
-              _timerWidget(),
-              // Ceza bannerleri
-              if (_cezalar.isNotEmpty) _cezaBannerleri(),
-              const SizedBox(height: 8),
-              Expanded(child: _takimListeleri()),
-            ],
+      body: Stack(children: [
+        if (_sunum)
+          SafeArea(child: _sunumGovdesi())
+        else
+          // 1440 px'te 700 px'lik kartların ortasında 44 px'lik düğmeler
+          // kalıyordu; masaüstü/iPad'de gövde 720'ye sınırlı (Center değil
+          // Align — iPad kaydırma notu, tema.dart).
+          Align(
+            alignment: Alignment.topCenter,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: AppTema.icerikMaxGenislik),
+              child: Column(
+                children: [
+                  Padding(padding: const EdgeInsets.fromLTRB(16, 8, 16, 8), child: _skorPaneli()),
+                  _timerWidget(),
+                  // Ceza bannerleri
+                  if (_cezalar.isNotEmpty) _cezaBannerleri(),
+                  const SizedBox(height: 8),
+                  Expanded(child: _takimListeleri()),
+                ],
+              ),
+            ),
           ),
-        ),
-      ),
+        if (_alarmGoster) _alarmKatmani(),
+      ]),
     ),
     );
   }
@@ -776,6 +825,228 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin {
               if (isCezali)
                 Icon(Icons.front_hand_rounded, color: Colors.red.shade400, size: 12),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+
+  // ------------------------------------------------------------------
+  // SUNUM MODU
+  // ------------------------------------------------------------------
+  Widget _sunumGovdesi() {
+    final n = widget.takimlar.length;
+    return LayoutBuilder(builder: (context, c) {
+      final yatay = c.maxWidth > c.maxHeight;
+      Widget paneller;
+      if (n <= 2 || (yatay && n <= 4)) {
+        paneller = Row(children: [
+          for (var i = 0; i < n; i++)
+            Expanded(child: Padding(padding: const EdgeInsets.all(6), child: _sunumTakimPaneli(i))),
+        ]);
+      } else {
+        paneller = GridView.count(
+          crossAxisCount: 2,
+          physics: const NeverScrollableScrollPhysics(),
+          childAspectRatio: (c.maxWidth / 2) / ((c.maxHeight - 150) / ((n + 1) ~/ 2)),
+          children: [for (var i = 0; i < n; i++) Padding(padding: const EdgeInsets.all(6), child: _sunumTakimPaneli(i))],
+        );
+      }
+      return Column(children: [
+        Expanded(child: Stack(children: [
+          paneller,
+          Positioned(
+            top: 4, right: 4,
+            child: IconButton(
+              tooltip: 'Sunum modundan çık',
+              style: IconButton.styleFrom(backgroundColor: Colors.black.withAlpha(90)),
+              icon: const Icon(Icons.fullscreen_exit_rounded, color: Colors.white),
+              onPressed: _sunumuAcKapa,
+            ),
+          ),
+        ])),
+        _sunumSureSeridi(),
+      ]);
+    });
+  }
+
+  Widget _sunumTakimPaneli(int i) {
+    final t = widget.takimlar[i];
+    final metin = AppTema.ustMetin(t.renk);
+    final cezaSayisi = _takimCezalari(i).length;
+    return Semantics(
+      button: true,
+      label: '${t.isim} skoru ${t.skor}. Artırmak için dokun, azaltmak için basılı tut',
+      excludeSemantics: true,
+      child: Material(
+        color: t.renk,
+        borderRadius: BorderRadius.circular(24),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(24),
+          onTap: () => setState(() { t.skor++; MacDurumu().kaydet(); }),
+          onLongPress: () => setState(() { if (t.skor > 0) { t.skor--; MacDurumu().kaydet(); } }),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 18, 16, 12),
+            child: Column(children: [
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(t.isim,
+                    style: TextStyle(color: metin, fontWeight: FontWeight.w800, fontSize: 30, letterSpacing: .5)),
+              ),
+              Text(t.renkAdi, style: TextStyle(color: metin.withAlpha(200), fontSize: 14)),
+              Expanded(
+                child: Center(
+                  child: FittedBox(
+                    fit: BoxFit.contain,
+                    child: Text('${t.skor}',
+                        style: TextStyle(color: metin, fontWeight: FontWeight.w900, fontSize: 260, height: 1)),
+                  ),
+                ),
+              ),
+              Row(children: [
+                Semantics(
+                  button: true, label: '${t.isim} skorunu azalt', excludeSemantics: true,
+                  child: Material(
+                    color: AppTema.ustDolgu(t.renk),
+                    borderRadius: BorderRadius.circular(14),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(14),
+                      onTap: () => setState(() { if (t.skor > 0) { t.skor--; MacDurumu().kaydet(); } }),
+                      child: SizedBox(width: 52, height: 52, child: Icon(Icons.remove_rounded, color: metin, size: 28)),
+                    ),
+                  ),
+                ),
+                const Spacer(),
+                if (cezaSayisi > 0)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(color: const Color(0xFF8E1F1A), borderRadius: BorderRadius.circular(12)),
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      const Icon(Icons.front_hand_rounded, color: Colors.white, size: 16),
+                      const SizedBox(width: 6),
+                      Text('Ceza ($cezaSayisi)', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                    ]),
+                  )
+                else
+                  Text('dokun +1', style: TextStyle(color: metin.withAlpha(150), fontSize: 13)),
+              ]),
+            ]),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _sunumSureSeridi() {
+    final progress = _toplamSaniye > 0 ? _kalanSaniye / _toplamSaniye : 0.0;
+    final renk = _timerBitti
+        ? Colors.red
+        : _kalanSaniye <= 10 && _kalanSaniye > 0 && _timerCalisiyor
+            ? Colors.orange
+            : Colors.white;
+    return Container(
+      margin: const EdgeInsets.fromLTRB(6, 0, 6, 6),
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+      decoration: BoxDecoration(
+        color: AppTema.panelKoyu2,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withAlpha(15)),
+      ),
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Row(children: [
+          Expanded(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(_sureFmt(_kalanSaniye),
+                  style: TextStyle(color: renk, fontSize: 72, fontWeight: FontWeight.w900, fontFamily: 'monospace', letterSpacing: 4, height: 1)),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Semantics(
+            button: true, label: 'Süreyi sıfırla', excludeSemantics: true,
+            child: Material(
+              color: Colors.white.withAlpha(15), borderRadius: BorderRadius.circular(14),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(14), onTap: _sifirla,
+                child: const Padding(padding: EdgeInsets.all(14), child: Icon(Icons.replay_rounded, color: Colors.white70, size: 28)),
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Material(
+            color: _timerBitti ? Colors.red.withAlpha(40) : _timerCalisiyor ? Colors.orange.withAlpha(40) : Colors.green.withAlpha(40),
+            borderRadius: BorderRadius.circular(18),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(18), onTap: _baslaDurdur,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 16),
+                child: Row(children: [
+                  Icon(
+                    _timerBitti ? Icons.alarm_off_rounded : _timerCalisiyor ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                    color: _timerBitti ? Colors.red : _timerCalisiyor ? Colors.orange : Colors.green, size: 30,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    _timerBitti ? "BİTTİ" : _timerCalisiyor ? "DURDUR" : "BAŞLAT",
+                    style: TextStyle(
+                      color: _timerBitti ? Colors.red : _timerCalisiyor ? Colors.orange : Colors.green,
+                      fontWeight: FontWeight.w800, fontSize: 18,
+                    ),
+                  ),
+                ]),
+              ),
+            ),
+          ),
+        ]),
+        if (_toplamSaniye > 0) ...[
+          const SizedBox(height: 8),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: progress, backgroundColor: Colors.white.withAlpha(20),
+              valueColor: AlwaysStoppedAnimation(renk.withAlpha(200)), minHeight: 6,
+            ),
+          ),
+        ],
+        const SizedBox(height: 8),
+        Wrap(alignment: WrapAlignment.center, runSpacing: 6, children: [
+          _presetBtn("0:30", 30), _presetBtn("1:00", 60), _presetBtn("2:00", 120),
+          _presetBtn("3:00", 180), _presetBtn("5:00", 300), _presetBtn("10:00", 600),
+        ]),
+      ]),
+    );
+  }
+
+  Widget _alarmKatmani() {
+    return Positioned.fill(
+      child: Semantics(
+        liveRegion: true,
+        label: 'Süre bitti',
+        child: AnimatedBuilder(
+          animation: _pulseCtrl,
+          builder: (context, _) => Material(
+            color: Color.lerp(const Color(0xFFB3261E), const Color(0xFFE53935), _pulseCtrl.value),
+            child: InkWell(
+              onTap: () { _pulseCtrl.reset(); setState(() => _alarmGoster = false); },
+              child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                const Icon(Icons.alarm_rounded, color: Colors.white, size: 96),
+                const SizedBox(height: 16),
+                FittedBox(
+                  child: Text('SÜRE BİTTİ',
+                      style: TextStyle(color: Colors.white, fontSize: 72, fontWeight: FontWeight.w900, letterSpacing: 6)),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  widget.takimlar.map((t) => '${t.isim} ${t.skor}').join('   •   '),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.white.withAlpha(230), fontSize: 22, fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 40),
+                Text('Kapatmak için dokun', style: TextStyle(color: Colors.white.withAlpha(180), fontSize: 15)),
+              ]),
+            ),
           ),
         ),
       ),

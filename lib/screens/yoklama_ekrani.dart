@@ -236,11 +236,12 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
                     color: Colors.white,
                     padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
                     child: Row(children: [
-                      Icon(Icons.groups_rounded, color: AppTema.ana, size: 20),
+                      const Icon(Icons.info_outline_rounded, color: AppTema.metinUcuncul, size: 18),
                       const SizedBox(width: 8),
-                      Text('$gelenSayisi / ${_ogrenciler.length} geldi',
-                          style: const TextStyle(fontWeight: FontWeight.w700)),
-                      const Spacer(),
+                      const Expanded(
+                        child: Text('Karta dokununca kalemler açılır',
+                            style: TextStyle(color: AppTema.metinIkincil, fontSize: 13)),
+                      ),
                       TextButton.icon(
                         onPressed: _tumuGeldi,
                         icon: const Icon(Icons.refresh_rounded, size: 18),
@@ -256,7 +257,7 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
                     child: ListView.separated(
                       // FAB yüksekliği (56) + kenar boşlukları + tampon.
                       // 100 iken Kaydet düğmesi son kartın rozetini örtüyordu.
-                      padding: const EdgeInsets.fromLTRB(12, 12, 12, 140),
+                      padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
                       itemCount: _ogrenciler.length,
                       separatorBuilder: (_, _) => const SizedBox(height: 8),
                       itemBuilder: (_, i) => _ogrenciKarti(_ogrenciler[i]),
@@ -265,16 +266,51 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
                 ]),
                   ),
                 ),
-      floatingActionButton: _yukleniyor || _ogrenciler.isEmpty
+      // Yüzen Kaydet düğmesi "Geldi" sütununun tam üstünde duruyordu
+      // (denetim D6); öğrenci listesindeki gibi sabit alt çubuk + sayaç.
+      bottomNavigationBar: _yukleniyor || _ogrenciler.isEmpty
           ? null
-          : FloatingActionButton.extended(
-              backgroundColor: AppTema.ana,
-              foregroundColor: Colors.white,
-              onPressed: _kaydediyor ? null : _kaydet,
-              icon: _kaydediyor
-                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : const Icon(Icons.save_rounded),
-              label: const Text('Kaydet'),
+          : Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [BoxShadow(color: Colors.black.withAlpha(15), blurRadius: 10, offset: const Offset(0, -2))],
+              ),
+              child: SafeArea(
+                // heightFactor olmadan Align alt çubuğu tüm ekrana yayıyordu.
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  heightFactor: 1,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: AppTema.icerikMaxGenislik),
+                    child: Row(children: [
+                      const Icon(Icons.groups_rounded, color: AppTema.ana, size: 22),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Semantics(
+                          liveRegion: true,
+                          child: Text('$gelenSayisi / ${_ogrenciler.length} geldi',
+                              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+                        ),
+                      ),
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTema.ana,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          elevation: 2,
+                        ),
+                        onPressed: _kaydediyor ? null : _kaydet,
+                        icon: _kaydediyor
+                            ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                            : const Icon(Icons.save_rounded),
+                        label: const Text('Kaydet', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                      ),
+                    ]),
+                  ),
+                ),
+              ),
             ),
     );
   }

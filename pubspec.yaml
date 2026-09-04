@@ -29,6 +29,8 @@ dependencies:
   encrypt: ^5.0.3
   firebase_analytics: ^12.2.0
   shared_preferences: ^2.5.5
+  audioplayers: ^6.7.1
+  wakelock_plus: ^1.7.0
 
 dev_dependencies:
   flutter_test:
@@ -43,6 +45,7 @@ flutter:
   # Uygulama içi resimleri buradan tanıtıyoruz
   assets:
     - assets/images/logo.png
+    - assets/sounds/sure_bitti.wav
 
 # Telefon ikonu için ayarlarımız burada durmaya devam etsin
 flutter_launcher_icons:
