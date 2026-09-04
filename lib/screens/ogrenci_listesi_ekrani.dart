@@ -73,7 +73,10 @@ const List<String> _takimIsimHavuzu = [
 class OgrenciListesiEkrani extends StatefulWidget {
   final String sinifId;
   final String? sinifAd;
-  const OgrenciListesiEkrani({super.key, required this.sinifId, this.sinifAd});
+  /// Arama sonucundan gelindiğinde liste yüklenir yüklenmez bu öğrencinin
+  /// kartı açılır (bkz. ogrenci_arama_ekrani.dart).
+  final String? acilacakOgrenciId;
+  const OgrenciListesiEkrani({super.key, required this.sinifId, this.sinifAd, this.acilacakOgrenciId});
   @override
   State<OgrenciListesiEkrani> createState() => _OgrenciListesiEkraniState();
 }
@@ -101,6 +104,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
   final _random = Random();
   String _aramaMetni = '';
   final _aramaCtrl = TextEditingController();
+  bool _otomatikKartAcildi = false;
 
   @override
   void dispose() {
@@ -527,6 +531,16 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
         // Eşleştirme seçicisi arama filtresinden etkilenmemeli — sınıfın
         // tamamı adayları olarak kalsın.
         final tumOgrenciler = List<Ogrenci>.from(liste);
+        // Öğrenci aramasından gelindiyse kartı bir kez, ilk veride aç.
+        if (!_otomatikKartAcildi && widget.acilacakOgrenciId != null) {
+          _otomatikKartAcildi = true;
+          final hedef = tumOgrenciler.where((o) => o.id == widget.acilacakOgrenciId).firstOrNull;
+          if (hedef != null) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) _ogrenciKartiAc(hedef, tumOgrenciler);
+            });
+          }
+        }
         // Arama filtresi — ekranda görünen ada göre. Demo modunda gerçek ada
         // göre aramak, kullanıcının gördüğü isimle sonuç bulamamasına yol açar.
         if (_aramaMetni.isNotEmpty) {

@@ -10,6 +10,7 @@ import '../services/mac_durumu.dart';
 import '../models/kontrol_kalemi.dart';
 import '../widgets/yardim_diyalogu.dart';
 import 'ogrenci_listesi_ekrani.dart';
+import 'ogrenci_arama_ekrani.dart';
 import 'admin_ekrani.dart';
 import 'profil_ekrani.dart';
 import 'skor_ekrani.dart';
@@ -91,6 +92,11 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
               onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminEkrani())),
             ),
           ],
+          IconButton(
+            icon: const Icon(Icons.person_search_rounded),
+            tooltip: 'Öğrenci ara',
+            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const OgrenciAramaEkrani())),
+          ),
           IconButton(
             icon: const Icon(Icons.help_outline_rounded),
             tooltip: 'Yardım',
