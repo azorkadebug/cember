@@ -286,6 +286,19 @@ class FirestoreService {
     });
   }
 
+  /// Öğrenci kartından kaydederken sayaçlar (kalemSayaclari + geriye dönük
+  /// sariKart/kiyafetEksik/ayakkabiEksik) FARK olarak ayrı işlemde yazılır;
+  /// burada mutlak değerleriyle üzerine yazılmasın diye dışarıda bırakılır.
+  Future<void> ogrenciAlanlariniGuncelle(
+      String sinifId, String ogrenciId, Map<String, dynamic> alanlar) async {
+    final temiz = Map<String, dynamic>.from(alanlar)
+      ..remove('kalemSayaclari')
+      ..remove('sariKart')
+      ..remove('kiyafetEksik')
+      ..remove('ayakkabiEksik');
+    await _ogrenciRef(sinifId, ogrenciId).update(temiz);
+  }
+
   Future<void> ogrenciGuncelle(String sinifId, Ogrenci ogrenci) async {
     await _db
         .collection('siniflar')
