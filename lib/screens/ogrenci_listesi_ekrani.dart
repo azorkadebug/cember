@@ -420,7 +420,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                     Expanded(
                       child: ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTema.ana,
+                          backgroundColor: AppTema.vurgu,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -507,7 +507,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
     return StreamBuilder<QuerySnapshot>(
       stream: _ogrencilerAkisiListe,
       builder: (context, snapshot) {
-        if (!snapshot.hasData) return const Center(child: CircularProgressIndicator(color: AppTema.ana));
+        if (!snapshot.hasData) return const Center(child: CircularProgressIndicator(color: AppTema.vurgu));
         List<Ogrenci> liste = snapshot.data!.docs
             .map((d) => Ogrenci.fromMap(d.id, d.data() as Map<String, dynamic>))
             .toList();
@@ -1089,7 +1089,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
               labelText: "Özel Not",
               floatingLabelBehavior: FloatingLabelBehavior.always,
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: AppTema.ana, width: 2)),
+              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: AppTema.vurgu, width: 2)),
             ),
           ),
         ),
@@ -1097,7 +1097,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("İptal")),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppTema.ana, foregroundColor: Colors.white,
+              backgroundColor: AppTema.vurgu, foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             ),
@@ -1367,9 +1367,9 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                                       duration: const Duration(milliseconds: 200),
                                       width: 44, height: 44,
                                       decoration: BoxDecoration(
-                                        color: secili ? AppTema.ana.withAlpha(25) : Colors.grey.shade100,
+                                        color: secili ? AppTema.vurgu.withAlpha(25) : Colors.grey.shade100,
                                         borderRadius: BorderRadius.circular(10),
-                                        border: Border.all(color: secili ? AppTema.ana : Colors.grey.shade300, width: secili ? 2 : 1),
+                                        border: Border.all(color: secili ? AppTema.vurgu : Colors.grey.shade300, width: secili ? 2 : 1),
                                       ),
                                       child: Center(child: Text(e.value, style: const TextStyle(fontSize: 18))),
                                     ),
@@ -1392,7 +1392,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                                   return Chip(
                                     avatar: const Icon(Icons.link_rounded, size: 16),
                                     label: Text(ad, style: const TextStyle(fontSize: 12)),
-                                    backgroundColor: AppTema.ana.withAlpha(20),
+                                    backgroundColor: AppTema.vurgu.withAlpha(20),
                                     side: BorderSide.none,
                                     deleteButtonTooltipMessage: '$ad ile eşleşmeyi kaldır',
                                     onDeleted: () => setSheetState(() {
@@ -1467,7 +1467,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                         const SizedBox(width: 4),
                         ElevatedButton(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTema.ana, foregroundColor: Colors.white,
+                            backgroundColor: AppTema.vurgu, foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
                           ),
@@ -1693,7 +1693,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                                 fillColor: Colors.grey.shade50,
                                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade200)),
                                 enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade200)),
-                                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: AppTema.ana, width: 1.5)),
+                                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: AppTema.vurgu, width: 1.5)),
                                 contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10), isDense: true,
                               ),
                               style: const TextStyle(fontSize: 16),
@@ -1751,7 +1751,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                                 fillColor: Colors.grey.shade50,
                                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade200)),
                                 enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade200)),
-                                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: AppTema.ana, width: 1.5)),
+                                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: AppTema.vurgu, width: 1.5)),
                                 contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10), isDense: true,
                               ),
                               style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
@@ -1786,7 +1786,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                                     : "Satır Ekle",
                                 style: const TextStyle(fontWeight: FontWeight.w600)),
                             style: TextButton.styleFrom(
-                              foregroundColor: AppTema.ana,
+                              foregroundColor: AppTema.vurgu,
                               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10),
@@ -1815,7 +1815,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                     const SizedBox(width: 12),
                     ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTema.ana, foregroundColor: Colors.white,
+                        backgroundColor: AppTema.vurgu, foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14), elevation: 2,
                       ),
@@ -1925,7 +1925,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
           actions: [
             TextButton(onPressed: () => Navigator.pop(c, false), child: Text("Atla", style: TextStyle(color: Colors.grey.shade600))),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: AppTema.ana, foregroundColor: Colors.white,
+              style: ElevatedButton.styleFrom(backgroundColor: AppTema.vurgu, foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
               onPressed: () => Navigator.pop(c, true),
               child: const Text("Yine de Ekle", style: TextStyle(fontWeight: FontWeight.w700)),
@@ -1992,7 +1992,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
           ),
           actions: [
             ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: AppTema.ana, foregroundColor: Colors.white,
+              style: ElevatedButton.styleFrom(backgroundColor: AppTema.vurgu, foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
               onPressed: () {
                 if (c.text.isNotEmpty) { setDialogState(() => formaRenkleri.add(c.text)); c.clear(); setState(() {}); }

@@ -146,7 +146,7 @@ class _OgrenciAramaEkraniState extends State<OgrenciAramaEkrani> {
         ),
       ),
       body: _yukleniyor
-          ? const Center(child: CircularProgressIndicator(color: AppTema.ana))
+          ? const Center(child: CircularProgressIndicator(color: AppTema.vurgu))
           : Align(
               alignment: Alignment.topCenter,
               child: ConstrainedBox(

@@ -747,7 +747,7 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin {
           buildCounter: gizliSayac,
           decoration: InputDecoration(
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: AppTema.ana, width: 2)),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: AppTema.vurgu, width: 2)),
           ),
         ),
         actions: [
@@ -757,7 +757,7 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppTema.ana, foregroundColor: Colors.white,
+              backgroundColor: AppTema.vurgu, foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             onPressed: () {

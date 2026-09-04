@@ -218,7 +218,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
                   );
                 }
                 if (!snapshot.hasData) {
-                  return const Center(child: CircularProgressIndicator(color: AppTema.ana));
+                  return const Center(child: CircularProgressIndicator(color: AppTema.vurgu));
                 }
                 if (snapshot.data!.docs.isEmpty) {
                   return Center(
@@ -297,7 +297,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
           FloatingActionButton.extended(
             heroTag: 'ekle',
             onPressed: () => _sinifEkle(context),
-            backgroundColor: AppTema.ana,
+            backgroundColor: AppTema.vurgu,
             foregroundColor: Colors.white,
             elevation: 4,
             icon: const Icon(Icons.add_rounded),
@@ -313,7 +313,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
     return Row(children: [
       Container(
         width: 34, height: 34,
-        decoration: BoxDecoration(color: AppTema.ana.withAlpha(20), shape: BoxShape.circle),
+        decoration: BoxDecoration(color: AppTema.vurgu.withAlpha(25), shape: BoxShape.circle),
         child: Center(
           child: Text("$no", style: const TextStyle(color: AppTema.ana, fontWeight: FontWeight.w800, fontSize: 16)),
         ),
@@ -616,7 +616,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppTema.ana,
+              backgroundColor: AppTema.vurgu,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
@@ -743,7 +743,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppTema.ana,
+              backgroundColor: AppTema.vurgu,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),

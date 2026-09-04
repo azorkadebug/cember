@@ -295,7 +295,7 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
                       ),
                       ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTema.ana,
+                          backgroundColor: AppTema.vurgu,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),

@@ -1,5 +1,4 @@
 import 'dart:io' show Platform;
-import 'dart:math' as math;
 import '../tema.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:async';
@@ -211,9 +210,11 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
                               BoxShadow(color: Colors.black.withAlpha(60), blurRadius: 24, offset: const Offset(0, 10)),
                             ],
                           ),
+                          // Kodla çizilen nokta-çember yerine App Store'daki
+                          // gerçek logo — iki farklı logo vardı (2026-09-05).
                           child: Padding(
-                            padding: EdgeInsets.all(klavyeAcik ? 10 : 18),
-                            child: const _CemberLogo(),
+                            padding: EdgeInsets.all(klavyeAcik ? 8 : 12),
+                            child: Image.asset('assets/images/logo.png', fit: BoxFit.contain),
                           ),
                         ),
                         SizedBox(height: klavyeAcik ? 10 : 20),
@@ -321,7 +322,7 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
                           child: TextButton(
                             onPressed: _loading ? null : _sifremiUnuttum,
                             style: TextButton.styleFrom(
-                              foregroundColor: AppTema.ana,
+                              foregroundColor: AppTema.vurgu,
                               padding: const EdgeInsets.symmetric(vertical: 4),
                               // 32px dokunma hedefi, şifre kurtarma gibi
                               // kritik bir işlev için fazla küçüktü.
@@ -340,7 +341,7 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
                           style: ElevatedButton.styleFrom(
                             // Sabit height büyütülmüş yazıda kırpıyordu (denetim D8).
                             minimumSize: const Size.fromHeight(52),
-                            backgroundColor: AppTema.ana,
+                            backgroundColor: AppTema.vurgu,
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                             elevation: 2,
@@ -410,7 +411,7 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
-            color: active ? AppTema.ana : Colors.transparent,
+            color: active ? AppTema.vurgu : Colors.transparent,
             borderRadius: BorderRadius.circular(10),
           ),
           child: Text(label,
@@ -446,7 +447,7 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
       fillColor: Colors.grey.shade50,
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: Colors.grey.shade200)),
       enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: Colors.grey.shade200)),
-      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: AppTema.ana, width: 2)),
+      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: AppTema.vurgu, width: 2)),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
     );
   }
@@ -478,49 +479,4 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
       ),
     );
   }
-}
-
-class _CemberLogo extends StatelessWidget {
-  const _CemberLogo();
-  @override
-  Widget build(BuildContext context) {
-    return CustomPaint(painter: _CemberLogoPainter(), size: const Size.square(74));
-  }
-}
-
-class _CemberLogoPainter extends CustomPainter {
-  static const _palette = [
-    Color(0xFFFF6B35),
-    Color(0xFF00C896),
-    Color(0xFF4A90E2),
-    Color(0xFFE94B6A),
-    Color(0xFFF5C544),
-    Color(0xFF9B59B6),
-  ];
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width * 0.36;
-
-    final ring = Paint()
-      ..color = AppTema.ana
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.5;
-    canvas.drawCircle(center, radius, ring);
-
-    for (int i = 0; i < 6; i++) {
-      final angle = (i / 6) * 2 * math.pi - math.pi / 2;
-      final pos = Offset(
-        center.dx + radius * math.cos(angle),
-        center.dy + radius * math.sin(angle),
-      );
-      canvas.drawCircle(pos, 6, Paint()..color = _palette[i]);
-    }
-
-    canvas.drawCircle(center, 5, Paint()..color = AppTema.anaKoyu);
-  }
-
-  @override
-  bool shouldRepaint(covariant _CemberLogoPainter oldDelegate) => false;
 }

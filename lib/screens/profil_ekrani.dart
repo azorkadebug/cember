@@ -222,7 +222,7 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
           ],
         ),
         body: _yukleniyor
-            ? const Center(child: CircularProgressIndicator(color: AppTema.ana))
+            ? const Center(child: CircularProgressIndicator(color: AppTema.vurgu))
             : SafeArea(
                 bottom: true,
                 child: SingleChildScrollView(
@@ -291,7 +291,7 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
                           child: ElevatedButton(
                             style: ElevatedButton.styleFrom(
                               minimumSize: const Size.fromHeight(52),
-                              backgroundColor: AppTema.ana,
+                              backgroundColor: AppTema.vurgu,
                               foregroundColor: Colors.white,
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                               elevation: 2,
@@ -590,7 +590,7 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  CircularProgressIndicator(color: AppTema.ana),
+                  CircularProgressIndicator(color: AppTema.vurgu),
                   SizedBox(height: 16),
                   Text("Verilerin siliniyor...",
                       style: TextStyle(fontWeight: FontWeight.w600)),
@@ -657,7 +657,7 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
               await AuthService().signOut();
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppTema.ana,
+              backgroundColor: AppTema.vurgu,
               foregroundColor: Colors.white,
             ),
             child: const Text("Çıkış Yap"),
@@ -699,7 +699,7 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
             fillColor: Colors.white,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: Colors.grey.shade200)),
             enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: Colors.grey.shade200)),
-            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: AppTema.ana, width: 2)),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: AppTema.vurgu, width: 2)),
           ),
           ),
         ),

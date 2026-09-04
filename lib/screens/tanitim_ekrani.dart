@@ -152,7 +152,7 @@ class _TanitimEkraniState extends State<TanitimEkrani> {
                   width: aktif ? 24 : 8,
                   height: 8,
                   decoration: BoxDecoration(
-                    color: aktif ? AppTema.ana : Colors.grey.shade300,
+                    color: aktif ? AppTema.vurgu : Colors.grey.shade300,
                     borderRadius: BorderRadius.circular(4),
                   ),
                 );
@@ -166,7 +166,7 @@ class _TanitimEkraniState extends State<TanitimEkrani> {
                 width: double.infinity,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTema.ana,
+                    backgroundColor: AppTema.vurgu,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),

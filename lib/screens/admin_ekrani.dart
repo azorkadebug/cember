@@ -65,7 +65,7 @@ class _AdminEkraniState extends State<AdminEkrani> {
         centerTitle: true,
       ),
       body: _yukleniyor
-          ? const Center(child: CircularProgressIndicator(color: AppTema.ana))
+          ? const Center(child: CircularProgressIndicator(color: AppTema.vurgu))
           : _hata != null
           ? Center(child: Padding(
               padding: const EdgeInsets.all(32),
@@ -172,7 +172,7 @@ class _AdminEkraniState extends State<AdminEkrani> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
                   decoration: BoxDecoration(
-                    color: AppTema.ana.withAlpha(20),
+                    color: AppTema.vurgu.withAlpha(25),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text('${e.value}', style: TextStyle(color: AppTema.ana, fontWeight: FontWeight.w700, fontSize: 13)),
@@ -214,7 +214,7 @@ class _AdminEkraniState extends State<AdminEkrani> {
             child: Row(
               children: [
                 CircleAvatar(
-                  backgroundColor: AppTema.ana.withAlpha(30),
+                  backgroundColor: AppTema.vurgu.withAlpha(30),
                   radius: 18,
                   child: Text(
                     (k['ad'] ?? '?').toString().substring(0, 1).toUpperCase(),

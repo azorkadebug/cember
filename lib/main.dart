@@ -39,7 +39,7 @@ class CemberApp extends StatelessWidget {
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-            seedColor: AppTema.ana, primary: AppTema.ana),
+            seedColor: AppTema.vurgu, primary: AppTema.vurgu),
         useMaterial3: true,
         textTheme: AppTema.textTheme,
         // Başlıklar tek ölçekten: AppBar 20/w800, diyalog 20/w800 (denetim

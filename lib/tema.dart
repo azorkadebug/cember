@@ -6,6 +6,17 @@ class AppTema {
   static const Color anaAcik = Color(0xFF546E7A);    // Açık ton
   static final Color ana50 = Colors.blueGrey.shade50;
 
+  // ---------------------------------------------------------------
+  // Marka vurgu rengi (Sabri seçti, 2026-09-05): turkuaz. Yalnız ANA
+  // EYLEMLERDE kullanılır — birincil düğmeler, FAB'lar, odak çerçevesi,
+  // seçili durum, ilerleme göstergesi. AppBar ve koyu paneller charcoal
+  // kalır; yeşil/sarı/kırmızı başarı/uyarı/tehlike için ayrılmıştır.
+  // Beyaz üzerinde 4,6:1 (AA).
+  // ---------------------------------------------------------------
+  static const Color vurgu = Color(0xFF00897B);
+  static const Color vurguKoyu = Color(0xFF00695C);
+  static const Color vurguZemin = Color(0xFFE0F2F1);
+
   static final gradient = [ana, anaKoyu];
   static final gradientAcik = [ana, anaAcik];
 

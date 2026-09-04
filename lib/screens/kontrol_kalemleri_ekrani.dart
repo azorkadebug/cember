@@ -112,7 +112,7 @@ class _KontrolKalemleriEkraniState extends State<KontrolKalemleriEkrani> {
                       decoration: BoxDecoration(
                         color: secili ? AppTema.ana : AppTema.ana50,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: secili ? AppTema.ana : Colors.transparent, width: 2),
+                        border: Border.all(color: secili ? AppTema.vurgu : Colors.transparent, width: 2),
                       ),
                       child: Icon(kalemIkonu(anahtar), color: secili ? Colors.white : AppTema.ana, size: 22),
                     ),
@@ -128,7 +128,7 @@ class _KontrolKalemleriEkraniState extends State<KontrolKalemleriEkrani> {
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppTema.ana, foregroundColor: Colors.white,
+                backgroundColor: AppTema.vurgu, foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
               onPressed: () {
@@ -161,7 +161,7 @@ class _KontrolKalemleriEkraniState extends State<KontrolKalemleriEkrani> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: secili ? AppTema.ana : Colors.grey.shade100,
+          color: secili ? AppTema.vurgu : Colors.grey.shade100,
           borderRadius: BorderRadius.circular(10),
         ),
         child: Text(label, style: TextStyle(
@@ -305,7 +305,7 @@ class _KontrolKalemleriEkraniState extends State<KontrolKalemleriEkrani> {
               ),
             ),
       floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: AppTema.ana,
+        backgroundColor: AppTema.vurgu,
         foregroundColor: Colors.white,
         onPressed: () => _kalemDuzenle(),
         icon: const Icon(Icons.add_rounded),
