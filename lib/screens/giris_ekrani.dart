@@ -388,7 +388,7 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
                       // Elle yazılan sürüm numarası güncellenmeyi unutuyordu
                       // (pubspec 1.1.0 iken ekranda hâlâ v1.0.0 yazıyordu).
                       // grey.shade300 beyaz üzerinde 1,3:1 — pratikte görünmüyordu.
-                      Text(_surum, style: TextStyle(color: AppTema.metinIkincil, fontSize: 11)),
+                      Text(_surum, style: TextStyle(color: AppTema.metinIkincil, fontSize: 12)),
                     ],
                   ),
                     ),

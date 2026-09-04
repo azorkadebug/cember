@@ -63,7 +63,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
       appBar: AppBar(
-        title: const Text('Sınıflarım', style: TextStyle(fontWeight: FontWeight.w800)),
+        title: const Text('Sınıflarım'),
         centerTitle: false,
         backgroundColor: AppTema.ana,
         foregroundColor: Colors.white,
@@ -315,7 +315,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
         width: 34, height: 34,
         decoration: BoxDecoration(color: AppTema.ana.withAlpha(20), shape: BoxShape.circle),
         child: Center(
-          child: Text("$no", style: const TextStyle(color: AppTema.ana, fontWeight: FontWeight.w800, fontSize: 15)),
+          child: Text("$no", style: const TextStyle(color: AppTema.ana, fontWeight: FontWeight.w800, fontSize: 16)),
         ),
       ),
       const SizedBox(width: 12),
@@ -355,7 +355,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
                     Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2))),
                     ListTile(
                       leading: Icon(Icons.edit_rounded, color: AppTema.ana),
-                      title: const Text("İsmi Düzenle", style: TextStyle(fontWeight: FontWeight.w600)),
+                      title: const Text("İsmi Düzenle"),
                       onTap: () => Navigator.pop(ctx, 'duzenle'),
                     ),
                     ListTile(
@@ -915,7 +915,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
         border: Border.all(color: _renkBul(secilenRenk).withAlpha(60)),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(etiket, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.grey.shade600)),
+        Text(etiket, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey.shade600)),
         const SizedBox(height: 6),
         DropdownButtonFormField<String>(
           initialValue: secilenId,

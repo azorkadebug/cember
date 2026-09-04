@@ -215,7 +215,7 @@ class _KontrolKalemleriEkraniState extends State<KontrolKalemleriEkrani> {
       appBar: AppBar(
         backgroundColor: AppTema.ana,
         foregroundColor: Colors.white,
-        title: const Text('Kontrol Kalemleri', style: TextStyle(fontWeight: FontWeight.w800)),
+        title: const Text('Kontrol Kalemleri'),
         actions: [
           TextButton(
             onPressed: _kaydediyor ? null : _kaydet,

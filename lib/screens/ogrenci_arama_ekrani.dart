@@ -124,7 +124,7 @@ class _OgrenciAramaEkraniState extends State<OgrenciAramaEkrani> {
             controller: _ctrl,
             autofocus: true,
             textInputAction: TextInputAction.search,
-            style: const TextStyle(color: Colors.white, fontSize: 17),
+            style: const TextStyle(color: Colors.white, fontSize: 16),
             cursorColor: Colors.white,
             onChanged: (v) => setState(() => _metin = trKucult(v.trim())),
             decoration: InputDecoration(
@@ -169,7 +169,7 @@ class _OgrenciAramaEkraniState extends State<OgrenciAramaEkrani> {
                                   padding: EdgeInsets.fromLTRB(4, 8, 4, 8),
                                   child: Text('SON BAKILANLAR',
                                       style: TextStyle(
-                                          fontSize: 11.5,
+                                          fontSize: 12,
                                           fontWeight: FontWeight.w700,
                                           letterSpacing: 1.1,
                                           color: AppTema.metinUcuncul)),
@@ -218,7 +218,7 @@ class _OgrenciAramaEkraniState extends State<OgrenciAramaEkrani> {
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text(o.gorunenAd,
                       maxLines: 1, overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
                   const SizedBox(height: 2),
                   Row(children: [
                     const Icon(Icons.class_outlined, size: 14, color: AppTema.metinUcuncul),
@@ -226,7 +226,7 @@ class _OgrenciAramaEkraniState extends State<OgrenciAramaEkrani> {
                     Flexible(
                       child: Text(k.sinifAd,
                           maxLines: 1, overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontSize: 12.5, color: AppTema.metinIkincil)),
+                          style: const TextStyle(fontSize: 12, color: AppTema.metinIkincil)),
                     ),
                     // Not içeriği bilerek gösterilmiyor (mahremiyet, 2026-08-28).
                     if (o.rozetler.isNotEmpty) ...[

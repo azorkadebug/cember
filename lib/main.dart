@@ -42,6 +42,13 @@ class CemberApp extends StatelessWidget {
             seedColor: AppTema.ana, primary: AppTema.ana),
         useMaterial3: true,
         textTheme: AppTema.textTheme,
+        // Başlıklar tek ölçekten: AppBar 20/w800, diyalog 20/w800 (denetim
+        // O12 — diyalog başlıkları 4 farklı ağırlıkta, 18 farklı fontSize).
+        appBarTheme: const AppBarTheme(
+            titleTextStyle: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: Colors.white)),
+        dialogTheme: const DialogThemeData(
+            titleTextStyle: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: AppTema.anaKoyu),
+            contentTextStyle: TextStyle(fontSize: 15, color: Color(0xFF37474F), height: 1.45)),
         // Web/masaüstünde varsayılan "compact" yoğunluk düğmeleri 4-8 px
         // kısaltıyordu; diyalog düğmeleri 32 px'te kalıyordu (denetim O11).
         visualDensity: VisualDensity.standard,

@@ -197,7 +197,7 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin {
                     color: zatenCezali ? Colors.white30 : Colors.white,
                     fontWeight: FontWeight.w600)),
                 trailing: zatenCezali
-                    ? Text("Cezalı", style: TextStyle(color: Colors.red.shade300, fontSize: 11))
+                    ? Text("Cezalı", style: TextStyle(color: Colors.red.shade300, fontSize: 12))
                     : null,
                 enabled: !zatenCezali,
                 onTap: () {
@@ -451,7 +451,7 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin {
         children: [
           Text(t.isim, style: TextStyle(color: metin, fontWeight: FontWeight.w800, fontSize: 13),
               textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis),
-          Text(t.renkAdi, style: TextStyle(color: metin.withAlpha(200), fontSize: 11)),
+          Text(t.renkAdi, style: TextStyle(color: metin.withAlpha(200), fontSize: 12)),
           SizedBox(height: kompakt ? 2 : 6),
           // Skor
           Row(
@@ -489,7 +489,7 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin {
                     const SizedBox(width: 5),
                     Text(
                       cezaSayisi > 0 ? "Ceza ($cezaSayisi)" : "2dk Ceza",
-                      style: TextStyle(color: cezaMetin, fontSize: 11, fontWeight: FontWeight.w700),
+                      style: TextStyle(color: cezaMetin, fontSize: 12, fontWeight: FontWeight.w700),
                     ),
                   ],
                 ),
@@ -738,7 +738,7 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text("İsim Düzenle", style: TextStyle(fontWeight: FontWeight.w700)),
+        title: const Text("İsim Düzenle"),
         content: TextField(
           controller: c,
           autofocus: true,
@@ -800,7 +800,7 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin {
                   style: TextStyle(color: o.isMale ? Colors.blue.shade300 : Colors.pink.shade300, fontSize: 12)),
               if (o.element != null) ...[
                 const SizedBox(width: 3),
-                Text(ElementSistemi.sembol(o.element)!, style: const TextStyle(fontSize: 11)),
+                Text(ElementSistemi.sembol(o.element)!, style: const TextStyle(fontSize: 12)),
               ],
               if (o.eslesenIdler.isNotEmpty) ...[
                 const SizedBox(width: 3),
@@ -1044,7 +1044,7 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin {
                   style: TextStyle(color: Colors.white.withAlpha(230), fontSize: 22, fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 40),
-                Text('Kapatmak için dokun', style: TextStyle(color: Colors.white.withAlpha(180), fontSize: 15)),
+                Text('Kapatmak için dokun', style: TextStyle(color: Colors.white.withAlpha(180), fontSize: 16)),
               ]),
             ),
           ),

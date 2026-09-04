@@ -451,7 +451,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
           ],
         ),
         const SizedBox(height: 2),
-        Text(label, style: TextStyle(color: Colors.white.withAlpha(160), fontSize: 10, letterSpacing: 0.5)),
+        Text(label, style: TextStyle(color: Colors.white.withAlpha(160), fontSize: 11, letterSpacing: 0.5)),
       ],
     );
   }
@@ -864,7 +864,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
         title: Row(children: [
           const Icon(Icons.medical_services_rounded, color: Colors.teal, size: 22),
           const SizedBox(width: 8),
-          const Text("Sağlık Notu", style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
+          const Text("Sağlık Notu", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
         ]),
         content: TextField(
           controller: notCtrl,
@@ -876,7 +876,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
             hintText: "Örn: derse katılamaz, dikkat edilmeli...",
             helperText: "Teşhis/hastalık adı yazma — yalnızca derste ne yapman gerektiğini not al.",
             helperMaxLines: 2,
-            helperStyle: const TextStyle(fontSize: 11.5),
+            helperStyle: const TextStyle(fontSize: 12),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           ),
@@ -978,7 +978,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                         return Chip(
                           materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                           visualDensity: VisualDensity.compact,
-                          label: Text("$tanim  ${r['tarih']}", style: const TextStyle(fontSize: 11)),
+                          label: Text("$tanim  ${r['tarih']}", style: const TextStyle(fontSize: 12)),
                           deleteIcon: Icon(Icons.close_rounded, size: 16, color: Colors.red.shade400),
                           onDeleted: () {
                             Navigator.pop(ctx);
@@ -1038,7 +1038,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text("Rozet Sil", style: TextStyle(fontWeight: FontWeight.w700)),
+        title: const Text("Rozet Sil"),
         content: Text("$tanim rozetini silmek istediğinize emin misiniz?"),
         actions: [
           TextButton(
@@ -1200,7 +1200,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
             ],
             Text(metin,
                 style: const TextStyle(
-                    fontSize: 11.5, fontWeight: FontWeight.w700, letterSpacing: 1.1,
+                    fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 1.1,
                     color: AppTema.metinUcuncul)),
           ]),
         );
@@ -1277,7 +1277,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                             Text(o.gorunenAd, maxLines: 1, overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
                             Text(ozet, maxLines: 2, overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(fontSize: 12.5, color: AppTema.metinIkincil)),
+                                style: const TextStyle(fontSize: 12, color: AppTema.metinIkincil)),
                           ]),
                         ),
                         IconButton(
@@ -1514,7 +1514,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
               : adaylar.where((p) => p.gorunenAd.toLowerCase().contains(arama)).toList();
           return AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Text("Kiminle Eşleştir?", style: TextStyle(fontWeight: FontWeight.w700)),
+          title: const Text("Kiminle Eşleştir?"),
           content: SizedBox(
             width: 320,
             height: 400,
@@ -1597,7 +1597,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
       context: dialogContext,
       builder: (c2) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text("Öğrenciyi Sil", style: TextStyle(fontWeight: FontWeight.w700)),
+        title: const Text("Öğrenciyi Sil"),
         content: Text("${o.gorunenAd} isimli öğrenciyi kalıcı olarak silmek istediğinize emin misiniz?"),
         actions: [
           TextButton(onPressed: () => Navigator.pop(c2), child: const Text("İptal")),
@@ -1696,7 +1696,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                                 focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: AppTema.ana, width: 1.5)),
                                 contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10), isDense: true,
                               ),
-                              style: const TextStyle(fontSize: 15),
+                              style: const TextStyle(fontSize: 16),
                             ),
                           ),
                           const SizedBox(width: 8),
@@ -1965,7 +1965,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Text("Forma Renkleri", style: TextStyle(fontWeight: FontWeight.w700)),
+          title: const Text("Forma Renkleri"),
           content: SizedBox(
             width: double.maxFinite,
             child: Column(mainAxisSize: MainAxisSize.min, children: [
@@ -2227,7 +2227,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                               Text("${t.renkAdi}  •  ${t.oyuncular.length} kişi  •  (${t.oyuncular.fold<int>(0, (toplam, o) => toplam + (efektifPuan[o.id] ?? o.puan))} puan)",
                                   textAlign: TextAlign.center,
                                   maxLines: 1, overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(color: metin.withAlpha(230), fontSize: 11)),
+                                  style: TextStyle(color: metin.withAlpha(230), fontSize: 12)),
                             ]);
                           }),
                         ),
@@ -2249,7 +2249,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                                       borderRadius: BorderRadius.circular(6),
                                     ),
                                     child: Center(child: Text(o.isMale ? "♂" : "♀",
-                                        style: TextStyle(color: o.isMale ? Colors.blue : Colors.pink, fontSize: 11))),
+                                        style: TextStyle(color: o.isMale ? Colors.blue : Colors.pink, fontSize: 12))),
                                   ),
                                   const SizedBox(width: 6),
                                   Expanded(child: Text(o.gorunenAd,

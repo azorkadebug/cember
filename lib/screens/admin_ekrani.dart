@@ -61,7 +61,7 @@ class _AdminEkraniState extends State<AdminEkrani> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF1A1A2E),
         foregroundColor: Colors.white,
-        title: const Text('Admin Panel', style: TextStyle(fontWeight: FontWeight.w800)),
+        title: const Text('Admin Panel'),
         centerTitle: true,
       ),
       body: _yukleniyor

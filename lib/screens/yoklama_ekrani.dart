@@ -196,7 +196,7 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
             Text('Yoklama${widget.sinifAd != null ? ' • ${widget.sinifAd}' : ''}',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17)),
+                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
             Semantics(
               button: true,
               label: 'Tarih: $_tarihEtiketi, değiştirmek için dokun',
@@ -344,7 +344,7 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
                 child: Text(o.gorunenAd,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
               ),
               // Katlıyken de eksik bilgisi kaybolmasın.
               if (!acik && eksikSayisi > 0) ...[

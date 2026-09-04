@@ -130,7 +130,7 @@ class _TanitimEkraniState extends State<TanitimEkrani> {
                         const SizedBox(height: 16),
                         Text(s.aciklama,
                             textAlign: TextAlign.center,
-                            style: const TextStyle(fontSize: 15, height: 1.6, color: AppTema.metinIkincil)),
+                            style: const TextStyle(fontSize: 16, height: 1.6, color: AppTema.metinIkincil)),
                         const Spacer(flex: 3),
                       ],
                     ),
