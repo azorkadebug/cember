@@ -45,6 +45,7 @@ flutter:
   # Uygulama içi resimleri buradan tanıtıyoruz
   assets:
     - assets/images/logo.png
+    - assets/images/logo_256.png
     - assets/sounds/sure_bitti.wav
 
 # Telefon ikonu için ayarlarımız burada durmaya devam etsin

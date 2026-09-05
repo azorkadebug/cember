@@ -125,6 +125,13 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
     super.dispose();
   }
 
+  @override
+  void didUpdateWidget(covariant OgrenciListesiEkrani eski) {
+    super.didUpdateWidget(eski);
+    // İki sütunda sınıf adı değişince başlık eski kalıyordu (denetim #3 O4).
+    if (eski.sinifAd != widget.sinifAd && widget.sinifAd != null) _sinifAd = widget.sinifAd;
+  }
+
   List<String> _rastgeleTakimIsimleri(int adet) {
     final havuz = [..._takimIsimHavuzu]..shuffle(_random);
     return havuz.take(adet).toList();
@@ -374,7 +381,13 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
         body: Column(
           children: [
             // Aktif maç banner'ı
-            if (MacDurumu().aktif && MacDurumu().sinifId == widget.sinifId) _aktifMacBanner(),
+            // Maç bitince yeniden çizime kadar "devam ediyor" kalıyordu (denetim #3 O5).
+            ListenableBuilder(
+              listenable: MacDurumu(),
+              builder: (_, _) => MacDurumu().aktif && MacDurumu().sinifId == widget.sinifId
+                  ? _aktifMacBanner()
+                  : const SizedBox.shrink(),
+            ),
             // Arama çubuğu
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
@@ -1894,8 +1907,13 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
   /// Toplu ekleme. Bu metot `onPressed` içinden await edilmeden çağrılıyor;
   /// gövdesi try/catch ile sarılmazsa bir hata (ağ kopması, kural reddi)
   /// sessizce yutulur ve kullanıcı ne başarı ne hata mesajı görür.
+  bool _topluKaydediyor = false;
+
   Future<void> _topluKaydet(
       List<TopluOgrenciSatiri> satirlar, BuildContext sheetContext) async {
+    // Yavaş bağlantıda çift dokunuş işlemi iki kez koşturuyordu (denetim #3 Y8).
+    if (_topluKaydediyor) return;
+    _topluKaydediyor = true;
     try {
       await _topluKaydetYurut(satirlar, sheetContext);
     } catch (_) {
@@ -1908,6 +1926,8 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ));
       }
+    } finally {
+      _topluKaydediyor = false;
     }
   }
 

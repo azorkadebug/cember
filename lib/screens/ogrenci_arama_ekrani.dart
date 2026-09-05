@@ -40,6 +40,7 @@ class _OgrenciAramaEkraniState extends State<OgrenciAramaEkrani> {
   List<_AramaKaydi> _tumu = const [];
   List<String> _sonBakilan = const [];
   bool _yukleniyor = true;
+  bool _hata = false;
   String _metin = '';
 
   @override
@@ -56,17 +57,26 @@ class _OgrenciAramaEkraniState extends State<OgrenciAramaEkrani> {
   }
 
   Future<void> _yukle() async {
+    if (_hata) setState(() { _hata = false; _yukleniyor = true; });
     final prefs = await SharedPreferences.getInstance();
     final son = prefs.getStringList(_sonBakilanAnahtari) ?? const [];
-    final siniflar = await _db.siniflarGetir();
     final kayitlar = <_AramaKaydi>[];
-    for (final d in siniflar.docs) {
-      final data = d.data() as Map<String, dynamic>?;
-      final ad = (data?['ad'] ?? d.id).toString();
-      final ogrenciler = await _db.ogrencileriGetir(d.id);
-      for (final o in ogrenciler) {
-        kayitlar.add(_AramaKaydi(d.id, ad, o));
+    try {
+      final siniflar = await _db.siniflarGetir();
+      // Sınıflar paralel çekiliyor (denetim #3 D11).
+      final sonuclar = await Future.wait(siniflar.docs.map((d) async {
+        final data = d.data() as Map<String, dynamic>?;
+        final ad = (data?['ad'] ?? d.id).toString();
+        final ogrenciler = await _db.ogrencileriGetir(d.id);
+        return [for (final o in ogrenciler) _AramaKaydi(d.id, ad, o)];
+      }));
+      for (final l in sonuclar) {
+        kayitlar.addAll(l);
       }
+    } catch (_) {
+      // Okuma hatasında sonsuz spinner kalıyordu (denetim #3 D9).
+      if (mounted) setState(() { _hata = true; _yukleniyor = false; });
+      return;
     }
     kayitlar.sort((a, b) => trKucult(a.ogrenci.ad).compareTo(trKucult(b.ogrenci.ad)));
     if (!mounted) return;
@@ -147,7 +157,17 @@ class _OgrenciAramaEkraniState extends State<OgrenciAramaEkrani> {
       ),
       body: _yukleniyor
           ? const Center(child: CircularProgressIndicator(color: AppTema.vurgu))
-          : Align(
+          : _hata
+              ? Center(
+                  child: Column(mainAxisSize: MainAxisSize.min, children: [
+                    Icon(Icons.cloud_off_rounded, size: 56, color: Colors.grey.shade300),
+                    const SizedBox(height: 12),
+                    const Text('Öğrenciler yüklenemedi', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppTema.metinIkincil)),
+                    const SizedBox(height: 12),
+                    FilledButton.icon(onPressed: _yukle, icon: const Icon(Icons.refresh_rounded), label: const Text('Tekrar dene')),
+                  ]),
+                )
+              : Align(
               alignment: Alignment.topCenter,
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: AppTema.icerikMaxGenislik),

@@ -30,8 +30,14 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
   String? _seciliSinifId;
   String? _seciliSinifAd;
 
-  FirestoreService get _db => FirestoreService(uid: AuthService().uid);
+  late final FirestoreService _db = FirestoreService(uid: AuthService().uid);
   bool _migrationYapildi = false;
+  /// build() içinde her çizimde yeni Stream kurulup sınıf dokümanları yeniden
+  /// okunuyordu; iki sütunda sınıf seçmek bile 5 okuma ediyordu (denetim #3 O2).
+  late final Stream<QuerySnapshot> _siniflarAkisi = _db.siniflarStream();
+  /// Sol panel geniş/dar geçişinde yeniden mount olup 5 dinleyiciyi
+  /// kapatıp açıyordu; GlobalKey durumu korur.
+  final _solPanelKey = GlobalKey();
 
   /// Sınıf kartlarındaki "N öğrenci" sayacının akışları, sınıf id'sine göre
   /// önbelleklenir.
@@ -157,7 +163,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
       ),
       body: LayoutBuilder(builder: (context, c) {
         final ikiSutun = c.maxWidth >= _ikiSutunEsigi;
-        final sol = _solPanel(context, ikiSutun);
+        final sol = KeyedSubtree(key: _solPanelKey, child: _solPanel(context, ikiSutun));
         if (!ikiSutun) return sol;
         return Row(children: [
           // FAB'lar geniş ekranda sağ sütunun alt çubuğuna biniyordu;
@@ -238,7 +244,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
           // List
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
-              stream: _db.siniflarStream(),
+              stream: _siniflarAkisi,
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
                   return Center(
@@ -1119,8 +1125,22 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
             onPressed: () async {
-              await _db.sinifSil(sinifId);
-              if (context.mounted) Navigator.pop(context);
+              try {
+                // Silinen sınıfın maçı bandda kalıyordu (denetim #3 O5).
+                if (MacDurumu().sinifId == sinifId) MacDurumu().macBitir();
+                await _db.sinifSil(sinifId);
+                if (context.mounted) Navigator.pop(context);
+              } catch (_) {
+                // Sunucudan okunamadı (çevrimdışı): yetim veri bırakmamak
+                // için silme hiç başlamıyor (denetim #3 Y4).
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                    content: Text('Sınıf silinemedi. Bağlantı gerekiyor; tekrar dene.'),
+                    backgroundColor: AppTema.tehlike,
+                  ));
+                }
+              }
             },
             child: const Text("Evet, Sil", style: TextStyle(fontWeight: FontWeight.w700)),
           ),

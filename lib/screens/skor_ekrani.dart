@@ -123,11 +123,14 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin {
         _kalanSaniye = 60;
         _timerBitti = false;
       }
-      _pulseCtrl.repeat(reverse: true);
+      // Nabız animasyonu süre boyunca değil yalnız son 10 sn'de: 60 fps
+      // sürekli çizim 10 dk'lık maçta tableti ısıtıyordu (denetim #3 O1).
+      if (_kalanSaniye <= 10) _pulseCtrl.repeat(reverse: true);
       setState(() => _timerCalisiyor = true);
       _timer = Timer.periodic(const Duration(seconds: 1), (t) {
         setState(() {
           _kalanSaniye--;
+          if (_kalanSaniye == 10) _pulseCtrl.repeat(reverse: true);
           if (_kalanSaniye <= 0) {
             _kalanSaniye = 0; _timerCalisiyor = false; _timerBitti = true;
             t.cancel(); _pulseCtrl.reset();

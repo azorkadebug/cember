@@ -214,7 +214,8 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
                           // gerçek logo — iki farklı logo vardı (2026-09-05).
                           child: Padding(
                             padding: EdgeInsets.all(klavyeAcik ? 8 : 12),
-                            child: Image.asset('assets/images/logo.png', fit: BoxFit.contain),
+                            child: // 1024 px / 546 KB'lık dosya 100 px'te gösteriliyordu (denetim #3 O11).
+                            Image.asset('assets/images/logo_256.png', fit: BoxFit.contain),
                           ),
                         ),
                         SizedBox(height: klavyeAcik ? 10 : 20),
