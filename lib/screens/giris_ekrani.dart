@@ -3,6 +3,7 @@ import '../tema.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import '../services/analytics_service.dart';
 import '../services/auth_service.dart';
@@ -25,6 +26,8 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
   bool _loading = false;
   bool _obscurePass = true;
   bool _kayitModu = false;
+  /// KVKK: kayıt olurken aydınlatma metni onayı zorunlu (denetim #4 Y7).
+  bool _politikaOnay = false;
   // Boş alan uyarısı doğrudan alanın altında gösterilir (SnackBar kaybolup gidiyordu).
   String? _emailHata;
   String? _sifreHata;
@@ -110,6 +113,11 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
     });
     try {
       if (_kayitModu) {
+        if (!_politikaOnay) {
+          setState(() => _loading = false);
+          _hataGoster('Kayıt için Gizlilik Politikası ve Aydınlatma Metni\'ni onaylaman gerekiyor.');
+          return;
+        }
         await _authService.signUpWithEmail(_emailCtrl.text, _passCtrl.text);
         unawaited(AnalyticsService.girisYapildi('email_kayit'));
         if (mounted) {
@@ -334,6 +342,26 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
                                 style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                           ),
                         ),
+                      if (_kayitModu)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 6),
+                          child: CheckboxListTile(
+                            value: _politikaOnay,
+                            onChanged: (v) => setState(() => _politikaOnay = v ?? false),
+                            controlAffinity: ListTileControlAffinity.leading,
+                            contentPadding: EdgeInsets.zero,
+                            dense: true,
+                            title: Wrap(children: [
+                              const Text('Öğrenci verilerini okulum adına işlediğimi biliyorum; ', style: TextStyle(fontSize: 13)),
+                              InkWell(
+                                onTap: () => launchUrl(Uri.parse(gizlilikPolitikasiUrl), mode: LaunchMode.externalApplication),
+                                child: const Text('Gizlilik Politikası ve Aydınlatma Metni',
+                                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppTema.vurgu, decoration: TextDecoration.underline)),
+                              ),
+                              const Text('\'ni okudum, kabul ediyorum.', style: TextStyle(fontSize: 13)),
+                            ]),
+                          ),
+                        ),
                       const SizedBox(height: 18),
                       // Submit
                       SizedBox(
@@ -386,7 +414,24 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
                         width: double.infinity,
                         child: _socialBtn(Icons.g_mobiledata, "Google ile Giriş", Colors.red, _googleGiris),
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 12),
+                      // Sosyal girişte de politika görünür olsun.
+                      Text.rich(
+                        TextSpan(children: [
+                          const TextSpan(text: 'Devam ederek '),
+                          WidgetSpan(
+                            child: InkWell(
+                              onTap: () => launchUrl(Uri.parse(gizlilikPolitikasiUrl), mode: LaunchMode.externalApplication),
+                              child: const Text('Gizlilik Politikası',
+                                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppTema.vurgu, decoration: TextDecoration.underline)),
+                            ),
+                          ),
+                          const TextSpan(text: "'nı kabul etmiş olursun."),
+                        ]),
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontSize: 12, color: AppTema.metinIkincil),
+                      ),
+                      const SizedBox(height: 12),
                       // Elle yazılan sürüm numarası güncellenmeyi unutuyordu
                       // (pubspec 1.1.0 iken ekranda hâlâ v1.0.0 yazıyordu).
                       // grey.shade300 beyaz üzerinde 1,3:1 — pratikte görünmüyordu.

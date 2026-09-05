@@ -39,7 +39,10 @@ class _Ceza {
   int kalanSaniye;
   late Timer timer;
 
-  _Ceza({required this.takimIndex, required this.oyuncu}) : kalanSaniye = 120;
+  _Ceza({required this.takimIndex, required this.oyuncu})
+      : kalanSaniye = 120,
+        bitis = DateTime.now().add(const Duration(seconds: 120));
+  final DateTime bitis;
 }
 
 class SkorEkrani extends StatefulWidget {
@@ -50,9 +53,13 @@ class SkorEkrani extends StatefulWidget {
   State<SkorEkrani> createState() => _SkorEkraniState();
 }
 
-class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin {
+class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, WidgetsBindingObserver {
   Timer? _timer;
   int _kalanSaniye = 0;
+  /// Süre geri sayımı tik saymaz, bitiş anına bağlıdır: iOS uygulamayı
+  /// arka plana alınca Timer donuyor, kaçırılan saniyeler geri gelmiyordu
+  /// (denetim #4 Y4). Kalan = bitiş − şimdi.
+  DateTime? _bitis;
   int _toplamSaniye = 0;
   bool _timerCalisiyor = false;
   bool _timerBitti = false;
@@ -68,8 +75,43 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _pulseCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
+    // Düdük sessiz modda da çalsın (playback) ama Bluetooth'tan çalan müziği
+    // kesmesin: duckOthers müziği kısar, düdük bitince geri getirir
+    // (denetim #4 Y5). Web'de desteklenmez, sessizce geçilir.
+    unawaited(AudioPlayer.global.setAudioContext(AudioContext(
+      iOS: AudioContextIOS(
+        category: AVAudioSessionCategory.playback,
+        options: const {AVAudioSessionOptions.duckOthers},
+      ),
+      android: const AudioContextAndroid(audioFocus: AndroidAudioFocus.gainTransientMayDuck),
+    )).catchError((_) {}));
     _durumGeriYukle();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Arka plandan dönünce süreyi hemen duvar saatine göre tazele; bittiyse
+    // alarmı bir kez çal.
+    if (state == AppLifecycleState.resumed && _timerCalisiyor) {
+      _tik();
+    }
+  }
+
+  /// Süreyi bitiş anından hesaplar; bitince alarmı çalar.
+  void _tik() {
+    if (_bitis == null) return;
+    final kalan = (_bitis!.difference(DateTime.now()).inMilliseconds / 1000).ceil();
+    setState(() {
+      _kalanSaniye = kalan < 0 ? 0 : kalan;
+      if (_kalanSaniye <= 10 && _kalanSaniye > 0 && !_pulseCtrl.isAnimating) _pulseCtrl.repeat(reverse: true);
+      if (_kalanSaniye <= 0) {
+        _kalanSaniye = 0; _timerCalisiyor = false; _timerBitti = true; _bitis = null;
+        _timer?.cancel(); _pulseCtrl.reset();
+        _sureBittiAlarmi();
+      }
+    });
   }
 
   void _durumGeriYukle() {
@@ -94,6 +136,7 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin {
       calisiyor: _timerCalisiyor,
       bitti: _timerBitti,
     );
+    WidgetsBinding.instance.removeObserver(this);
     _timer?.cancel();
     _pulseCtrl.dispose();
     for (var c in _cezalar) { c.timer.cancel(); }
@@ -113,6 +156,7 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin {
     if (_timerCalisiyor) {
       _timer?.cancel();
       _pulseCtrl.reset();
+      _bitis = null;
       setState(() => _timerCalisiyor = false);
     } else {
       // Süre seçilmeden BAŞLAT'a basınca burada sessizce return ediliyordu:
@@ -126,18 +170,9 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin {
       // Nabız animasyonu süre boyunca değil yalnız son 10 sn'de: 60 fps
       // sürekli çizim 10 dk'lık maçta tableti ısıtıyordu (denetim #3 O1).
       if (_kalanSaniye <= 10) _pulseCtrl.repeat(reverse: true);
+      _bitis = DateTime.now().add(Duration(seconds: _kalanSaniye));
       setState(() => _timerCalisiyor = true);
-      _timer = Timer.periodic(const Duration(seconds: 1), (t) {
-        setState(() {
-          _kalanSaniye--;
-          if (_kalanSaniye == 10) _pulseCtrl.repeat(reverse: true);
-          if (_kalanSaniye <= 0) {
-            _kalanSaniye = 0; _timerCalisiyor = false; _timerBitti = true;
-            t.cancel(); _pulseCtrl.reset();
-            _sureBittiAlarmi();
-          }
-        });
-      });
+      _timer = Timer.periodic(const Duration(seconds: 1), (_) => _tik());
     }
   }
 
@@ -225,7 +260,7 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin {
     final ceza = _Ceza(takimIndex: takimIndex, oyuncu: oyuncu);
     ceza.timer = Timer.periodic(const Duration(seconds: 1), (t) {
       setState(() {
-        ceza.kalanSaniye--;
+        ceza.kalanSaniye = ((ceza.bitis.difference(DateTime.now()).inMilliseconds / 1000).ceil()).clamp(0, 120);
         if (ceza.kalanSaniye <= 0) {
           t.cancel();
           _cezalar.remove(ceza);
@@ -237,9 +272,9 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin {
   }
 
   void _cezaBittiUyari(int takimIndex, Ogrenci oyuncu) {
-    // Sistem sesi + titreşim
-    SystemSound.play(SystemSoundType.alert);
-    HapticFeedback.heavyImpact();
+    // Düdükle aynı yoldan (sessiz modu aşar); sistem sesi sessiz modda gelmiyordu.
+    unawaited(_ses.play(AssetSource('sounds/sure_bitti.wav')).catchError((_) {}));
+    unawaited(HapticFeedback.heavyImpact());
 
     final t = widget.takimlar[takimIndex];
     showDialog(

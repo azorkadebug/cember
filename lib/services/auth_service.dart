@@ -4,6 +4,8 @@ import 'dart:math';
 import 'package:crypto/crypto.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'analytics_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'sayfa_yenile_stub.dart' if (dart.library.html) 'sayfa_yenile_web.dart';
 import 'package:flutter/foundation.dart'
     show kIsWeb, defaultTargetPlatform, TargetPlatform;
@@ -223,6 +225,10 @@ class AuthService {
     DemoModu.sifirla();
     SifrelemeService.temizle();
 
+    // Çıkıştan sonraki olaylar önceki kullanıcıya yazılmasın (denetim #4 O11);
+    // "son bakılan öğrenciler" listesi de cihazda kalmasın (D8).
+    try { await AnalyticsService.setUserId(null); } catch (_) {}
+    try { await (await SharedPreferences.getInstance()).remove('son_bakilan_ogrenciler'); } catch (_) {}
     await _auth.signOut();
     if (kIsWeb) {
       // Paylaşılan okul bilgisayarında kalıcı önbellek çıkıştan sonra

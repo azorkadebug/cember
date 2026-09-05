@@ -39,7 +39,13 @@ class AnalyticsService {
     });
   }
 
-  static Future<void> setUserId(String uid) async {
+  static Future<void> setUserId(String? uid) async {
     await _analytics.setUserId(id: uid);
+  }
+
+  /// Hesap silinince Analytics'teki kullanıcı kimliğine bağlı veri de
+  /// sıfırlanır (denetim #4 O12).
+  static Future<void> sifirla() async {
+    try { await _analytics.resetAnalyticsData(); } catch (_) {}
   }
 }

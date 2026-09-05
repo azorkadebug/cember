@@ -1,6 +1,7 @@
 import '../tema.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../widgets/girdi.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/analytics_service.dart';
@@ -317,6 +318,14 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
                               style: const TextStyle(color: AppTema.metinIkincil, fontSize: 13),
                             ),
                           ),
+                          // Uygulama içinde politikaya tıklanabilir bağlantı yoktu (denetim #4 Y7).
+                          Center(
+                            child: TextButton.icon(
+                              onPressed: () => launchUrl(Uri.parse(gizlilikPolitikasiUrl), mode: LaunchMode.externalApplication),
+                              icon: const Icon(Icons.privacy_tip_outlined, size: 18),
+                              label: const Text('Gizlilik Politikası ve Aydınlatma Metni'),
+                            ),
+                          ),
                           const SizedBox(height: 48),
                           Divider(color: Colors.grey.shade300, height: 1),
                           const SizedBox(height: 20),
@@ -612,6 +621,7 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
       // 2) Firestore verileri (sınıflar, öğrenciler, yoklamalar, profil).
       //    Oturum hâlâ açık olmalı — kurallar `request.auth` istiyor.
       await _db.tumVerileriSil();
+      await AnalyticsService.sifirla();
       // 3) Auth hesabı. Oturum az önce tazelendiği için
       //    `requires-recent-login` beklenmiyor.
       await AuthService().deleteAccount();

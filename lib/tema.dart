@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+/// Gizlilik politikası ve KVKK aydınlatma metni (web'de yayında).
+const String gizlilikPolitikasiUrl = 'https://cemberapp-2a101.web.app/privacy.html';
+
 class AppTema {
   static const Color ana = Color(0xFF37474F);        // Charcoal
   static const Color anaKoyu = Color(0xFF263238);    // Koyu ton

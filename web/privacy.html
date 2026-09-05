@@ -107,7 +107,7 @@
 <div class="container">
 
 <h1>Gizlilik Politikası</h1>
-<p class="meta">Çember uygulaması · Son güncelleme: 23 Ağustos 2026 · Yürürlük: 23 Ağustos 2026</p>
+<p class="meta">Çember uygulaması · Son güncelleme: 6 Eylül 2026 · Yürürlük: 6 Eylül 2026</p>
 
 <p>Bu Gizlilik Politikası, <strong>Çember</strong> uygulamasının (bundan sonra "Uygulama" olarak anılacaktır) kullanıcılarına ait kişisel verilerin nasıl toplandığını, işlendiğini, saklandığını ve korunduğunu açıklar. Uygulamayı kullanarak bu politikayı kabul etmiş sayılırsınız.</p>
 
@@ -155,7 +155,6 @@
   <li>Cihaz modeli, işletim sistemi sürümü, dil ve ülke ayarı</li>
   <li>Uygulama sürümü ve oturum bilgileri</li>
   <li>Hangi ekranların ne sıklıkla görüntülendiği</li>
-  <li>Çökme (crash) raporları ve hata kayıtları</li>
   <li>Profil formunda girdiğiniz şehir ve branş bilgisi (hangi branşlarda kullanıldığını anlamak için)</li>
 </ul>
 <p>Bu veriler doğrudan kişiyi tanımlamaya yönelik değildir; ancak Firebase Analytics'te kullanıcı kimliğiniz (UID) ile ilişkilendirilir. <strong>Öğrenci adları, sınıf adları ve öğrenci notları analitik hizmetlere hiçbir şekilde gönderilmez.</strong></p>
@@ -172,7 +171,7 @@
 <h2>4. Verilerin Saklandığı Yer ve Üçüncü Taraf Hizmetler</h2>
 <p>Uygulama altyapısında aşağıdaki üçüncü taraf hizmetleri kullanır. Bu hizmetlerin kendi gizlilik politikaları da geçerlidir:</p>
 <ul>
-  <li><strong>Google Firebase</strong> (Firestore, Authentication, Analytics, Hosting): Veriler Google Cloud sunucularında, başta Avrupa Birliği bölgesi olmak üzere Google tarafından belirlenen veri merkezlerinde saklanır. <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google Gizlilik Politikası</a></li>
+  <li><strong>Google Firebase</strong> (Firestore, Authentication, Analytics, Hosting): Veriler Google Cloud'un <strong>Amerika Birleşik Devletleri'ndeki çoklu bölge (nam5) veri merkezlerinde</strong> saklanır. Bu, KVKK madde 9 anlamında <strong>yurt dışına veri aktarımı</strong>dır; kayıt sırasında verilen onay bu aktarımı da kapsar. Sunucu tarafında şifreli (at-rest) depolama ve TLS ile iletim uygulanır. <a href="https://firebase.google.com/support/privacy" target="_blank" rel="noopener">Firebase Gizlilik ve Güvenlik</a></li>
   <li><strong>Google Sign-In</strong>: Google hesabı ile giriş yapılması halinde Google kimlik doğrulama hizmeti kullanılır.</li>
   <li><strong>Apple Sign-In</strong>: Apple hesabı ile giriş yapılması halinde Apple kimlik doğrulama hizmeti kullanılır. <a href="https://www.apple.com/legal/privacy/" target="_blank" rel="noopener">Apple Gizlilik Politikası</a></li>
 </ul>
@@ -194,9 +193,11 @@
 <h2>7. Çocuklara Ait Veriler ve Veli Onayı</h2>
 <p>Çember bir <strong>öğretmen aracılığıyla</strong> kullanılır; uygulamanın doğrudan kullanıcısı çocuklar değil, öğretmenlerdir. Bununla birlikte öğretmen, sınıfındaki öğrencilerin (genelde 10-14 yaş ortaokul) adlarını uygulamaya girer.</p>
 <ul>
+  <li><strong>Sağlık notu</strong> alanı özel nitelikli kişisel veridir (KVKK m. 6). Bu alana teşhis ya da hastalık adı yazmayın; yalnızca derse katılımı etkileyen kısa bir uyarı ("bugün oynamayacak" gibi) girin ve girmeden önce veli bilgilendirmesini sağlayın.</li>
   <li>Hangi öğrencinin hangi verisinin girileceğine öğretmen karar verdiği için, veli onayı veya okul protokolü gibi <strong>yasal dayanağın sağlanması öncelikle öğretmen kullanıcının sorumluluğundadır.</strong> Bununla birlikte, KVKK'da veri sorumlusu sıfatı sözleşmeyle tümüyle devredilemez; uygulamanın geliştiricisi olarak veri güvenliği ve silme taleplerinin yerine getirilmesi konusundaki yükümlülüklerimi üstlenmeye devam ederim.</li>
   <li><strong>Veri minimizasyonu önerisi:</strong> Sınıf listesini oluştururken öğrencinin tam adı yerine ad ve soyadının baş harfi (&#8220;Ali Y.&#8221;) ya da okul numarası kullanılabilir. Sınıf içinde ayırt etmeye yeter, uygulamada tutulan kimlik verisini azaltır. Uygulamadaki <strong>Demo Modu</strong> ise sunum ve ekran görüntüsü alırken gerçek adları geçici olarak maskeler.</li>
   <li>Uygulama çocuklardan doğrudan veri toplamaz; çocuklara yönelik reklam göstermez; çocuk verilerini pazarlama amacıyla işlemez.</li>
+  <li><strong>Demo modu</strong> (Sınıflarım ekranındaki göz simgesi) öğrenci adlarını sahte adlarla değiştirir; sunum ve ekran görüntüsü paylaşımında kullanın.</li>
   <li>Bir velinin çocuğuna ait verinin silinmesini talep etmesi halinde, ilgili öğretmen veya doğrudan <a href="mailto:cember@amoro.org">cember@amoro.org</a> üzerinden bildirimde bulunulduğunda veri 7 gün içinde silinir.</li>
 </ul>
 
@@ -220,8 +221,8 @@
   <li>Firebase Authentication üzerinden güvenli kimlik doğrulama sağlanır</li>
   <li>Firestore güvenlik kuralları (rules) ile bir kullanıcının sadece kendi verilerine erişebilmesi sağlanır</li>
   <li>Veriler Google Cloud altyapısında, endüstri standardı sunucu güvenliği ve sunucu tarafı (at-rest) şifreleme ile korunur</li>
-  <li>Uygulamadan çıkış yapıldığında cihazda tutulan geçici veriler (yarım kalan maç kaydı, önbellek) silinir; bu sayede paylaşılan bir cihazda sonraki kullanıcı önceki öğretmenin verilerini göremez</li>
-  <li>Cihaz yedeklerine (Google Drive / iCloud) uygulama verisi dahil edilmez</li>
+  <li>Uygulama çevrimdışı çalışabilmek için cihazda bir Firestore önbelleği tutar. <strong>Web sürümünde</strong> çıkış yapıldığında bu önbellek ve yarım kalan maç kaydı silinir; paylaşılan bir bilgisayarda sonraki kullanıcı önceki öğretmenin verilerini göremez. <strong>Telefon uygulamasında</strong> önbellek cihazda kalır ve yalnızca oturum açan hesabın verisini gösterir; ortak kullanılan bir tablette hesabınızı kapatmadan önce uygulamayı silmeniz önerilir.</li>
+  <li>Android'de uygulama verisi cihaz yedeğine (Google Drive) dahil edilmez. iOS'ta önbellek iCloud yedeğine girebilir; iCloud yedekleri Apple tarafından şifrelenir.</li>
 </ul>
 <p>Uygulamanın öğrenci verilerine erişimi <strong>sunucu tarafı güvenlik kurallarıyla</strong> sınırlanır: bir öğretmen, başka bir öğretmenin sınıfını veya öğrencisini hiçbir koşulda okuyamaz. Uygulama ayrıca cihaz üzerinde ek bir şifreleme katmanı kullandığını iddia etmez; koruma yukarıdaki önlemlerden gelir.</p>
 
