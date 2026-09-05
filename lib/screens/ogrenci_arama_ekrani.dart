@@ -6,6 +6,7 @@ import '../services/firestore_service.dart';
 import '../tema.dart';
 import 'ogrenci_listesi_ekrani.dart';
 import '../utils/metin.dart';
+import '../widgets/simgeler.dart';
 
 /// Sınıflarım'daki büyüteçten açılan, tüm sınıflarda öğrenci arayan sayfa.
 /// Sabri'nin isteği (2026-09-05): öğretmen öğrenciyi biliyor ama o an
@@ -226,9 +227,7 @@ class _OgrenciAramaEkraniState extends State<OgrenciAramaEkrani> {
                     color: renk.withAlpha(30),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Center(
-                      child: Text(o.isMale ? '♂' : '♀',
-                          style: TextStyle(color: renk, fontSize: 18, fontWeight: FontWeight.w800))),
+                  child: Center(child: CinsiyetSimgesi(o.isMale, boyut: 22, renk: renk)),
                 ),
               ),
               const SizedBox(width: 12),

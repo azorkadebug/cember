@@ -1,4 +1,5 @@
 import '../tema.dart';
+import '../widgets/simgeler.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -229,8 +230,7 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
               final zatenCezali = _cezalar.any((c) => c.oyuncu.id == o.id);
               return ListTile(
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                leading: Text(o.isMale ? "♂" : "♀",
-                    style: TextStyle(color: o.isMale ? Colors.blue.shade300 : Colors.pink.shade300, fontSize: 14)),
+                leading: CinsiyetSimgesi(o.isMale, boyut: 18, renk: o.isMale ? Colors.blue.shade300 : Colors.pink.shade300),
                 title: Text(o.gorunenAd, style: TextStyle(
                     color: zatenCezali ? Colors.white30 : Colors.white,
                     fontWeight: FontWeight.w600)),
@@ -834,11 +834,10 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
           child: Row(
             children: [
-              Text(o.isMale ? "♂" : "♀",
-                  style: TextStyle(color: o.isMale ? Colors.blue.shade300 : Colors.pink.shade300, fontSize: 12)),
+              CinsiyetSimgesi(o.isMale, boyut: 14, renk: o.isMale ? Colors.blue.shade300 : Colors.pink.shade300),
               if (o.element != null) ...[
                 const SizedBox(width: 3),
-                Text(ElementSistemi.sembol(o.element)!, style: const TextStyle(fontSize: 12)),
+                ElementSimgesi(o.element!, boyut: 13, sade: true),
               ],
               if (o.eslesenIdler.isNotEmpty) ...[
                 const SizedBox(width: 3),

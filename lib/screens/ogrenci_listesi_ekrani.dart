@@ -4,6 +4,7 @@ import 'dart:math';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../widgets/girdi.dart';
+import '../widgets/simgeler.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/ogrenci.dart';
 import '../models/kontrol_kalemi.dart';
@@ -243,8 +244,8 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                     ),
                     YardimBolumu(
                       ikon: Icons.local_fire_department_rounded,
-                      baslik: 'Element 🔥💧🌱💨',
-                      aciklama: 'Öğrenci kartındaki "Element" satırından ata: 🔥 ateş, 💧 su, 🌱 toprak, 💨 hava. Çatışan elementler (🔥↔💧 ve 🌱↔💨) hep FARKLI takımlara düşer; kavgalı ya da ayrılması gereken öğrenciler için. Aynı elementler genelde aynı takımda toplanır.',
+                      baslik: 'Element',
+                      aciklama: 'Öğrenci kartındaki "Element" satırından ata: ateş, su, toprak, hava. Çatışan elementler (ateş ile su, toprak ile hava) hep FARKLI takımlara düşer; kavgalı ya da ayrılması gereken öğrenciler için. Aynı elementler genelde aynı takımda toplanır.',
                       renk: Color(0xFFE53935),
                     ),
                     YardimBolumu(
@@ -1332,7 +1333,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
               .toList();
           final ozet = [
             '${o.puan} puan',
-            if (o.element != null) '${ElementSistemi.sembol(o.element)} ${ElementSistemi.etiket(o.element)}',
+            if (o.element != null) 'Element: ${ElementSistemi.etiket(o.element)}',
             if (esAdlari.isNotEmpty) 'Eşli: ${esAdlari.join(', ')}',
           ].join('  ·  ');
           return Padding(
@@ -1370,8 +1371,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(color: cinsiyetRenk.withAlpha(120)),
                             ),
-                            child: Center(child: Text(o.isMale ? "♂" : "♀",
-                                style: TextStyle(color: cinsiyetRenk, fontSize: 20, fontWeight: FontWeight.w800))),
+                            child: Center(child: CinsiyetSimgesi(o.isMale, boyut: 26, renk: cinsiyetRenk)),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -1454,8 +1454,9 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                           bolumBasligi('TAKIM KURMA', ikon: Icons.groups_rounded),
                           Row(children: [
                             const SizedBox(width: 56, child: Text('Element', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTema.metinIkincil))),
-                            ...ElementSistemi.semboller.entries.map((e) {
+                            ...ElementSistemi.ikonlar.entries.map((e) {
                               final secili = o.element == e.key;
+                              final renk = ElementSistemi.renkler[e.key]!;
                               return Padding(
                                 padding: const EdgeInsets.only(right: 6),
                                 child: Semantics(
@@ -1470,11 +1471,11 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                                       duration: const Duration(milliseconds: 200),
                                       width: 44, height: 44,
                                       decoration: BoxDecoration(
-                                        color: secili ? AppTema.vurgu.withAlpha(25) : Colors.grey.shade100,
+                                        color: secili ? renk.withAlpha(40) : Colors.grey.shade100,
                                         borderRadius: BorderRadius.circular(10),
-                                        border: Border.all(color: secili ? AppTema.vurgu : Colors.grey.shade300, width: secili ? 2 : 1),
+                                        border: Border.all(color: secili ? renk : Colors.grey.shade300, width: secili ? 2 : 1),
                                       ),
-                                      child: Center(child: Text(e.value, style: const TextStyle(fontSize: 18))),
+                                      child: Center(child: Icon(e.value, size: 24, color: secili ? renk : AppTema.metinUcuncul)),
                                     ),
                                   ),
                                 ),
@@ -1542,9 +1543,9 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                               ),
                             ),
                             const SizedBox(width: 12),
-                            _genderChip("Erkek ♂", o.isMale, Colors.blue, () => setSheetState(() => o.isMale = true)),
+                            _genderChip("Erkek", true, o.isMale, () => setSheetState(() => o.isMale = true)),
                             const SizedBox(width: 6),
-                            _genderChip("Kız ♀", !o.isMale, Colors.pink, () => setSheetState(() => o.isMale = false)),
+                            _genderChip("Kız", false, !o.isMale, () => setSheetState(() => o.isMale = false)),
                           ]),
                         ]),
                       ),
@@ -1675,7 +1676,8 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
     );
   }
 
-  Widget _genderChip(String label, bool selected, Color color, VoidCallback onTap) {
+  Widget _genderChip(String label, bool erkek, bool selected, VoidCallback onTap) {
+    final color = CinsiyetSimgesi.rengi(erkek);
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
@@ -1688,9 +1690,13 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
         ),
         // Seçili olmayan taraf gri metin + gri zemin + gri kenarlıkla
         // okunmuyordu.
-        child: Text(label, style: TextStyle(
-            color: selected ? color : AppTema.metinIkincil,
-            fontWeight: selected ? FontWeight.w700 : FontWeight.w500)),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          CinsiyetSimgesi(erkek, boyut: 18, renk: selected ? color : AppTema.metinUcuncul),
+          const SizedBox(width: 6),
+          Text(label, style: TextStyle(
+              color: selected ? color : AppTema.metinIkincil,
+              fontWeight: selected ? FontWeight.w700 : FontWeight.w500)),
+        ]),
       ),
     );
   }
@@ -1758,7 +1764,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                   child: Row(children: [
                     const SizedBox(width: 24),
                     const Expanded(flex: 5, child: Text("Ad Soyad", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12, color: AppTema.metinIkincil, letterSpacing: 0.3))),
-                    const SizedBox(width: 52, child: Center(child: Text("♂ / ♀", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12, color: AppTema.metinIkincil)))),
+                    const SizedBox(width: 52, child: Center(child: Text("Cins.", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12, color: AppTema.metinIkincil)))),
                     const SizedBox(width: 54, child: Center(child: Text("Puan", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12, color: AppTema.metinIkincil, letterSpacing: 0.3)))),
                     const SizedBox(width: 36),
                   ]),
@@ -1826,14 +1832,9 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                                 border: !satir.cinsiyetSecildi ? Border.all(color: Colors.grey.shade300) : null,
                               ),
                               child: Center(
-                                child: Text(
-                                  !satir.cinsiyetSecildi ? "?" : (satir.isMale ? "♂" : "♀"),
-                                  style: TextStyle(
-                                    color: !satir.cinsiyetSecildi ? AppTema.metinUcuncul : Colors.white,
-                                    fontSize: !satir.cinsiyetSecildi ? 14 : 18,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
+                                child: !satir.cinsiyetSecildi
+                                    ? const Icon(Icons.question_mark_rounded, size: 18, color: AppTema.metinUcuncul)
+                                    : CinsiyetSimgesi(satir.isMale, boyut: 22, renk: Colors.white),
                               ),
                             ),
                             ),
@@ -2371,8 +2372,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                                       color: o.isMale ? Colors.blue.shade50 : Colors.pink.shade50,
                                       borderRadius: BorderRadius.circular(6),
                                     ),
-                                    child: Center(child: Text(o.isMale ? "♂" : "♀",
-                                        style: TextStyle(color: o.isMale ? Colors.blue : Colors.pink, fontSize: 12))),
+                                    child: Center(child: CinsiyetSimgesi(o.isMale, boyut: 15)),
                                   ),
                                   const SizedBox(width: 6),
                                   Expanded(child: Text(o.gorunenAd,

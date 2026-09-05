@@ -12,6 +12,21 @@ class ElementSistemi {
     'hava': '💨',
   };
 
+  /// Arayüzde emoji yerine ikon (tasarım listesi #6). `semboller` metin
+  /// bağlamları (yardım, log) için kaldı.
+  static const Map<String, IconData> ikonlar = {
+    'ates': Icons.local_fire_department_rounded,
+    'su': Icons.water_drop_rounded,
+    'toprak': Icons.eco_rounded,
+    'hava': Icons.air_rounded,
+  };
+  static const Map<String, Color> renkler = {
+    'ates': Color(0xFFE53935),
+    'su': Color(0xFF1E88E5),
+    'toprak': Color(0xFF43A047),
+    'hava': Color(0xFF78909C),
+  };
+
   static const Map<String, String> etiketler = {
     'ates': 'Ateş',
     'su': 'Su',
