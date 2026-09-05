@@ -3,6 +3,8 @@ import 'dart:math';
 
 import 'package:crypto/crypto.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'sayfa_yenile_stub.dart' if (dart.library.html) 'sayfa_yenile_web.dart';
 import 'package:flutter/foundation.dart'
     show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:google_sign_in/google_sign_in.dart';
@@ -222,13 +224,19 @@ class AuthService {
     SifrelemeService.temizle();
 
     await _auth.signOut();
-    // Eskiden burada Firestore terminate()+clearPersistence() vardı:
-    // sonlandırılmış istemci aynı oturumda yeniden kullanılınca her çağrı
-    // hata veriyor, tekrar giren kullanıcı "Bağlantı kurulamadı"da
-    // kalıyordu (denetim #3 K1, 1a48f5f'ten beri canlıda). Önbellek
-    // sorguları ownerId'ye göre süzüldüğü için sonraki kullanıcı öncekinin
-    // verisini görmez; disk önbelleği temizliği ileride uygulama
-    // kapanışında ele alınabilir.
+    if (kIsWeb) {
+      // Paylaşılan okul bilgisayarında kalıcı önbellek çıkıştan sonra
+      // diskte 46 öğrenci adı bırakıyordu (denetim #4 Y6). terminate()
+      // sonrası istemci yeniden kullanılamadığı için (denetim #3 K1) sayfa
+      // yenileniyor; giriş ekranı temiz bir istemciyle açılır.
+      try {
+        await FirebaseFirestore.instance.terminate();
+        await FirebaseFirestore.instance.clearPersistence();
+      } catch (_) {}
+      sayfayiYenile();
+    }
+    // Mobilde önbellek kalır: sorgular kullanıcıya göre süzülür, cihaz
+    // kişiseldir; sonlandırma yeniden başlatma gerektirir.
   }
 
   /// Hassas işlemler (hesap silme) öncesi oturumu tazeler.

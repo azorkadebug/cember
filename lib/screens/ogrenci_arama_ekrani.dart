@@ -5,6 +5,7 @@ import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
 import '../tema.dart';
 import 'ogrenci_listesi_ekrani.dart';
+import '../utils/metin.dart';
 
 /// Sınıflarım'daki büyüteçten açılan, tüm sınıflarda öğrenci arayan sayfa.
 /// Sabri'nin isteği (2026-09-05): öğretmen öğrenciyi biliyor ama o an
@@ -27,9 +28,6 @@ class _AramaKaydi {
   String get anahtar => '$sinifId|${ogrenci.id}';
 }
 
-/// Türkçe'ye duyarlı küçük harf: Dart'ın toLowerCase'i "İ"yi "i̇" (i + nokta)
-/// yapar, "I"yı "i" yapar; "İrem" araması "irem" ile eşleşmezdi.
-String trKucult(String s) => s.replaceAll('İ', 'i').replaceAll('I', 'ı').toLowerCase();
 
 class _OgrenciAramaEkraniState extends State<OgrenciAramaEkrani> {
   static const _sonBakilanAnahtari = 'son_bakilan_ogrenciler';
@@ -78,7 +76,7 @@ class _OgrenciAramaEkraniState extends State<OgrenciAramaEkrani> {
       if (mounted) setState(() { _hata = true; _yukleniyor = false; });
       return;
     }
-    kayitlar.sort((a, b) => trKucult(a.ogrenci.ad).compareTo(trKucult(b.ogrenci.ad)));
+    kayitlar.sort((a, b) => trKarsilastir(a.ogrenci.ad, b.ogrenci.ad));
     if (!mounted) return;
     setState(() {
       _tumu = kayitlar;

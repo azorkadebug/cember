@@ -66,6 +66,7 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
       _sehirCtrl.text = data['sehir'] ?? '';
       _brans = data['brans'] ?? 'Beden Eğitimi';
     }
+    _ilkMetinler = [_adCtrl.text, _okulCtrl.text, _sehirCtrl.text];
     // Ön doldurma bittikten SONRA dinle, yoksa açılışta kirli görünür.
     for (final c in [_adCtrl, _okulCtrl, _sehirCtrl]) {
       c.addListener(_kirliIsaretle);
@@ -130,8 +131,13 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
     }
   }
 
+  List<String> _ilkMetinler = const ['', '', ''];
+
   void _kirliIsaretle() {
-    if (!_kirli && mounted) setState(() => _kirli = true);
+    // Alana yalnız dokunmak (seçim değişimi) da kirli sayılıyordu (denetim #4 O6).
+    final degisti = [_adCtrl.text, _okulCtrl.text, _sehirCtrl.text]
+        .asMap().entries.any((e) => e.value != _ilkMetinler[e.key]);
+    if (degisti != _kirli && mounted) setState(() => _kirli = degisti);
   }
 
   /// Kaydedilmemiş değişiklikle çıkmadan önce sorar.

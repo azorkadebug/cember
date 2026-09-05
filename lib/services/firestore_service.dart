@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../tema.dart';
 import '../models/ogrenci.dart';
 import '../models/kontrol_kalemi.dart';
 
@@ -41,7 +42,7 @@ class FirestoreService {
       'ad': sinifAdi,
       'brans': brans,
       'kontrolKalemleri': kalemler.map((k) => k.toMap()).toList(),
-      'formaRenkleri': formaRenkleri ?? ['Kırmızı', 'Mavi', 'Sarı', 'Yeşil', 'Siyah', 'Beyaz', 'Turuncu', 'Lacivert'],
+      'formaRenkleri': formaRenkleri ?? AppTema.formaRenkAdlari,
     });
   }
 
@@ -109,6 +110,38 @@ class FirestoreService {
         .doc(tarihKey)
         .get();
     return doc.data();
+  }
+
+  /// Listedeki "Yok yaz" kaydırması: bugünün yoklama dokümanına da işler,
+  /// yoksa Yoklama ekranı ile sınıf listesi iki ayrı "yok" tutuyordu
+  /// (denetim #4 Y1).
+  Future<void> yoklamaTekOgrenci(String sinifId, String tarihKey, String ogrenciId, bool geldi) {
+    return _db
+        .collection('siniflar')
+        .doc(sinifId)
+        .collection('yoklamalar')
+        .doc(tarihKey)
+        .set({
+      'tarih': tarihKey,
+      'guncellendi': FieldValue.serverTimestamp(),
+      'kayitlar': {ogrenciId: {'geldi': geldi}},
+    }, SetOptions(merge: true));
+  }
+
+  Future<void> saglikNotuSil(String sinifId, String ogrenciId, Map<String, dynamic> not) {
+    return _ogrenciRef(sinifId, ogrenciId).update({'saglikNotlari': FieldValue.arrayRemove([not])});
+  }
+
+  /// Firestore/ağ hatasını öğretmenin anlayacağı Türkçeye çevirir; ham
+  /// "[cloud_firestore/permission-denied] ..." metni ekrana düşmesin
+  /// (denetim #4 Y10).
+  static String hataMesaji(Object e) {
+    final m = e.toString();
+    if (m.contains('permission-denied')) return 'Bu veriye erişim yetkin yok. Çıkıp tekrar girmeyi dene.';
+    if (m.contains('resource-exhausted')) return 'Günlük kullanım sınırı doldu. Yarın tekrar dene.';
+    if (m.contains('unavailable') || m.contains('network')) return 'Bağlantı yok. İnternetini kontrol edip tekrar dene.';
+    if (m.contains('not-found')) return 'Kayıt bulunamadı; silinmiş olabilir.';
+    return 'Bir şeyler ters gitti. Tekrar dene.';
   }
 
   /// Bir günün yoklamasını kaydeder. [kayitlar]: { ogrenciId: {geldi, kalemler} }.

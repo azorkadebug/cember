@@ -17,7 +17,7 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
   /// pubspec.yaml'daki sürüm. `--dart-define=APP_VERSION=...` ile
   /// derleme sırasında geçilebilir; verilmezse buradaki değer kullanılır.
   static const String _surum =
-      String.fromEnvironment('APP_VERSION', defaultValue: 'v1.1.1');
+      String.fromEnvironment('APP_VERSION', defaultValue: 'v1.2.0');
 
   final _emailCtrl = TextEditingController();
   final _passCtrl = TextEditingController();

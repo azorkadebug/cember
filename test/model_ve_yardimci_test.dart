@@ -8,7 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:cember/models/kontrol_kalemi.dart';
 import 'package:cember/models/ogrenci.dart';
-import 'package:cember/screens/ogrenci_arama_ekrani.dart' show trKucult;
+import 'package:cember/utils/metin.dart';
 import 'package:cember/services/demo_modu.dart';
 import 'package:cember/services/sifreleme_service.dart';
 import 'package:cember/tema.dart';

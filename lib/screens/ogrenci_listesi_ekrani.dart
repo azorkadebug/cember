@@ -1,4 +1,5 @@
 import '../tema.dart';
+import '../utils/metin.dart';
 import 'dart:math';
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -23,12 +24,12 @@ const List<String> _takimIsimHavuzu = [
   // Kantin & yemek teması
   "Tost Mafyası", "Ayran United", "Simit Karteli", "Poğaça Operasyonu",
   "Kantin Korsanları", "Çikolata Çetesi", "Kraker Komandoları", "Cips Fırtınası",
-  "Kaşarlı Ejderhalar", "Susamlı Şimşekler", "Ketçap Canavarları", "Kola Kasırgası",
+  "Susamlı Şimşekler", "Ketçap Canavarları", "Kola Kasırgası",
   // Okul teması
   "Teneffüs Kaplanları", "Ödev Avcıları", "Zil Korsanları", "Sınav Hayaletleri",
   "Silgi Savaşçıları", "Uçan Tebeşirler", "Mega Cetvel", "Defter Ejderhaları",
   "Çılgın Silgiler", "Kalem Açar Birliği", "Tahta Kalesi FC", "Müdür Yardımcıları",
-  "Sıra Arkası Spor", "Kopya Ajanları", "Yoklama Fantastiği",
+  "Sıra Arkası Spor", "Yoklama Fantastikleri",
   // Absürt hayvan
   "Ninja Kaplumbağalar", "Korsan Papağanlar", "Viking Kedileri", "Şimşek Hamsterlar",
   "Perişan Penguenler", "Süpersonik Sincaplar", "Panik Ahtapotlar", "Disko Arıları",
@@ -40,13 +41,13 @@ const List<String> _takimIsimHavuzu = [
   "Kozmik Köfteciler", "Turşu Yıldızları", "Dinamit Domatesler", "Kaptan Patlıcan",
   "Fantom Peynirler", "Kızgın Bamyalar", "Fırtınalı Fasulye",
   // Absürt eşya & kavram
-  "Çaydanlık United", "Ejder Çorapları", "Gizli Ajanlar FC", "Gökgürültüsü FC",
+  "Çaydanlık United", "Ejder Çorapları", "Gizli Ajanlar FC", "Gök Gürültüsü FC",
   "Buldozer Kelebekler", "Sihirli Noktalar", "Nükleer Cevizler", "Dalga Delileri",
-  "Yıkılmaz Yumurtalar", "Uçan Halıcılar", "Biber Gazı Spor",
+  "Yıkılmaz Yumurtalar", "Uçan Halıcılar",
   // Epik & komik karışım
   "Meşhur Patatesler", "Efsane Peçeteler", "Korkusuz Krakerler", "Sönen Yıldızlar",
   "Asi Kurabiyeler", "Gölge Simsarları", "Fırtına Fıstıkları", "Yanan Buzlar",
-  "Demir Elmalar", "Altın Sakızlar", "Gümüş Göbekler", "Elmas Dirsekler",
+  "Demir Elmalar", "Altın Sakızlar", "Elmas Dirsekler",
   // Trend & pop kültür
   "WiFi Avcıları", "Şarj Bitti FC", "Ekran Kırıkları", "Caps Efsaneleri",
   "Meme Lordu", "Hashtag Ordusu", "Emoji Savaşçıları", "TikTok Kaplanları",
@@ -57,16 +58,23 @@ const List<String> _takimIsimHavuzu = [
   "Beş Dakika Daha", "Zil Çalsın Yeter", "Tahtaya Kalkmam",
   // Ortaokul meme / gündelik dil
   "Efsane Çocuklar", "Mood Bozanlar", "Resmen Biz", "Aynen Öyle FC",
-  "Off Yine mi Biz", "Sus Len", "Tamamdır Reis", "Hadi Canım",
-  "Valla Olmaz", "Yok Artık", "Bana mı Dedin",
+  "Off Yine mi Biz", "Tamamdır Reis", "Hadi Canım",
+  "Valla Olmaz", "Yok Artık", 
   // Absürt süper kahraman
   "Kaptan Kek", "Süper Simit", "Işın Kılıçlı Kalemler", "Radyoaktif Silgiler",
   "X-Men Yok Biz Varız", "Lazerli Lokumlar", "Atomik Ayakkabılar",
   // Ortaokul spor & çakma marka
-  "Adidos FC", "Nayki United", "Pumba Spor", "Beşiktoast", "Galatasaray Tost",
+  "Adidos FC", "Nayki United", "Pumba Spor", 
   "Real Mısır", "Barçelona Börek", "Manchester Mantı",
   // Matematik & ders esprisi
-  "Pisagor Çetesi", "Bölen Bulunmaz", "Sıfırın Altı", "Negatif Enerji FC",
+  "Pisagor Çetesi", "Bölen Bulunmaz", "Kesirli Kahramanlar",
+  // Denetim #4 (2026-09-06): kaba/küçük düşürücü/taraftar göndermeli 10 ad
+  // çıkarıldı (Sus Len, Kaşarlı Ejderhalar, Biber Gazı Spor, Negatif Enerji,
+  // Sıfırın Altı, Gümüş Göbekler, Bana mı Dedin, Kopya Ajanları, Beşiktoast,
+  // Galatasaray Tost); yerine kimseyi etiketlemeyen absürtler:
+  "Uçan Köfteler", "Kozmik Kalemtıraşlar", "Hızlı Hıyarlar", "Şaşkın Şalgamlar",
+  "Gizemli Gofretler", "Kayıp Kalem Uçları", "Fırıldak Fındıklar", "Teneffüs Tayfası",
+  "Sıra Kapmaca FC", "Çıtır Çıtır United", "Zıpzıp Zerdeçallar", 
   "Virgülden Sonrası", "Türev Canavarları", "X'i Bulanlar",
 ];
 
@@ -98,6 +106,9 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
       _db.ogrencilerStream(widget.sinifId);
   late final Stream<QuerySnapshot> _ogrencilerAkisiListe =
       _db.ogrencilerStream(widget.sinifId);
+  /// Yeniden abonelikte ilk olaya kadar veri yok sayılıp 0/0/0 yazılıyordu
+  /// (denetim #4 Y2).
+  QuerySnapshot? _sonBaslik, _sonListe;
 
   int secilenTakimSayisi = 2;
   List<String> formaRenkleri = ['Kırmızı', 'Mavi', 'Sarı', 'Yeşil', 'Siyah', 'Beyaz', 'Turuncu', 'Lacivert'];
@@ -221,37 +232,37 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                     YardimBolumu(
                       ikon: Icons.person_add_alt_rounded,
                       baslik: 'Öğrenci ekleme',
-                      aciklama: 'Sağ alttaki "+" düğmesi → tek tek ekle. Üstte "👥 Hızlı Ekle" ile toplu ekle (her satıra bir isim).',
+                      aciklama: 'Sağ üstteki ⋮ menüsünden "Hızlı Öğrenci Ekle" ile toplu ekle: her satıra bir isim, cinsiyet ve puan. Aynı isim varsa uyarır.',
                       renk: Color(0xFF1976D2),
                     ),
                     YardimBolumu(
                       ikon: Icons.bolt_rounded,
-                      baslik: 'Puan (50-150)',
-                      aciklama: 'Her öğrenciye seviye puanı verebilirsin. AI takım dağıtımı bu puanları kullanarak adil takımlar kurar — yüksek puanlı öğrencileri dengeli dağıtır (snake draft). Varsayılan 100; yetenek/katılım seviyesine göre 70-130 arası ayarla.',
+                      baslik: 'Yetenek puanı',
+                      aciklama: 'Her öğrenciye bir yetenek puanı verebilirsin (varsayılan 100). Takım kurucu puanları yılan sıralamasıyla dağıtıp takım toplamlarını dengeler. Öğrenci kartındaki "Bilgiler" bölümünden değiştir; 70-130 arası yeterli.',
                       renk: Color(0xFFFFB300),
                     ),
                     YardimBolumu(
                       ikon: Icons.local_fire_department_rounded,
-                      baslik: 'Element sistemi 🔥💧🌱💨',
-                      aciklama: 'Öğrencilere element ata: 🔥 ateş, 💧 su, 🌱 toprak, 💨 hava. Çatışan elementler (🔥↔💧 ve 🌱↔💨) algoritma tarafından FARKLI takımlara yerleştirilir. Sınıfta kavgalı/dağıtılması gereken öğrencileri ayırmak için ideal. Aynı element olan öğrenciler genelde aynı takıma kümelenir.',
+                      baslik: 'Element 🔥💧🌱💨',
+                      aciklama: 'Öğrenci kartındaki "Element" satırından ata: 🔥 ateş, 💧 su, 🌱 toprak, 💨 hava. Çatışan elementler (🔥↔💧 ve 🌱↔💨) hep FARKLI takımlara düşer; kavgalı ya da ayrılması gereken öğrenciler için. Aynı elementler genelde aynı takımda toplanır.',
                       renk: Color(0xFFE53935),
                     ),
                     YardimBolumu(
                       ikon: Icons.link_rounded,
                       baslik: 'Eşleştirme 🔗',
-                      aciklama: 'Öğrenci düzenle penceresindeki "Eşleş" alanından iki öğrenciyi birbirine bağla. AI Takım Kur bu ikiliyi mümkün olduğunca hep aynı takıma yerleştirir — element sisteminden bağımsızdır, mevcut elementlerini etkilemez. Örn. birlikte oynamaktan hoşlanan iki arkadaşı ayırmadan takım kurmak için ideal.',
+                      aciklama: 'Öğrenci kartındaki "Eşleş" satırından iki öğrenciyi birbirine bağla. Takım kurucu bu ikiliyi hep aynı takıma koyar; elementten bağımsızdır. Birlikte oynamaktan hoşlanan iki arkadaşı ayırmamak için.',
                       renk: Color(0xFF3949AB),
                     ),
                     YardimBolumu(
                       ikon: Icons.checklist_rounded,
                       baslik: 'Yoklama',
-                      aciklama: 'Üstteki ✓ simgesiyle tarihli yoklama al — kontrol kalemleriyle (kitap, forma, boya…) birlikte kaydedilir. Öğrenciye dokunarak da hızlıca "burada/yok" işaretleyebilirsin; yalnızca burada olanlar takım dağıtımında yer alır.',
+                      aciklama: 'Üstteki ✓ simgesiyle tarihli yoklama al; kontrol kalemleriyle (kitap, forma, boya…) birlikte kaydedilir. Listede bir öğrenciyi sağa kaydırarak da hızlıca "Yok" yazabilirsin; ikisi aynı kayda işler. Yalnız gelenler takım kurmaya girer.',
                       renk: Color(0xFF00897B),
                     ),
                     YardimBolumu(
                       ikon: Icons.sports_score_rounded,
-                      baslik: 'AI Takım Oluştur',
-                      aciklama: 'Alttaki "AI Takım Kur" düğmesi ile öğrencileri adil gruplara ayır — oyun, yarışma veya grup çalışması için. Snake draft algoritması: önce kızları, sonra erkekleri puana göre sıralayıp en az kişili takıma yerleştirir. Element çatışmalarını otomatik önler. Sonuç: max 1 kişi farkı + denk puanlar.',
+                      baslik: 'Takım Kur',
+                      aciklama: 'Alttaki "Takım Kur" düğmesi öğrencileri adil gruplara ayırır: oyun, yarışma ya da grup çalışması için. Önce kızları, sonra erkekleri puana göre sıralayıp yılan sıralamasıyla dağıtır; elementli ve eşli öğrencileri önce yerleştirir. Sonuç: en fazla 1 kişi farkı, denk puanlar, çatışan elementler ayrı.',
                       renk: Color(0xFF43A047),
                     ),
                     YardimBolumu(
@@ -263,7 +274,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                     YardimBolumu(
                       ikon: Icons.assignment_late_rounded,
                       baslik: 'Kontrol kalemleri',
-                      aciklama: 'Branşına göre kontrol kalemleri tanımla (forma, kitap, boya, enstrüman…): günlük ✓/✗ veya sezon boyu sayaç. Üstteki ayar simgesinden düzenle. Sağlık notları + rozetler de öğrenci kartında tutulur.',
+                      aciklama: 'Branşına göre kontrol kalemleri tanımla (forma, kitap, boya, enstrüman…): günlük ✓/✗ ya da sezon boyu sayaç. ⋮ menüsünden "Kontrol Kalemleri" ile düzenle. Sağlık notları ve rozetler öğrenci kartında.',
                       renk: Color(0xFF8E24AA),
                     ),
                   ],
@@ -344,7 +355,9 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                       // Kompakt istatistik satırı
                       StreamBuilder<QuerySnapshot>(
                         stream: _ogrencilerAkisiBaslik,
+                        initialData: _sonBaslik,
                         builder: (context, snapshot) {
+                          if (snapshot.hasData) _sonBaslik = snapshot.data;
                           final total = snapshot.hasData ? snapshot.data!.docs.length : 0;
                           final present = snapshot.hasData
                               ? snapshot.data!.docs.where((d) => (d.data() as Map<String, dynamic>)['buradaMi'] ?? true).length
@@ -393,7 +406,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
               child: TextField(
                 controller: _aramaCtrl,
-                onChanged: (val) => setState(() => _aramaMetni = val.toLowerCase()),
+                onChanged: (val) => setState(() => _aramaMetni = trKucult(val)),
                 decoration: InputDecoration(
                   hintText: "Öğrenci ara...",
                   hintStyle: TextStyle(color: Colors.grey.shade500),
@@ -457,7 +470,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                         ),
                         onPressed: _takimlariKur,
                         icon: const Icon(Icons.auto_awesome_rounded),
-                        label: const Text("AI Takım Kur", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                        label: const Text("Takım Kur", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
                       ),
                     ),
                   ],
@@ -536,7 +549,16 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
   Widget _bulutListeInsaEt() {
     return StreamBuilder<QuerySnapshot>(
       stream: _ogrencilerAkisiListe,
+      initialData: _sonListe,
       builder: (context, snapshot) {
+        if (snapshot.hasData) _sonListe = snapshot.data;
+        if (snapshot.hasError && !snapshot.hasData) {
+          return Center(child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Text(FirestoreService.hataMesaji(snapshot.error!), textAlign: TextAlign.center,
+                style: const TextStyle(color: AppTema.metinIkincil)),
+          ));
+        }
         if (!snapshot.hasData) return const Center(child: CircularProgressIndicator(color: AppTema.vurgu));
         List<Ogrenci> liste = snapshot.data!.docs
             .map((d) => Ogrenci.fromMap(d.id, d.data() as Map<String, dynamic>))
@@ -557,7 +579,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
           );
         }
         // Alfabetik sıralama
-        liste.sort((a, b) => a.ad.toLowerCase().compareTo(b.ad.toLowerCase()));
+        liste.sort((a, b) => trKarsilastir(a.gorunenAd, b.gorunenAd));
         // Eşleştirme seçicisi arama filtresinden etkilenmemeli — sınıfın
         // tamamı adayları olarak kalsın.
         final tumOgrenciler = List<Ogrenci>.from(liste);
@@ -577,7 +599,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
         // göre aramak, kullanıcının gördüğü isimle sonuç bulamamasına yol açar.
         if (_aramaMetni.isNotEmpty) {
           liste = liste
-              .where((o) => o.gorunenAd.toLowerCase().contains(_aramaMetni))
+              .where((o) => trKucult(o.gorunenAd).contains(_aramaMetni))
               .toList();
         }
         return _listeInsaEt(liste, tumOgrenciler);
@@ -617,6 +639,11 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
               // Tek alan yazılıyor: tüm dokümanı geri yazmak, ikinci bir
               // cihazdan o sırada girilen puan/sayaç değişikliklerini siler.
               unawaited(_db.buradaMiGuncelle(widget.sinifId, o.id, o.buradaMi));
+              // Yoklama ekranı ile sınıf listesi iki ayrı "yok" tutuyordu
+              // (denetim #4 Y1): kaydırma bugünün yoklamasına da işlensin.
+              final b = DateTime.now();
+              final tarih = '${b.year}-${b.month.toString().padLeft(2, '0')}-${b.day.toString().padLeft(2, '0')}';
+              unawaited(_db.yoklamaTekOgrenci(widget.sinifId, tarih, o.id, o.buradaMi).catchError((_) {}));
               return false; // Kartı silme, sadece toggle
             },
             background: Container(
@@ -633,7 +660,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                   Icon(o.buradaMi ? Icons.cancel_rounded : Icons.check_circle_rounded,
                       color: o.buradaMi ? Colors.red.shade900 : AppTema.basari),
                   const SizedBox(width: 8),
-                  Text(o.buradaMi ? "Yok Say" : "Geldi",
+                  Text(o.buradaMi ? "Yok yaz" : "Geldi",
                       style: TextStyle(fontWeight: FontWeight.w700, color: o.buradaMi ? Colors.red.shade900 : AppTema.basari)),
                 ],
               ),
@@ -941,7 +968,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
   void _saglikGecmisiDialog(Ogrenci o) {
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
+      builder: (ctx) => StatefulBuilder(builder: (ctx, setD) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(children: [
           const Icon(Icons.history_rounded, color: Colors.teal, size: 22),
@@ -965,6 +992,17 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                   child: Text(kayit['tarih'] ?? '', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.teal)),
                 ),
                 title: Text(kayit['not'] ?? '-', style: const TextStyle(fontSize: 14)),
+                // Sağlık notu hiçbir yerden silinemiyordu (denetim #4 O2).
+                trailing: IconButton(
+                  icon: const Icon(Icons.delete_outline_rounded, color: AppTema.tehlike, size: 20),
+                  tooltip: 'Notu sil',
+                  onPressed: () {
+                    setD(() => o.saglikNotlari.remove(kayit));
+                    unawaited(_db.saglikNotuSil(widget.sinifId, o.id, kayit)
+                        .catchError((_) => _hataGoster('Not silinemedi.')));
+                    if (o.saglikNotlari.isEmpty) Navigator.pop(ctx);
+                  },
+                ),
               );
             },
           ),
@@ -975,7 +1013,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
             child: const Text("Kapat"),
           ),
         ],
-      ),
+      )),
     );
   }
 
@@ -1070,7 +1108,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text("Rozet Sil"),
-        content: Text("$tanim rozetini silmek istediğinize emin misiniz?"),
+        content: Text("$tanim rozetini silmek istediğine emin misin?"),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
@@ -1236,6 +1274,11 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
       });
       Navigator.pop(sheetCtx, 'kaydedildi');
       if (bosMu) return;
+      // Başarı için hiç geri bildirim yoktu (denetim #4 O1).
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('${o.gorunenAd} kaydedildi'),
+        duration: const Duration(seconds: 2),
+      ));
       // Beklenmiyor: çevrimdışıyken kuyruğa girer, bağlanınca gider
       // (kalıcı önbellek açık). Hata gelirse kullanıcıya söylenir.
       unawaited(_db
@@ -1410,7 +1453,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                           // 4. Takım kurma
                           bolumBasligi('TAKIM KURMA', ikon: Icons.groups_rounded),
                           Row(children: [
-                            const SizedBox(width: 56, child: Text('İfade', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTema.metinIkincil))),
+                            const SizedBox(width: 56, child: Text('Element', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTema.metinIkincil))),
                             ...ElementSistemi.semboller.entries.map((e) {
                               final secili = o.element == e.key;
                               return Padding(
@@ -1418,7 +1461,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                                 child: Semantics(
                                   button: true,
                                   selected: secili,
-                                  label: 'İfade: ${ElementSistemi.etiketler[e.key] ?? e.key}',
+                                  label: 'Element: ${ElementSistemi.etiketler[e.key] ?? e.key}',
                                   excludeSemantics: true,
                                   child: InkWell(
                                     borderRadius: BorderRadius.circular(10),
@@ -1474,7 +1517,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                           ]),
                           const Padding(
                             padding: EdgeInsets.only(top: 6),
-                            child: Text('İfade çatışanları ayırır, eşleşme ikiliyi aynı takıma koyar.',
+                            child: Text('Çatışan elementler ayrı takıma, eşleşenler aynı takıma düşer.',
                                 style: TextStyle(fontSize: 12, color: AppTema.metinUcuncul)),
                           ),
 
@@ -1560,7 +1603,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
     Set<String> dokunulanEslerinIdleri,
   ) {
     final adaylar = tumOgrenciler.where((p) => p.id != o.id).toList()
-      ..sort((a, b) => a.gorunenAd.toLowerCase().compareTo(b.gorunenAd.toLowerCase()));
+      ..sort((a, b) => trKarsilastir(a.gorunenAd, b.gorunenAd));
     final adlar = {for (final p in tumOgrenciler) p.id: p.gorunenAd};
     // 30 kişilik sınıfta arama olmadan kullanılamıyordu; başkasıyla eşli
     // adaylar da ayırt edilmiyordu (denetim O4).
@@ -1658,7 +1701,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
       builder: (c2) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text("Öğrenciyi Sil"),
-        content: Text("${o.gorunenAd} isimli öğrenciyi kalıcı olarak silmek istediğinize emin misiniz?"),
+        content: Text("${o.gorunenAd} isimli öğrenciyi kalıcı olarak silmek istediğine emin misin?"),
         actions: [
           TextButton(onPressed: () => Navigator.pop(c2), child: const Text("İptal")),
           ElevatedButton(
@@ -1988,7 +2031,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
               ]),
             )),
             const SizedBox(height: 12),
-            Text("Yine de eklemek ister misiniz?", style: TextStyle(color: Colors.grey.shade600)),
+            Text("Yine de ekleyelim mi?", style: TextStyle(color: Colors.grey.shade600)),
           ]),
           actions: [
             TextButton(onPressed: () => Navigator.pop(c, false), child: Text("Atla", style: TextStyle(color: Colors.grey.shade600))),
@@ -2091,7 +2134,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
     if (gelenler.length < secilenTakimSayisi) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: const Text("Yeterli öğrenci yok."),
+          content: Text("$secilenTakimSayisi takım için en az $secilenTakimSayisi gelen öğrenci gerekir (şu an ${gelenler.length})."),
           backgroundColor: Colors.red.shade700, behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ));
@@ -2246,8 +2289,8 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
             padding: const EdgeInsets.fromLTRB(24, 16, 16, 8),
             child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const Text("AI Takım Dağılımı", style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
-                Text("${gelenler.length} oyuncu  •  $secilenTakimSayisi takım", style: const TextStyle(color: AppTema.metinIkincil)),
+                const Text("Takım Dağılımı", style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
+                Text("${gelenler.length} öğrenci  •  $secilenTakimSayisi takım", style: const TextStyle(color: AppTema.metinIkincil)),
               ]),
               Material(
                 color: AppTema.ana50, borderRadius: BorderRadius.circular(12),

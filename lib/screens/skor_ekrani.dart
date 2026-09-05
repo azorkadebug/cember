@@ -181,7 +181,7 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin {
         title: Row(children: [
           Icon(Icons.front_hand_rounded, color: Colors.red.shade400, size: 22),
           const SizedBox(width: 8),
-          Text("2 dk Ceza — ${t.renkAdi}", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16)),
+          Text("2 dk Mola — ${t.renkAdi}", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16)),
         ]),
         content: SizedBox(
           width: double.maxFinite,
@@ -200,7 +200,7 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin {
                     color: zatenCezali ? Colors.white30 : Colors.white,
                     fontWeight: FontWeight.w600)),
                 trailing: zatenCezali
-                    ? Text("Cezalı", style: TextStyle(color: Colors.red.shade300, fontSize: 12))
+                    ? Text("Molada", style: TextStyle(color: Colors.red.shade300, fontSize: 12))
                     : null,
                 enabled: !zatenCezali,
                 onTap: () {
@@ -254,7 +254,7 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin {
             child: const Icon(Icons.check_circle_rounded, color: Colors.green, size: 24),
           ),
           const SizedBox(width: 12),
-          const Expanded(child: Text("Ceza Bitti!", style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800))),
+          const Expanded(child: Text("Mola bitti", style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800))),
         ]),
         content: Row(children: [
           Container(width: 10, height: 10, decoration: BoxDecoration(color: t.renk, shape: BoxShape.circle)),
@@ -344,20 +344,20 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin {
                 ),
                 YardimBolumu(
                   ikon: Icons.timer_rounded,
-                  baslik: 'Timer (kronometre)',
-                  aciklama: 'Başlat/Durdur düğmesi ile zamanı kontrol et. Hazır süreler (0:30, 1:00, 2:00, 3:00, 5:00, 10:00) ile periyotları hızlıca ayarla. Sıfırla butonu zamanı 0:00\'a getirir.',
+                  baslik: 'Süre sayacı',
+                  aciklama: 'Geri sayım: hazır süreyi seç (0:30 … 10:00), Başlat/Durdur ile yönet. Sıfırla, seçili süreye geri döndürür. Süre bitince tam ekran uyarı, titreşim ve düdük.',
                   renk: Color(0xFF1976D2),
                 ),
                 YardimBolumu(
                   ikon: Icons.report_rounded,
-                  baslik: '2 dakika ceza sistemi',
-                  aciklama: 'Takım kartı üstünde "Ceza" düğmesi → cezalanacak oyuncuyu seç. Seçilen oyuncu 2 dakika boyunca takımdan düşer (kırmızı banner üstte gösterir). Süre dolunca otomatik geri döner. Buz hokeyi/futsal mantığı — disiplinsizliği oyun içinde yönet, dışlama yerine "soğuma" molası.',
+                  baslik: '2 dakika mola',
+                  aciklama: 'Takım kartındaki "2 dk Mola" düğmesi → oyuncuyu seç. Oyuncu 2 dakika oyundan çıkar (üstte kırmızı şerit), süre dolunca kendiliğinden döner. Buz hokeyi/futsal mantığı: dışlama yerine soğuma molası. Perdede "molada" görünür, "ceza" değil.',
                   renk: Color(0xFFE53935),
                 ),
                 YardimBolumu(
                   ikon: Icons.flag_circle_rounded,
                   baslik: 'Sınıfa dön / etkinliği bitir',
-                  aciklama: 'Sol üstteki ok ile sınıf ekranına dönebilirsin: skor ve süre saklanır, süre arka planda işlemeye devam eder. Sınıflarım ekranındaki "Etkinlik devam ediyor" şeridinden geri gel ya da oradaki ⏹ ile etkinliği bitir.',
+                  aciklama: 'Sol üstteki ok ile sınıf ekranına dönebilirsin: skor ve süre saklanır, uygulama açık kaldığı sürece süre işlemeye devam eder. Sınıflarım ekranındaki "Etkinlik devam ediyor" şeridine dokununca skor tablosu açılır; ⏹ ile etkinliği bitir.',
                   renk: Color(0xFF8E24AA),
                 ),
                 YardimBolumu(
@@ -491,7 +491,7 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin {
                     Icon(Icons.front_hand_rounded, color: cezaMetin, size: 15),
                     const SizedBox(width: 5),
                     Text(
-                      cezaSayisi > 0 ? "Ceza ($cezaSayisi)" : "2dk Ceza",
+                      cezaSayisi > 0 ? "Mola ($cezaSayisi)" : "2 dk Mola",
                       style: TextStyle(color: cezaMetin, fontSize: 12, fontWeight: FontWeight.w700),
                     ),
                   ],
@@ -782,7 +782,7 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin {
     final etiket = [
       o.gorunenAd,
       if (isKaptan) 'kaptan',
-      if (isCezali) 'cezalı',
+      if (isCezali) 'molada',
       if (o.eslesenIdler.isNotEmpty) 'eşli',
       ?elementAdi,
       o.isMale ? 'erkek' : 'kız',
@@ -817,7 +817,7 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin {
                     color: isCezali ? Colors.red.shade300 : isKaptan ? Colors.amber : Colors.white70,
                     fontWeight: isKaptan ? FontWeight.w800 : FontWeight.w400,
                     fontSize: 12,
-                    decoration: isCezali ? TextDecoration.lineThrough : null,
+                    fontStyle: isCezali ? FontStyle.italic : FontStyle.normal,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -928,11 +928,11 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin {
                     child: Row(mainAxisSize: MainAxisSize.min, children: [
                       const Icon(Icons.front_hand_rounded, color: Colors.white, size: 16),
                       const SizedBox(width: 6),
-                      Text('Ceza ($cezaSayisi)', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                      Text('Mola ($cezaSayisi)', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
                     ]),
                   )
                 else
-                  Text('dokun +1', style: TextStyle(color: metin.withAlpha(150), fontSize: 13)),
+                  Text('dokun +1', style: TextStyle(color: metin.withAlpha(110), fontSize: 12)),
               ]),
             ]),
           ),

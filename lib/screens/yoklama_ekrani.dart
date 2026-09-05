@@ -8,7 +8,7 @@ import '../services/firestore_service.dart';
 import '../services/auth_service.dart';
 
 /// Günlük yoklama ızgarası: öğrenci × (geldi/yok + günlük kalemler).
-/// Tarihli kayıt tutar; "Yeni Ders / Tümü Geldi" ile sıfırlanır.
+/// Tarihli kayıt tutar; "Hepsini Geldi Yap" ile sıfırlanır (Kaydet gerekir).
 class YoklamaEkrani extends StatefulWidget {
   final String sinifId;
   final String? sinifAd;
@@ -126,6 +126,16 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
     }
     setState(() => _kaydediyor = true);
     try {
+      // Sınıf listesindeki "buradaMi" ile aynı kayda işlesin (denetim #4 Y1);
+      // bugünün yoklaması için geldi/yok değişenler listeye de yazılır.
+      final b = DateTime.now();
+      final buGunMu = _tarih.year == b.year && _tarih.month == b.month && _tarih.day == b.day;
+      if (buGunMu) {
+        for (final e in kayitlar.entries) {
+          final g = (e.value as Map)['geldi'];
+          if (g is bool) unawaited(_db.buradaMiGuncelle(widget.sinifId, e.key, g).catchError((_) {}));
+        }
+      }
       await _db
           .yoklamaKaydet(widget.sinifId, _tarihKey, kayitlar)
           // Çevrimdışıyken süresiz bekliyordu, mesaj yoktu (denetim #3 Y8).
@@ -152,7 +162,7 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
       if (mounted) {
         setState(() => _kaydediyor = false);
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: const Text('Kaydedilemedi, tekrar deneyin.'),
+          content: const Text('Kaydedilemedi, tekrar dene.'),
           backgroundColor: Colors.red.shade700,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -214,13 +224,41 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
     }
   }
 
+  bool get _kirli => _ogrenciler.any((o) {
+        final s = _kayitlar[o.id], i = _ilkKayitlar[o.id];
+        if (s == null || i == null) return false;
+        if (s.geldi != i.geldi) return true;
+        return s.kalemler.entries.any((e) => i.kalemler[e.key] != e.value);
+      });
+
   @override
   Widget build(BuildContext context) {
     final gelenSayisi = _ogrenciler.where((o) => _kayitlar[o.id]?.geldi ?? true).length;
     final bugun = DateTime.now();
     final buGun = _tarih.year == bugun.year && _tarih.month == bugun.month && _tarih.day == bugun.day;
 
-    return Scaffold(
+    // Kaydetmeden çıkışta değişiklik sessizce kayboluyordu (denetim #4 Y8).
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        if (!_kirli) { Navigator.pop(context); return; }
+        final secim = await showDialog<String>(
+          context: context,
+          builder: (c) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: const Text('Kaydedilmemiş değişiklikler'),
+            content: const Text('Yoklamada kaydetmediğin işaretler var.'),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(c, 'cik'), child: const Text('Kaydetmeden çık')),
+              FilledButton(onPressed: () => Navigator.pop(c, 'kaydet'), child: const Text('Kaydet')),
+            ],
+          ),
+        );
+        if (secim == 'kaydet') await _kaydet();
+        if (secim != null && context.mounted) Navigator.pop(context);
+      },
+      child: Scaffold(
       backgroundColor: Colors.grey.shade100,
       appBar: AppBar(
         backgroundColor: AppTema.ana,
@@ -293,7 +331,7 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
                       TextButton.icon(
                         onPressed: _tumuGeldi,
                         icon: const Icon(Icons.refresh_rounded, size: 18),
-                        label: const Text('Yeni Ders / Tümü Geldi'),
+                        label: const Text('Hepsini Geldi Yap'),
                         // Yıkıcı bir toplu işlem — sıradan bir metin düğmesi
                         // gibi görünmesin.
                         style: TextButton.styleFrom(foregroundColor: AppTema.uyari),
@@ -360,6 +398,7 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
                 ),
               ),
             ),
+      ),
     );
   }
 

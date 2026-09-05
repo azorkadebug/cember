@@ -49,7 +49,7 @@ class _KontrolKalemleriEkraniState extends State<KontrolKalemleriEkrani> {
       if (mounted) {
         setState(() => _kaydediyor = false);
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: const Text('Kaydedilemedi, tekrar deneyin.'),
+          content: const Text('Kaydedilemedi, tekrar dene.'),
           backgroundColor: Colors.red.shade700,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),

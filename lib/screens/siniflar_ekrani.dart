@@ -1,4 +1,5 @@
 import '../tema.dart';
+import '../utils/metin.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../widgets/girdi.dart';
@@ -53,6 +54,10 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
   Stream<QuerySnapshot> _ogrenciSayisiAkisi(String sinifId) =>
       _ogrenciSayaclari.putIfAbsent(
           sinifId, () => _db.ogrencilerStream(sinifId));
+  /// Aynı akışa yeniden abone olunca ilk olay gelene kadar veri yok sayılıp
+  /// "0 öğrenci" yazılıyordu (denetim #4 Y2); son değer saklanır.
+  final Map<String, QuerySnapshot> _sonSayaclar = {};
+  QuerySnapshot? _sonSiniflar;
 
   @override
   void initState() {
@@ -81,7 +86,9 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
         foregroundColor: Colors.white,
         elevation: 0,
         actions: [
-          if (AuthService().isAdmin) ...[
+          // Demo modu yalnız admin'e çiziliyordu; tanıtım, yardım, mağaza
+          // metni ve gizlilik politikası herkese vaat ediyordu (denetim #4 K4).
+          ...[
             IconButton(
               icon: Icon(DemoModu.aktif ? Icons.visibility_off_rounded : Icons.visibility_rounded),
               tooltip: DemoModu.aktif ? 'Demo Kapat' : 'Demo Aç',
@@ -98,7 +105,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
                 ));
               },
             ),
-            IconButton(
+            if (AuthService().isAdmin) IconButton(
               icon: const Icon(Icons.admin_panel_settings_rounded),
               tooltip: 'Admin',
               onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminEkrani())),
@@ -119,25 +126,25 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
                 YardimBolumu(
                   ikon: Icons.add_circle_outline_rounded,
                   baslik: 'Yeni sınıf oluştur',
-                  aciklama: 'Sağ alttaki "+" düğmesi → sınıf adı yaz (örn. 7-A, 6-B) ve branşını seç. Kontrol kalemleri (forma, kitap, boya…) branşa göre otomatik gelir; takım renkleri de otomatik atanır.',
+                  aciklama: 'Sağ alttaki "Sınıf Ekle" düğmesi → sınıf adı yaz (örn. 7-A) ve branşını seç. Kontrol kalemleri (forma, kitap, boya…) branşa göre hazır gelir; takım renkleri de otomatik atanır.',
                   renk: Color(0xFF43A047),
                 ),
                 YardimBolumu(
                   ikon: Icons.touch_app_rounded,
                   baslik: 'Sınıfa giriş',
-                  aciklama: 'Sınıf kartına dokun → o sınıfın öğrenci listesi açılır. Yoklama alabilir, öğrenci ekleyebilir, takım kurup etkinlik başlatabilirsin.',
+                  aciklama: 'Sınıf kartına dokun → o sınıfın öğrenci listesi açılır. Yoklama alabilir, öğrenci ekleyebilir, takım kurup oyun başlatabilirsin. Sınıflarım ekranındaki göz simgesi demo modunu açar: öğrenci adları sahte isimlerle gösterilir (sunum ve ekran görüntüsü için).',
                   renk: Color(0xFF1976D2),
                 ),
                 YardimBolumu(
                   ikon: Icons.sports_kabaddi_rounded,
                   baslik: 'Sınıflar Arası Yarışma',
-                  aciklama: 'İki farklı sınıfı karşı karşıya getir (örn. 7-A vs 7-B) — maç, bilgi yarışması, münazara… Her sınıf bir takım olur, skor tablosu açılır.',
+                  aciklama: 'Sağ alttaki kupa düğmesi: iki sınıfı karşı karşıya getir (örn. 7-A ile 7-B) — maç, bilgi yarışması, münazara… Her sınıf bir takım olur, skor tablosu açılır.',
                   renk: Color(0xFFC77B46),
                 ),
                 YardimBolumu(
                   ikon: Icons.edit_rounded,
                   baslik: 'Sınıf adı değiştir / sil',
-                  aciklama: 'Sınıf kartına basılı tut → menüden "Yeniden adlandır" veya "Sil" seç. Silme geri alınamaz.',
+                  aciklama: 'Sınıf kartını sola kaydır → "İsmi Düzenle" ya da "Sınıfı Sil". Silme geri alınamaz; Firestore yedeği yoksa geri getirilemez.',
                   renk: Color(0xFFE53935),
                 ),
                 YardimBolumu(
@@ -245,7 +252,9 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: _siniflarAkisi,
+              initialData: _sonSiniflar,
               builder: (context, snapshot) {
+                if (snapshot.hasData) _sonSiniflar = snapshot.data;
                 if (snapshot.hasError) {
                   return Center(
                     child: Padding(
@@ -255,7 +264,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
                         children: [
                           Icon(Icons.error_outline, size: 48, color: Colors.red.shade300),
                           const SizedBox(height: 12),
-                          Text("Hata: ${snapshot.error}", textAlign: TextAlign.center,
+                          Text(FirestoreService.hataMesaji(snapshot.error!), textAlign: TextAlign.center,
                               style: TextStyle(color: Colors.red.shade700)),
                         ],
                       ),
@@ -310,11 +319,18 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
                   alignment: Alignment.topCenter,
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: AppTema.icerikMaxGenislik),
-                    child: ListView.builder(
+                    child: Builder(builder: (context) {
+                      // Doküman kimliğine göre rastgele geliyordu (denetim #4 D3).
+                      final docs = List<QueryDocumentSnapshot>.from(snapshot.data!.docs)
+                        ..sort((a, b) => trKarsilastir(
+                            ((a.data() as Map?)?['ad'] ?? '').toString(),
+                            ((b.data() as Map?)?['ad'] ?? '').toString()));
+                      return ListView.builder(
                       padding: const EdgeInsets.fromLTRB(16, 0, 16, 180),
-                      itemCount: snapshot.data!.docs.length,
-                      itemBuilder: (context, i) => _sinifKarti(context, snapshot.data!.docs[i], ikiSutun),
-                    ),
+                      itemCount: docs.length,
+                      itemBuilder: (context, i) => _sinifKarti(context, docs[i], ikiSutun),
+                    );
+                    }),
                   ),
                 );
               },
@@ -437,7 +453,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
             if (result == 'duzenle') {
               if (context.mounted) _sinifAdiniDuzenle(context, docId, ad);
             } else if (result == 'sil') {
-              if (context.mounted) _sinifSilOnay(context, docId);
+              if (context.mounted) _sinifSilOnay(context, docId, ad);
             }
             return false;
           },
@@ -499,7 +515,9 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
                           const SizedBox(height: 4),
                           StreamBuilder<QuerySnapshot>(
                             stream: _ogrenciSayisiAkisi(docId),
+                            initialData: _sonSayaclar[docId],
                             builder: (context, snap) {
+                              if (snap.hasData) _sonSayaclar[docId] = snap.data!;
                               final count = snap.hasData ? snap.data!.docs.length : 0;
                               // Boş sınıf listede diğerleriyle aynı görünüyordu;
                               // öğretmeni bir sonraki adıma yönlendir.
@@ -558,11 +576,13 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onTap: () {
+                  // Şerit sınıf listesini açıyor, orada ikinci bir "Devam Et"
+                  // gerekiyordu (denetim #4 O3); doğrudan skor tablosu.
                   if (mac.takimlar != null) {
-                    Navigator.push(context, MaterialPageRoute(
-                      builder: (_) => OgrenciListesiEkrani(sinifId: mac.sinifId!),
-                    )).then((_) {
-                      // SiniflarEkrani yeniden çizilsin
+                    Navigator.push<String>(context, MaterialPageRoute(
+                      builder: (_) => SkorEkrani(takimlar: mac.takimlar!),
+                    )).then((sonuc) {
+                      if (sonuc != 'geridon') MacDurumu().macBitir();
                       (context as Element).markNeedsBuild();
                     });
                   }
@@ -627,7 +647,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
           const Text("Etkinliği Bitir", style: TextStyle(fontWeight: FontWeight.w700)),
         ]),
         content: Text(
-          "Etkinliği tamamen bitirmek istediğinize emin misiniz? Skorlar sıfırlanacak.",
+          "Etkinliği tamamen bitirmek istediğine emin misin? Skorlar sıfırlanacak.",
           style: TextStyle(color: Colors.grey.shade700, height: 1.5),
         ),
         actions: [
@@ -828,6 +848,17 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
             onPressed: () async {
               if (c.text.trim().isEmpty) return;
               final ad = c.text.toUpperCase().trim();
+              // Aynı adla ikinci sınıf uyarısız oluşuyordu (denetim #4 O8).
+              final mevcut = _sonSiniflar?.docs.any((d) =>
+                      trKucult(((d.data() as Map?)?['ad'] ?? '').toString()) == trKucult(ad)) ??
+                  false;
+              if (mevcut) {
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                  content: Text('"$ad" adında bir sınıfın zaten var. Farklı bir ad seç.'),
+                  backgroundColor: AppTema.uyari,
+                ));
+                return;
+              }
               Navigator.pop(context);
               try {
                 await _db.sinifEkle(ad, brans: secilenBrans);
@@ -835,7 +866,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
               } catch (e) {
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    content: Text("Sınıf eklenemedi: $e"),
+                    content: Text("Sınıf eklenemedi. ${FirestoreService.hataMesaji(e)}"),
                     backgroundColor: Colors.red.shade700,
                     behavior: SnackBarBehavior.floating,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -940,7 +971,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
               onPressed: () async {
                 if (sinif1Id == sinif2Id) {
                   ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
-                    content: const Text("Aynı sınıfı seçemezsiniz."),
+                    content: const Text("Aynı sınıfı iki kez seçemezsin."),
                     backgroundColor: Colors.red.shade700, behavior: SnackBarBehavior.floating,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ));
@@ -968,11 +999,22 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
                 }
                 // Diyalog hata durumunda ("hazır öğrenci yok") açık kalır;
                 // eskiden kapanıp kullanıcıyı baştan seçtiriyordu (denetim O8).
-                final basladi = await _siniflarArasiMacBaslat(sinif1Id!, sinif2Id!, renk1, renk2,
+                final takimlar = await _siniflarArasiMacBaslat(sinif1Id!, sinif2Id!, renk1, renk2,
                   siniflar.firstWhere((s) => s['id'] == sinif1Id)['ad'] as String,
                   siniflar.firstWhere((s) => s['id'] == sinif2Id)['ad'] as String,
                 );
-                if (basladi && ctx.mounted) Navigator.pop(ctx);
+                if (takimlar == null) return;
+                // Skor ekranı push edildikten SONRA diyaloğu kapatmak en
+                // üstteki rotayı, yani skor ekranını kapatıyordu (denetim #4
+                // K3). Önce diyalog, sonra skor.
+                if (ctx.mounted) Navigator.pop(ctx);
+                if (context.mounted) {
+                  unawaited(Navigator.push<String>(context, MaterialPageRoute(
+                    builder: (_) => SkorEkrani(takimlar: takimlar),
+                  )).then((sonuc) {
+                    if (sonuc != 'geridon') MacDurumu().macBitir();
+                  }));
+                }
               },
               label: const Text("Yarışmayı Başlat", style: TextStyle(fontWeight: FontWeight.w700)),
             ),
@@ -1043,7 +1085,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
     );
   }
 
-  Future<bool> _siniflarArasiMacBaslat(String sinif1Id, String sinif2Id, String renk1, String renk2, String ad1, String ad2) async {
+  Future<List<TakimBilgi>?> _siniflarArasiMacBaslat(String sinif1Id, String sinif2Id, String renk1, String renk2, String ad1, String ad2) async {
     final ogrenciler1 = await _db.ogrencileriGetir(sinif1Id);
     final ogrenciler2 = await _db.ogrencileriGetir(sinif2Id);
 
@@ -1058,7 +1100,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ));
       }
-      return false;
+      return null;
     }
 
     final takimlar = [
@@ -1080,16 +1122,10 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
 
     MacDurumu().macBaslat(sinif1Id, takimlar);
     unawaited(AnalyticsService.macBasladi(takimSayisi: 2, oyuncuSayisi: gelenler1.length + gelenler2.length));
-
-    if (mounted) {
-      Navigator.push(context, MaterialPageRoute(
-        builder: (_) => SkorEkrani(takimlar: takimlar),
-      )).ignore();
-    }
-    return true;
+    return takimlar;
   }
 
-  void _sinifSilOnay(BuildContext context, String sinifId) {
+  void _sinifSilOnay(BuildContext context, String sinifId, String sinifAdi) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -1109,7 +1145,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
           ],
         ),
         content: Text(
-          "$sinifId sınıfını ve tüm öğrencilerini silmek istediğinize emin misiniz?\n\nBu işlem geri alınamaz.",
+          "$sinifAdi sınıfını ve tüm öğrencilerini silmek istediğine emin misin?\n\nBu işlem geri alınamaz.",
           style: TextStyle(color: Colors.grey.shade700, height: 1.5),
         ),
         actions: [
