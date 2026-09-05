@@ -70,23 +70,16 @@ void main() {
       expect(map['sariKart'], 4);
     });
 
-    test('kalemSayaclari boşken eski alanlar nesnedeki değeri yansıtır', () {
-      // ÖNEMLİ: toMap `kalemSayaclari['kiyafet'] ?? kiyafetEksik` diyor.
-      // Sayaç 0'a inince haritadan silindiği için eski alan, nesnedeki
-      // (fromMap ile okunmuş) ESKİ değeri geri yazar — bu bir tutarsızlık.
+    test('sayaç sıfıra inince eski PE alanı da 0 yazılır (denetim #3 D3)', () {
       final o = Ogrenci.fromMap('x', {
         'ad': 'A',
-        'kiyafetEksik': 5, // eski istemcinin yazdığı değer
+        'kiyafetEksik': 5,
         'kalemSayaclari': {'kiyafet': 5},
       });
-      o.kalemArti('kiyafet', -5); // sayaç sıfırlandı → haritadan silindi
+      o.kalemArti('kiyafet', -5);
       final map = o.toMap();
-
       expect(map['kalemSayaclari'], isEmpty);
-      // Beklenen: 0. Gerçek davranış aşağıda belgeleniyor.
-      expect(map['kiyafetEksik'], 5,
-          reason: 'kalemSayaclari 0 olunca eski alan senkron kalmıyor '
-              '(models/ogrenci.dart:120-122) — v1.0 istemci 5 görür');
+      expect(map['kiyafetEksik'], 0);
     });
 
     test('eski belge (kalemSayaclari yok) PE alanlarından tohumlanır', () {
@@ -124,22 +117,35 @@ void main() {
       expect(o.saglikNotlari.single['not'], 'x');
     });
 
-    test('puan double gelirse fromMap TİP HATASI verir (Şüpheli)', () {
-      // `puan: map['puan'] ?? 100` — int alanına double atanır.
-      // Web JS SDK'de tam sayılar int gelir; ama bir istemci 90.0 yazarsa
-      // öğrenci listesi hiç açılmaz. Belgeleme amaçlı.
-      expect(
-        () => Ogrenci.fromMap('x', {'ad': 'A', 'puan': 90.0}),
-        throwsA(isA<TypeError>()),
-      );
+    test('bozuk tipli alanlar çökertmez, varsayılana/kırpmaya düşer (denetim #3 O3)', () {
+      final o = Ogrenci.fromMap('x', {
+        'ad': 'A',
+        'puan': 90.0,
+        'buradaMi': 'evet',
+        'saglikDurumu': '3',
+        'isMale': null,
+        'element': 7,
+        'eslesenIdler': 'abc',
+        'saglikNotlari': ['bozuk', {'tarih': 't', 'not': 'n'}],
+        'kalemSayaclari': {'sari_kart': '2', 'kiyafet': -4},
+      });
+      expect(o.puan, 90);
+      expect(o.buradaMi, isTrue);
+      expect(o.saglikDurumu, 3);
+      expect(o.isMale, isTrue);
+      expect(o.element, isNull);
+      expect(o.eslesenIdler, isEmpty);
+      expect(o.saglikNotlari.length, 1);
+      expect(o.kalemSayaclari, {'sari_kart': 2});
     });
 
     test('eslesenIdler boş liste olarak KOŞULSUZ yazılır', () {
       final map = Ogrenci(id: 'x', ad: 'A').toMap();
       expect(map.containsKey('eslesenIdler'), isTrue);
       expect(map['eslesenIdler'], isEmpty);
-      // element ise yalnız doluyken yazılır.
-      expect(map.containsKey('element'), isFalse);
+      // element de koşulsuz: null = ifade kaldırıldı (denetim #3 Y5).
+      expect(map.containsKey('element'), isTrue);
+      expect(map['element'], isNull);
     });
   });
 

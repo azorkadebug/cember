@@ -119,9 +119,11 @@ class Ogrenci {
       'puan': puan.clamp(0, 9999),
       // Eski PE alanları geriye dönük uyumluluk için yeni haritadan senkronlanır
       // (v1.0/1.0.1 iOS istemcileri bu alanları okuyor).
-      'ayakkabiEksik': kalemSayaclari['ayakkabi'] ?? ayakkabiEksik,
-      'kiyafetEksik': kalemSayaclari['kiyafet'] ?? kiyafetEksik,
-      'sariKart': kalemSayaclari['sari_kart'] ?? sariKart,
+      // Sayaç sıfıra inince anahtar silinir; eski alan da 0 olmalı, nesnedeki
+      // bayat değere düşmemeli (denetim #3 D3).
+      'ayakkabiEksik': kalemSayaclari['ayakkabi'] ?? 0,
+      'kiyafetEksik': kalemSayaclari['kiyafet'] ?? 0,
+      'sariKart': kalemSayaclari['sari_kart'] ?? 0,
       'saglikDurumu': saglikDurumu,
       'kalemSayaclari': kalemSayaclari,
       'not': _kirp(not, notMaxUzunluk),
@@ -130,7 +132,10 @@ class Ogrenci {
       // Artık şifrelenmiyor. Bayrak açıkça false yazılıyor ki eski
       // istemciler (v1.0/1.0.1) bu kaydı çözmeye çalışmasın.
       'sifrelendi': false,
-      if (element != null) 'element': element,
+      // Koşulsuz: null da gerçek bir değer (ifade kaldırıldı). Koşullu
+      // yazılınca update() alanı olduğu gibi bırakıyor, ifade kaldırılamıyordu
+      // (denetim #3 Y5).
+      'element': element,
       // element'in aksine koşulsuz yazılıyor: boş liste de gerçek bir
       // değerdir ve son eşi kaldırıldığında Firestore'daki eski değeri
       // silmesi gerekir (update() olmayan alanı değiştirmeden bırakır).
@@ -150,26 +155,37 @@ class Ogrenci {
     return Ogrenci(
       id: id,
       ad: SifrelemeService.alanCoz(map, 'ad'),
-      puan: map['puan'] ?? 100,
-      buradaMi: map['buradaMi'] ?? true,
-      ayakkabiEksik: map['ayakkabiEksik'] ?? 0,
-      kiyafetEksik: map['kiyafetEksik'] ?? 0,
-      sariKart: map['sariKart'] ?? 0,
-      saglikDurumu: map['saglikDurumu'] ?? 0,
+      // Tip toleransı: 100.0, "5", null gibi değerler tek bir dokümanda bile
+      // olsa tüm sınıf listesi çöküyordu (denetim #3 O3).
+      puan: _tamSayi(map['puan'], 100).clamp(0, 9999),
+      buradaMi: _mantik(map['buradaMi'], true),
+      ayakkabiEksik: _tamSayi(map['ayakkabiEksik'], 0),
+      kiyafetEksik: _tamSayi(map['kiyafetEksik'], 0),
+      sariKart: _tamSayi(map['sariKart'], 0),
+      saglikDurumu: _tamSayi(map['saglikDurumu'], 0),
       not: SifrelemeService.alanCoz(map, 'not'),
-      isMale: map['isMale'] ?? true,
-      element: map['element'],
-      eslesenIdler: (map['eslesenIdler'] as List<dynamic>?)
-          ?.map((e) => e.toString())
-          .toList(),
-      saglikNotlari: (map['saglikNotlari'] as List<dynamic>?)
-          ?.map((e) => Map<String, dynamic>.from(e as Map))
-          .toList(),
-      rozetler: (map['rozetler'] as List<dynamic>?)
-          ?.map((e) => Map<String, dynamic>.from(e as Map))
-          .toList(),
+      isMale: _mantik(map['isMale'], true),
+      element: map['element'] is String ? map['element'] as String : null,
+      eslesenIdler: map['eslesenIdler'] is List
+          ? (map['eslesenIdler'] as List).map((e) => e.toString()).toList()
+          : null,
+      saglikNotlari: _haritaListesi(map['saglikNotlari']),
+      rozetler: _haritaListesi(map['rozetler']),
       kalemSayaclari: _kalemSayaclariCoz(map),
     );
+  }
+
+  static int _tamSayi(dynamic v, int varsayilan) {
+    if (v is num) return v.toInt();
+    if (v is String) return int.tryParse(v) ?? varsayilan;
+    return varsayilan;
+  }
+
+  static bool _mantik(dynamic v, bool varsayilan) => v is bool ? v : varsayilan;
+
+  static List<Map<String, dynamic>>? _haritaListesi(dynamic v) {
+    if (v is! List) return null;
+    return v.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
   }
 
   /// `kalemSayaclari` yoksa (eski belge), branşı olmayan = Beden Eğitimi
@@ -177,7 +193,9 @@ class Ogrenci {
   static Map<String, int> _kalemSayaclariCoz(Map<String, dynamic> map) {
     final raw = map['kalemSayaclari'];
     if (raw is Map) {
-      final m = raw.map((k, v) => MapEntry(k.toString(), (v as num?)?.toInt() ?? 0));
+      // Artımlı yazma (FieldValue.increment) yarışta 0'ın altına düşebilir;
+      // okurken 0-999'a kırpılır.
+      final m = raw.map((k, v) => MapEntry(k.toString(), _tamSayi(v, 0).clamp(0, 999)));
       m.removeWhere((k, v) => v == 0);
       return m;
     }

@@ -55,7 +55,10 @@ class FirestoreService {
   /// dokümanın `ownerId`'sine baktığı için üst silindikten sonra bu
   /// kayıtlar okunamaz ama silinemez hâle gelir.
   Future<void> _altKoleksiyonuSil(CollectionReference<Map<String, dynamic>> col) async {
-    final snap = await col.get();
+    // Varsayılan kaynak çevrimdışıyken/önbellek boşken boş dönüyor, sınıf
+    // dokümanı siliniyor, öğrenciler yetim kalıyordu (denetim #3 Y4).
+    // Sunucudan iste; olmazsa hata fırlasın, silme hiç başlamasın.
+    final snap = await col.get(const GetOptions(source: Source.server));
     for (var i = 0; i < snap.docs.length; i += _batchBoyutu) {
       final batch = _db.batch();
       final son = (i + _batchBoyutu < snap.docs.length)
@@ -234,56 +237,58 @@ class FirestoreService {
         .update({'rozetler': FieldValue.arrayRemove([rozet])});
   }
 
-  /// Kontrol kalemi sayaçlarını FARK olarak uygular.
-  ///
-  /// Oku-değiştir-yaz yerine işlem (transaction) kullanılıyor: iki cihazdan
-  /// aynı anda sarı kart verildiğinde ikisi de sayılır, son yazan diğerini
-  /// silmez. 0-999 kırpması ve eski PE alanlarının (sariKart, kiyafetEksik,
-  /// ayakkabiEksik) yansıtılması sunucudan okunan güncel değer üzerinden
-  /// yapılır — v1.0/1.0.1 istemcileri hâlâ o alanları okuyor.
-  Future<void> kalemSayaclariniUygula(
+  /// Öğrenci kartının tek Kaydet'i: yalnız DEĞİŞEN alanlar, sayaçlar ve
+  /// sağlık FARK (FieldValue.increment), sağlık notu ve eşler arrayUnion /
+  /// arrayRemove. İşlem (runTransaction) kullanılmıyor: işlem sunucu ister,
+  /// çevrimdışı anında düşüyordu ve kayıt sessizce kayboluyordu (denetim #3
+  /// K2). Artımlı yazma çevrimdışı kuyruğa girer, sunucuda atomik uygulanır;
+  /// aynı anda iki cihazdan verilen sarı kartlar ikisi de sayılır. Mutlak
+  /// yazma diğer cihazın ad/not/rozet/eş değişikliğini eziyordu (Y1).
+  /// Tek WriteBatch: partner güncellemeleri de aynı anda gider.
+  Future<void> ogrenciFarklariniYaz(
     String sinifId,
-    String ogrenciId,
-    Map<String, int> farklar, {
-    List<Map<String, dynamic>>? saglikNotlari,
+    String ogrenciId, {
+    Map<String, dynamic> alanlar = const {},
+    Map<String, int> kalemFarklari = const {},
+    int saglikFarki = 0,
+    List<Map<String, dynamic>> yeniSaglikNotlari = const [],
+    List<String> esEkle = const [],
+    List<String> esKaldir = const [],
   }) async {
-    final temizFarklar = Map<String, int>.from(farklar)
-      ..removeWhere((_, v) => v == 0);
-    if (temizFarklar.isEmpty && saglikNotlari == null) return;
-
     final ref = _ogrenciRef(sinifId, ogrenciId);
-    await _db.runTransaction((tx) async {
-      final snap = await tx.get(ref);
-      final data = snap.data() ?? <String, dynamic>{};
-
-      final mevcut = <String, int>{};
-      final raw = data['kalemSayaclari'];
-      if (raw is Map) {
-        raw.forEach((k, v) => mevcut[k.toString()] = (v as num?)?.toInt() ?? 0);
-      }
-
-      temizFarklar.forEach((id, delta) {
-        final yeni = ((mevcut[id] ?? 0) + delta).clamp(0, 999);
-        if (yeni == 0) {
-          mevcut.remove(id);
-        } else {
-          mevcut[id] = yeni;
-        }
-      });
-
-      tx.update(ref, {
-        'kalemSayaclari': mevcut,
-        // Geriye dönük uyumluluk alanları
-        'sariKart': mevcut['sari_kart'] ?? 0,
-        'kiyafetEksik': mevcut['kiyafet'] ?? 0,
-        'ayakkabiEksik': mevcut['ayakkabi'] ?? 0,
-        if (saglikNotlari != null)
-          'saglikNotlari': saglikNotlari.length > Ogrenci.saglikNotuMaxAdet
-              ? saglikNotlari
-                  .sublist(saglikNotlari.length - Ogrenci.saglikNotuMaxAdet)
-              : saglikNotlari,
-      });
+    final guncelleme = <String, dynamic>{
+      ...alanlar,
+      'sifrelendi': false,
+    };
+    // kalemSayaclari haritasındaki 3 PE kalemi v1.0/1.0.1 istemcileri için
+    // düz alanlara da yansır.
+    const eskiAd = {'sari_kart': 'sariKart', 'kiyafet': 'kiyafetEksik', 'ayakkabi': 'ayakkabiEksik'};
+    kalemFarklari.forEach((id, d) {
+      if (d == 0) return;
+      guncelleme['kalemSayaclari.$id'] = FieldValue.increment(d);
+      final eski = eskiAd[id];
+      if (eski != null) guncelleme[eski] = FieldValue.increment(d);
     });
+    if (saglikFarki != 0) guncelleme['saglikDurumu'] = FieldValue.increment(saglikFarki);
+    if (yeniSaglikNotlari.isNotEmpty) {
+      guncelleme['saglikNotlari'] = FieldValue.arrayUnion(yeniSaglikNotlari);
+    }
+    if (esEkle.isNotEmpty) guncelleme['eslesenIdler'] = FieldValue.arrayUnion(esEkle);
+
+    final batch = _db.batch();
+    batch.update(ref, guncelleme);
+    for (final eid in esEkle) {
+      batch.update(_ogrenciRef(sinifId, eid), {'eslesenIdler': FieldValue.arrayUnion([ogrenciId])});
+    }
+    for (final eid in esKaldir) {
+      batch.update(_ogrenciRef(sinifId, eid), {'eslesenIdler': FieldValue.arrayRemove([ogrenciId])});
+    }
+    await batch.commit();
+    // Aynı alana bir batch içinde hem union hem remove yazılamaz; kaldırma
+    // ayrı, çok nadir (aynı kayıtta hem ekleme hem çıkarma).
+    if (esKaldir.isNotEmpty) {
+      await ref.update({'eslesenIdler': FieldValue.arrayRemove(esKaldir)});
+    }
   }
 
   /// Öğrenci kartından kaydederken sayaçlar (kalemSayaclari + geriye dönük
@@ -299,22 +304,16 @@ class FirestoreService {
     await _ogrenciRef(sinifId, ogrenciId).update(temiz);
   }
 
-  Future<void> ogrenciGuncelle(String sinifId, Ogrenci ogrenci) async {
-    await _db
-        .collection('siniflar')
-        .doc(sinifId)
-        .collection('ogrenciler')
-        .doc(ogrenci.id)
-        .update(ogrenci.toMap());
-  }
-
-  Future<void> ogrenciSil(String sinifId, String ogrenciId) async {
-    await _db
-        .collection('siniflar')
-        .doc(sinifId)
-        .collection('ogrenciler')
-        .doc(ogrenciId)
-        .delete();
+  /// [partnerIdler]: silinen öğrenciyle eşli olanlar; onların listesinden
+  /// id aynı batch'te çıkarılır ki çöp "?" çipi kalmasın (denetim #3).
+  Future<void> ogrenciSil(String sinifId, String ogrenciId,
+      {List<String> partnerIdler = const []}) async {
+    final batch = _db.batch();
+    batch.delete(_ogrenciRef(sinifId, ogrenciId));
+    for (final pid in partnerIdler) {
+      batch.update(_ogrenciRef(sinifId, pid), {'eslesenIdler': FieldValue.arrayRemove([ogrenciId])});
+    }
+    await batch.commit();
   }
 
   Future<List<Ogrenci>> ogrencileriGetir(String sinifId) async {

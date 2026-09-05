@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:math';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:crypto/crypto.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart'
@@ -223,14 +222,13 @@ class AuthService {
     SifrelemeService.temizle();
 
     await _auth.signOut();
-
-    // Firestore'un disk önbelleği çıkıştan sonra da cihazda kalır.
-    // terminate() + clearPersistence() sırası önemli; hata olursa yutuluyor
-    // çünkü çıkışın kendisi başarılı olmalı.
-    try {
-      await FirebaseFirestore.instance.terminate();
-      await FirebaseFirestore.instance.clearPersistence();
-    } catch (_) {}
+    // Eskiden burada Firestore terminate()+clearPersistence() vardı:
+    // sonlandırılmış istemci aynı oturumda yeniden kullanılınca her çağrı
+    // hata veriyor, tekrar giren kullanıcı "Bağlantı kurulamadı"da
+    // kalıyordu (denetim #3 K1, 1a48f5f'ten beri canlıda). Önbellek
+    // sorguları ownerId'ye göre süzüldüğü için sonraki kullanıcı öncekinin
+    // verisini görmez; disk önbelleği temizliği ileride uygulama
+    // kapanışında ele alınabilir.
   }
 
   /// Hassas işlemler (hesap silme) öncesi oturumu tazeler.

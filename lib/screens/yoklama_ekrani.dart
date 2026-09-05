@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../tema.dart';
@@ -28,9 +29,16 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
   late final FirestoreService _db;
   bool _yukleniyor = true;
   bool _kaydediyor = false;
+  bool _hata = false;
   DateTime _tarih = DateTime.now();
   List<Ogrenci> _ogrenciler = [];
   final Map<String, _Kayit> _kayitlar = {};
+  /// Yüklendiği andaki kopya: Kaydet yalnız buna göre DEĞİŞEN öğrencileri
+  /// yazar. Tüm sınıf yazılınca iki cihazda son kaydeden kazanıyor, diğerinin
+  /// işaretlediği devamsızlık siliniyordu (denetim #3 Y2).
+  Map<String, _Kayit> _ilkKayitlar = {};
+  Map<String, _Kayit> _kopyala(Map<String, _Kayit> m) =>
+      {for (final e in m.entries) e.key: _Kayit(geldi: e.value.geldi, kalemler: Map.of(e.value.kalemler))};
   /// Kontrol kalemi çipleri açık olan öğrenciler. Kartlar varsayılan olarak
   /// tek satır — 30 kişilik sınıfta ekranda 6-7 öğrenci yerine 15+ görünsün.
   final Set<String> _acik = {};
@@ -85,31 +93,59 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
       if (!mounted) return;
       setState(() {
         _ogrenciler = ogrenciler;
+        _ilkKayitlar = _kopyala(_kayitlar);
+        _hata = false;
         _yukleniyor = false;
       });
     } catch (_) {
-      if (mounted) setState(() => _yukleniyor = false);
+      // Okuma hatası "Bu sınıfta öğrenci yok" diye görünüyordu (denetim #3 Y8).
+      if (mounted) setState(() { _hata = true; _yukleniyor = false; });
     }
   }
 
   Future<void> _kaydet() async {
+    // Yalnız değişen öğrencilerin değişen alanları; set(merge) haritayı derin
+    // birleştirdiği için diğer cihazın kayıtları korunur.
+    final kayitlar = <String, dynamic>{};
+    for (final o in _ogrenciler) {
+      final simdi = _kayitlar[o.id];
+      final ilk = _ilkKayitlar[o.id];
+      if (simdi == null) continue;
+      final fark = <String, dynamic>{};
+      if (ilk == null || simdi.geldi != ilk.geldi) fark['geldi'] = simdi.geldi;
+      final kalemFark = <String, bool>{};
+      simdi.kalemler.forEach((k, v) {
+        if (ilk == null || ilk.kalemler[k] != v) kalemFark[k] = v;
+      });
+      if (kalemFark.isNotEmpty) fark['kalemler'] = kalemFark;
+      if (fark.isNotEmpty) kayitlar[o.id] = fark;
+    }
+    if (kayitlar.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Değişiklik yok.')));
+      return;
+    }
     setState(() => _kaydediyor = true);
-    final kayitlar = {
-      for (final o in _ogrenciler)
-        o.id: {
-          'geldi': _kayitlar[o.id]?.geldi ?? true,
-          'kalemler': _kayitlar[o.id]?.kalemler ?? {},
-        },
-    };
     try {
-      await _db.yoklamaKaydet(widget.sinifId, _tarihKey, kayitlar);
+      await _db
+          .yoklamaKaydet(widget.sinifId, _tarihKey, kayitlar)
+          // Çevrimdışıyken süresiz bekliyordu, mesaj yoktu (denetim #3 Y8).
+          .timeout(const Duration(seconds: 8));
       if (mounted) {
-        setState(() => _kaydediyor = false);
+        setState(() { _kaydediyor = false; _ilkKayitlar = _kopyala(_kayitlar); });
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('$_tarihEtiketi yoklaması kaydedildi'),
           backgroundColor: Colors.green.shade700,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        ));
+      }
+    } on TimeoutException {
+      // Yazma kuyrukta: kalıcı önbellek açık, bağlantı gelince gidecek.
+      if (mounted) {
+        setState(() { _kaydediyor = false; _ilkKayitlar = _kopyala(_kayitlar); });
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Bağlantı yok. Yoklama kaydedildi, internet gelince gönderilecek.'),
+          backgroundColor: AppTema.uyari,
         ));
       }
     } catch (_) {
@@ -223,7 +259,19 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
       ),
       body: _yukleniyor
           ? const Center(child: CircularProgressIndicator())
-          : _ogrenciler.isEmpty
+          : _hata
+              ? Center(
+                  child: Column(mainAxisSize: MainAxisSize.min, children: [
+                    Icon(Icons.cloud_off_rounded, size: 56, color: Colors.grey.shade300),
+                    const SizedBox(height: 12),
+                    const Text('Yoklama yüklenemedi', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppTema.metinIkincil)),
+                    const SizedBox(height: 4),
+                    const Text('Bağlantını kontrol edip tekrar dene.', style: TextStyle(color: AppTema.metinUcuncul)),
+                    const SizedBox(height: 16),
+                    FilledButton.icon(onPressed: _yukle, icon: const Icon(Icons.refresh_rounded), label: const Text('Tekrar dene')),
+                  ]),
+                )
+              : _ogrenciler.isEmpty
               ? const Center(child: Text('Bu sınıfta öğrenci yok.', style: TextStyle(color: AppTema.metinIkincil)))
               // 1440 px'te isim solda, "Geldi" 1270 px sağdaydı (denetim O5).
               : Align(
@@ -362,9 +410,15 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
               ],
               // 85×36 px'ti, toggle rolü yoktu (denetim O11/O9).
               Semantics(
+                // container: yoksa çip satırın (InkWell) düğümüne karışıyor,
+                // ekran okuyucu ve otomasyon çipe ayrı ulaşamıyor.
+                container: true,
                 button: true,
                 toggled: geldi,
                 label: geldi ? 'Geldi, yok saymak için dokun' : 'Yok, geldi saymak için dokun',
+                // excludeSemantics GestureDetector'ın dokunma eylemini de
+                // siliyordu; ekran okuyucuda çipe basılamıyordu (denetim #3 O8).
+                onTap: () => setState(() => kayit.geldi = !kayit.geldi),
                 excludeSemantics: true,
                 child: GestureDetector(
                 onTap: () => setState(() => kayit.geldi = !kayit.geldi),
@@ -415,9 +469,11 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
               children: _gunlukKalemler.map((k) {
                 final getirdi = kayit.kalemler[k.id] ?? true;
                 return Semantics(
+                  container: true,
                   button: true,
                   toggled: getirdi,
                   label: '${k.ad} ${getirdi ? "getirdi" : "getirmedi"}',
+                  onTap: () => setState(() => kayit.kalemler[k.id] = !getirdi),
                   excludeSemantics: true,
                   child: GestureDetector(
                   onTap: () => setState(() => kayit.kalemler[k.id] = !getirdi),

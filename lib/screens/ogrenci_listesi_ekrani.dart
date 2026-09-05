@@ -107,6 +107,17 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
   String _aramaMetni = '';
   final _aramaCtrl = TextEditingController();
   bool _otomatikKartAcildi = false;
+  bool _kartKapaniyor = false;
+  /// Kontrol kalemleri/forma renkleri yüklendi mi (arama kartı bunu bekler).
+  late final Future<void> _sinifBilgisiHazir;
+
+  void _hataGoster(String mesaj) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(mesaj),
+      backgroundColor: AppTema.tehlike,
+    ));
+  }
 
   @override
   void dispose() {
@@ -124,7 +135,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
     super.initState();
     _db = FirestoreService(uid: AuthService().uid);
     _sinifAd = widget.sinifAd; // sınıf listesinden geldiyse anında göster; yoksa fetch dolduracak
-    _formaRenkleriniYukle();
+    _sinifBilgisiHazir = _formaRenkleriniYukle();
   }
 
   List<KontrolKalemi> _kontrolKalemleriCoz(Map<String, dynamic>? data) {
@@ -396,7 +407,9 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
           ],
         ),
       ),
-      bottomNavigationBar: Container(
+      bottomNavigationBar: IgnorePointer(
+        ignoring: _kartKapaniyor,
+        child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -438,6 +451,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                 ),
               ),
             ),
+      ),
     );
   }
 
@@ -539,9 +553,11 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
           _otomatikKartAcildi = true;
           final hedef = tumOgrenciler.where((o) => o.id == widget.acilacakOgrenciId).firstOrNull;
           if (hedef != null) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
+            // Kalemler yüklenmeden açılınca kart "kontrol kalemi yok"
+            // gösteriyordu (denetim #3 O6).
+            unawaited(_sinifBilgisiHazir.then((_) {
               if (mounted) _ogrenciKartiAc(hedef, tumOgrenciler);
-            });
+            }));
           }
         }
         // Arama filtresi — ekranda görünen ada göre. Demo modunda gerçek ada
@@ -783,7 +799,6 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
     );
   }
 
-  void _save(Ogrenci o) => _db.ogrenciGuncelle(widget.sinifId, o);
 
   Color _kalemRengi(KontrolKalemi k) {
     if (k.tip == KalemTipi.sayac) return Colors.amber.shade700;
@@ -1106,7 +1121,11 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
             ),
             onPressed: () {
               o.not = nC.text;
-              _save(o);
+              // Tüm dokümanı mutlak yazıyordu; başka cihazın sayaç/rozet
+              // değişikliğini eziyordu (denetim #3 Y1). Yalnız not.
+              unawaited(_db
+                  .ogrenciAlanlariniGuncelle(widget.sinifId, o.id, {'not': o.not})
+                  .catchError((_) => _hataGoster('Not kaydedilemedi.')));
               Navigator.pop(ctx);
             },
             child: const Text("Kaydet", style: TextStyle(fontWeight: FontWeight.w700)),
@@ -1168,30 +1187,55 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
       }
     }
 
-    Future<void> kaydet(BuildContext sheetCtx) async {
+    final ilkAd = o.ad, ilkPuan = o.puan, ilkNot = o.not;
+
+    void kaydet(BuildContext sheetCtx) {
       final yeniAd = adC.text.trim();
       if (yeniAd.isNotEmpty) o.ad = yeniAd;
-      o.puan = int.tryParse(pC.text) ?? 100;
+      o.puan = (int.tryParse(pC.text) ?? 100).clamp(0, 9999);
       o.not = nC.text;
+      // Yalnız DEĞİŞEN alanlar (denetim #3 Y1): açık kart bayat olabilir,
+      // dokunulmayan alanı yazmak diğer cihazın değişikliğini siler.
+      final alanlar = <String, dynamic>{
+        if (o.ad != ilkAd) 'ad': o.ad,
+        if (o.puan != ilkPuan) 'puan': o.puan,
+        if (o.not != ilkNot) 'not': o.not,
+        if (o.isMale != ilkIsMale) 'isMale': o.isMale,
+        if (o.element != ilkElement) 'element': o.element ?? FieldValue.delete(),
+      };
       final farklar = <String, int>{};
       for (final id in {...ilkSayaclar.keys, ...o.kalemSayaclari.keys}) {
         final fark = (o.kalemSayaclari[id] ?? 0) - (ilkSayaclar[id] ?? 0);
         if (fark != 0) farklar[id] = fark;
       }
+      final yeniNotlar = o.saglikNotlari.length > ilkSaglikNotlari.length
+          ? o.saglikNotlari.sublist(ilkSaglikNotlari.length)
+          : const <Map<String, dynamic>>[];
+      final esEkle = o.eslesenIdler.where((e) => !ilkEsler.contains(e)).toList();
+      final esKaldir = ilkEsler.where((e) => !o.eslesenIdler.contains(e)).toList();
+      final bosMu = alanlar.isEmpty && farklar.isEmpty && o.saglikDurumu == ilkSaglik &&
+          yeniNotlar.isEmpty && esEkle.isEmpty && esKaldir.isEmpty;
+      // Kapanış animasyonu sırasında ikinci dokunuş alt çubuktaki "AI Takım
+      // Kur"a düşüyordu (denetim #3 O7).
+      _kartKapaniyor = true;
+      Future<void>.delayed(const Duration(milliseconds: 450), () {
+        if (mounted) setState(() => _kartKapaniyor = false);
+      });
       Navigator.pop(sheetCtx, 'kaydedildi');
-      // Önce sayaç farkları (işlem), sonra diğer alanlar — sıra önemli:
-      // ters olursa mutlak sayaçlar işlemin sonucunu ezebilir.
-      await _db.kalemSayaclariniUygula(widget.sinifId, o.id, farklar,
-          saglikNotlari: o.saglikNotlari);
-      await _db.ogrenciAlanlariniGuncelle(widget.sinifId, o.id, o.toMap());
-      // Eşleşme karşılıklı: dokunulan partnerlerin yalnız eş listesi yazılır.
-      for (final eid in dokunulanEslerinIdleri) {
-        final es = tumOgrenciler.where((p) => p.id == eid);
-        if (es.isNotEmpty) {
-          await _db.ogrenciAlanlariniGuncelle(
-              widget.sinifId, eid, {'eslesenIdler': es.first.eslesenIdler});
-        }
-      }
+      if (bosMu) return;
+      // Beklenmiyor: çevrimdışıyken kuyruğa girer, bağlanınca gider
+      // (kalıcı önbellek açık). Hata gelirse kullanıcıya söylenir.
+      unawaited(_db
+          .ogrenciFarklariniYaz(
+            widget.sinifId, o.id,
+            alanlar: alanlar,
+            kalemFarklari: farklar,
+            saglikFarki: o.saglikDurumu - ilkSaglik,
+            yeniSaglikNotlari: yeniNotlar,
+            esEkle: esEkle,
+            esKaldir: esKaldir,
+          )
+          .catchError((e) => _hataGoster('Kaydedilemedi: öğrenci silinmiş ya da bağlantı sorunu olabilir.')));
     }
 
     Widget bolumBasligi(String metin, {IconData? ikon}) => Padding(
@@ -1474,7 +1518,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
                           ),
-                          onPressed: () => unawaited(kaydet(sheetCtx)),
+                          onPressed: () => kaydet(sheetCtx),
                           child: const Text("Kaydet", style: TextStyle(fontWeight: FontWeight.w700)),
                         ),
                       ]),
@@ -1608,7 +1652,8 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red.shade600, foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
             onPressed: () async {
-              await _db.ogrenciSil(widget.sinifId, o.id);
+              await _db.ogrenciSil(widget.sinifId, o.id,
+                  partnerIdler: _tumOgrenciler.where((p) => p.eslesenIdler.contains(o.id)).map((p) => p.id).toList());
               if (c2.mounted) Navigator.pop(c2);
               if (dialogContext.mounted) Navigator.pop(dialogContext);
             },
@@ -2014,8 +2059,14 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
 
   Color _takimRenginiBul(String renkAdi) => AppTema.formaRengi(renkAdi);
 
-  void _takimlariKur() async {
-    final gelenler = (await _db.ogrencileriGetir(widget.sinifId)).where((o) => o.buradaMi).toList();
+  Future<void> _takimlariKur() async {
+    final List<Ogrenci> gelenler;
+    try {
+      gelenler = (await _db.ogrencileriGetir(widget.sinifId)).where((o) => o.buradaMi).toList();
+    } catch (_) {
+      _hataGoster('Öğrenci listesi alınamadı. Bağlantını kontrol et.');
+      return;
+    }
 
     if (gelenler.length < secilenTakimSayisi) {
       if (mounted) {
@@ -2127,8 +2178,14 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
       }
     }
 
-    dengeliDagit(kizlar);
-    dengeliDagit(erkekler);
+    // İfadeli ya da eşli öğrenciler önce yerleşir: elementsiz bir öğrenci
+    // beraberliği bozunca su için tek aday kalıyor, o da ateşin takımı
+    // oluyordu — 1000 denemede %10-24 çatışma (denetim #3 Y7). Bu sıralamayla
+    // 0/1000; puan dengesi değişmiyor (test/takim_kurma_test.dart).
+    bool kisitli(Ogrenci o) => o.element != null || o.eslesenIdler.isNotEmpty;
+    List<Ogrenci> kisitlilarOnce(List<Ogrenci> l) => [...l.where(kisitli), ...l.where((o) => !kisitli(o))];
+    dengeliDagit(kisitlilarOnce(kizlar));
+    dengeliDagit(kisitlilarOnce(erkekler));
 
     final takimIsimleri = _rastgeleTakimIsimleri(secilenTakimSayisi);
     if (!mounted) return;

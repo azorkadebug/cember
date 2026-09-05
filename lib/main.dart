@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'firebase_options.dart';
 import 'screens/giris_ekrani.dart';
@@ -22,6 +23,15 @@ void main() async {
   Intl.defaultLocale = 'tr';
   await initializeDateFormatting('tr');
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  // Çevrimdışı önbellek: spor salonunda internet gidince liste ve yoklama
+  // önbellekten gelsin, yazmalar kuyruğa girip bağlanınca gitsin. Kapalıyken
+  // sekme yenilenince bekleyen yazmalar kayboluyordu (denetim #3 Y3).
+  try {
+    FirebaseFirestore.instance.settings = const Settings(
+      persistenceEnabled: true,
+      cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
+    );
+  } catch (_) {}
   runApp(const CemberApp());
 }
 
