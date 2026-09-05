@@ -76,7 +76,9 @@ class OgrenciListesiEkrani extends StatefulWidget {
   /// Arama sonucundan gelindiğinde liste yüklenir yüklenmez bu öğrencinin
   /// kartı açılır (bkz. ogrenci_arama_ekrani.dart).
   final String? acilacakOgrenciId;
-  const OgrenciListesiEkrani({super.key, required this.sinifId, this.sinifAd, this.acilacakOgrenciId});
+  /// Geniş ekranda Sınıflarım'ın sağ sütununa gömülü: geri oku yok.
+  final bool gomulu;
+  const OgrenciListesiEkrani({super.key, required this.sinifId, this.sinifAd, this.acilacakOgrenciId, this.gomulu = false});
   @override
   State<OgrenciListesiEkrani> createState() => _OgrenciListesiEkraniState();
 }
@@ -173,6 +175,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
             expandedHeight: 160,
             floating: false,
             pinned: true,
+            automaticallyImplyLeading: !widget.gomulu,
             backgroundColor: AppTema.ana,
             foregroundColor: Colors.white,
             centerTitle: true,

@@ -24,6 +24,12 @@ class SiniflarEkrani extends StatefulWidget {
 }
 
 class _SiniflarEkraniState extends State<SiniflarEkrani> {
+  /// Geniş ekranda (iPad yatay, masaüstü) iki sütun: solda sınıflar, sağda
+  /// seçili sınıfın öğrencileri (tasarım listesi #5, 2026-09-05).
+  static const double _ikiSutunEsigi = 900;
+  String? _seciliSinifId;
+  String? _seciliSinifAd;
+
   FirestoreService get _db => FirestoreService(uid: AuthService().uid);
   bool _migrationYapildi = false;
 
@@ -149,7 +155,40 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
           ),
         ],
       ),
-      body: Column(
+      body: LayoutBuilder(builder: (context, c) {
+        final ikiSutun = c.maxWidth >= _ikiSutunEsigi;
+        final sol = _solPanel(context, ikiSutun);
+        if (!ikiSutun) return sol;
+        return Row(children: [
+          // FAB'lar geniş ekranda sağ sütunun alt çubuğuna biniyordu;
+          // sol sütunun içinde kalıyorlar.
+          SizedBox(
+            width: 380,
+            child: Stack(children: [
+              sol,
+              Positioned(right: 16, bottom: 16, child: _fabSutunu(context)),
+            ]),
+          ),
+          const VerticalDivider(width: 1, thickness: 1),
+          Expanded(
+            child: _seciliSinifId == null
+                ? _sagBosDurum()
+                : OgrenciListesiEkrani(
+                    key: ValueKey(_seciliSinifId),
+                    sinifId: _seciliSinifId!,
+                    sinifAd: _seciliSinifAd,
+                    gomulu: true,
+                  ),
+          ),
+        ]);
+      }),
+      floatingActionButton: MediaQuery.sizeOf(context).width >= _ikiSutunEsigi ? null : _fabSutunu(context),
+    );
+  }
+
+
+  Widget _solPanel(BuildContext context, bool ikiSutun) {
+    return Column(
         children: [
           // Header gradient — kompakt
           Container(
@@ -268,7 +307,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
                     child: ListView.builder(
                       padding: const EdgeInsets.fromLTRB(16, 0, 16, 180),
                       itemCount: snapshot.data!.docs.length,
-                      itemBuilder: (context, i) => _sinifKarti(context, snapshot.data!.docs[i]),
+                      itemBuilder: (context, i) => _sinifKarti(context, snapshot.data!.docs[i], ikiSutun),
                     ),
                   ),
                 );
@@ -276,11 +315,15 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
             ),
           ),
         ],
-      ),
-      // İki genişletilmiş FAB alt alta durunca etiket uzunlukları farklı
-      // olduğu için sol kenarları kademeli görünüyordu ve ikisi de aynı
-      // görsel ağırlıktaydı. İkincil eylem artık küçük ikon-FAB.
-      floatingActionButton: Column(
+      );
+  }
+
+
+  // İki genişletilmiş FAB alt alta durunca etiket uzunlukları farklı
+  // olduğu için sol kenarları kademeli görünüyordu ve ikisi de aynı
+  // görsel ağırlıktaydı. İkincil eylem artık küçük ikon-FAB.
+  Widget _fabSutunu(BuildContext context) {
+    return Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
@@ -304,6 +347,22 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
             label: const Text("Sınıf Ekle", style: TextStyle(fontWeight: FontWeight.w700)),
           ),
         ],
+      );
+  }
+
+  Widget _sagBosDurum() {
+    return Container(
+      color: Colors.grey.shade100,
+      child: Center(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Icon(Icons.touch_app_outlined, size: 64, color: Colors.grey.shade300),
+          const SizedBox(height: 14),
+          const Text('Soldan bir sınıf seç',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppTema.metinIkincil)),
+          const SizedBox(height: 6),
+          const Text('Öğrenciler, yoklama ve takım kurma burada açılır.',
+              style: TextStyle(color: AppTema.metinUcuncul)),
+        ]),
       ),
     );
   }
@@ -330,10 +389,11 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
     ]);
   }
 
-  Widget _sinifKarti(BuildContext context, QueryDocumentSnapshot doc) {
+  Widget _sinifKarti(BuildContext context, QueryDocumentSnapshot doc, bool ikiSutun) {
     final data = doc.data() as Map<String, dynamic>?;
     final ad = data?['ad'] ?? doc.id;
     final docId = doc.id;
+    final secili = ikiSutun && _seciliSinifId == docId;
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: ClipRRect(
@@ -386,15 +446,26 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
           ),
           child: Material(
             borderRadius: BorderRadius.circular(16),
-            color: Colors.white,
+            color: secili ? AppTema.vurguZemin : Colors.white,
             elevation: 2,
             shadowColor: Colors.black.withAlpha(20),
+            shape: secili
+                ? RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    side: const BorderSide(color: AppTema.vurgu, width: 2))
+                : null,
             child: InkWell(
               borderRadius: BorderRadius.circular(16),
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => OgrenciListesiEkrani(sinifId: docId, sinifAd: ad)),
-              ),
+              onTap: () {
+                if (ikiSutun) {
+                  setState(() { _seciliSinifId = docId; _seciliSinifAd = ad; });
+                } else {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => OgrenciListesiEkrani(sinifId: docId, sinifAd: ad)),
+                  );
+                }
+              },
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Row(
