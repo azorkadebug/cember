@@ -1,0 +1,98 @@
+{
+  "v": 3,
+  "attachments": {},
+  "boards": {
+    "Main.dc.html": {
+      "h": 844,
+      "radius": 28,
+      "title": "Sınıflar · Açık (bugün)",
+      "w": 390,
+      "x": 0,
+      "y": 0
+    },
+    "Siniflar-Charcoal.dc.html": {
+      "h": 844,
+      "radius": 28,
+      "title": "Sınıflar · Koyu B — Charcoal",
+      "w": 390,
+      "x": 940,
+      "y": 0
+    },
+    "Siniflar-Lacivert.dc.html": {
+      "h": 844,
+      "radius": 28,
+      "title": "Sınıflar · Koyu A — Lacivert",
+      "w": 390,
+      "x": 470,
+      "y": 0
+    },
+    "Yoklama-Charcoal.dc.html": {
+      "h": 844,
+      "radius": 28,
+      "title": "Yoklama · Koyu B — Charcoal",
+      "w": 390,
+      "x": 940,
+      "y": 1300
+    },
+    "Yoklama-Lacivert.dc.html": {
+      "h": 844,
+      "radius": 28,
+      "title": "Yoklama · Koyu A — Lacivert",
+      "w": 390,
+      "x": 470,
+      "y": 1300
+    },
+    "Yoklama.dc.html": {
+      "h": 844,
+      "radius": 28,
+      "title": "Yoklama · Açık (bugün)",
+      "w": 390,
+      "x": 0,
+      "y": 1300
+    }
+  },
+  "createdOnFiles": {
+    "at": "2026-10-02T12:00:00Z",
+    "v": 1
+  },
+  "designSystems": [
+    {
+      "artifact": "https://claude.ai/artifact/FMQyEhVvy7bburdjWceaH8",
+      "copiedAt": "2026-10-02T12:00:00Z",
+      "namespace": "cember",
+      "title": "Çember",
+      "version": "1790972059-ae64"
+    }
+  ],
+  "launch": {
+    "view": "canvas"
+  },
+  "notes": {
+    "baslik1": {
+      "kind": "title1",
+      "maxW": 1330,
+      "text": "Sınıflar — açık · lacivert · charcoal",
+      "w": 240,
+      "x": 0,
+      "y": -300
+    },
+    "baslik2": {
+      "kind": "title1",
+      "maxW": 1330,
+      "text": "Yoklama — açık · lacivert · charcoal",
+      "w": 240,
+      "x": 0,
+      "y": 1000
+    }
+  },
+  "order": [
+    "Main.dc.html",
+    "Siniflar-Lacivert.dc.html",
+    "Siniflar-Charcoal.dc.html",
+    "Yoklama.dc.html",
+    "Yoklama-Lacivert.dc.html",
+    "Yoklama-Charcoal.dc.html"
+  ],
+  "pages": [],
+  "title": "Çember Koyu Tema"
+}
