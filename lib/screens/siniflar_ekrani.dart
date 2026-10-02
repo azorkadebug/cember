@@ -1,5 +1,6 @@
 import '../tema.dart';
 import '../utils/metin.dart';
+import '../utils/egitim_yili.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../widgets/girdi.dart';
@@ -12,6 +13,7 @@ import '../models/kontrol_kalemi.dart';
 import '../widgets/yardim_diyalogu.dart';
 import 'ogrenci_listesi_ekrani.dart';
 import 'ogrenci_arama_ekrani.dart';
+import 'arsiv_sinif_ekrani.dart';
 import 'admin_ekrani.dart';
 import 'profil_ekrani.dart';
 import 'skor_ekrani.dart';
@@ -325,11 +327,18 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
                         ..sort((a, b) => trKarsilastir(
                             ((a.data() as Map?)?['ad'] ?? '').toString(),
                             ((b.data() as Map?)?['ad'] ?? '').toString()));
-                      return ListView.builder(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 180),
-                      itemCount: docs.length,
-                      itemBuilder: (context, i) => _sinifKarti(context, docs[i], ikiSutun),
-                    );
+                      // Ana listede yalnız bu yılın sınıfları; eskiler en
+                      // altta katlanmış "Geçmiş Yıllar"da.
+                      final aktif = docs.where(_buYilin).toList();
+                      final gecmis = docs.where((d) => !_buYilin(d)).toList();
+                      return ListView(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 180),
+                        children: [
+                          if (aktif.isEmpty) _yeniYilKarti(),
+                          for (final d in aktif) _sinifKarti(context, d, ikiSutun),
+                          if (gecmis.isNotEmpty) _gecmisYillar(context, gecmis),
+                        ],
+                      );
                     }),
                   ),
                 );
@@ -441,6 +450,12 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
                       onTap: () => Navigator.pop(ctx, 'duzenle'),
                     ),
                     ListTile(
+                      leading: const Icon(Icons.inventory_2_rounded, color: AppTema.ana),
+                      title: Text("Geçmiş Yıla Taşı (${EgitimYili.onceki(EgitimYili.simdiki)})"),
+                      subtitle: const Text("Ana listeden kalkar, öğrencileri silinmez"),
+                      onTap: () => Navigator.pop(ctx, 'arsiv'),
+                    ),
+                    ListTile(
                       leading: Icon(Icons.delete_rounded, color: Colors.red.shade600),
                       title: Text("Sınıfı Sil", style: TextStyle(fontWeight: FontWeight.w600, color: Colors.red.shade600)),
                       onTap: () => Navigator.pop(ctx, 'sil'),
@@ -452,6 +467,8 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
             );
             if (result == 'duzenle') {
               if (context.mounted) _sinifAdiniDuzenle(context, docId, ad);
+            } else if (result == 'arsiv') {
+              if (context.mounted) unawaited(_arsiveTasi(context, docId, ad));
             } else if (result == 'sil') {
               if (context.mounted) _sinifSilOnay(context, docId, ad);
             }
@@ -849,7 +866,9 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
               if (c.text.trim().isEmpty) return;
               final ad = c.text.toUpperCase().trim();
               // Aynı adla ikinci sınıf uyarısız oluşuyordu (denetim #4 O8).
-              final mevcut = _sonSiniflar?.docs.any((d) =>
+              // Yalnız bu yıl: geçen yılın 7E'si varken bu yıl yeni bir 7E
+              // açılabilmeli.
+              final mevcut = _sonSiniflar?.docs.any((d) => _buYilin(d) &&
                       trKucult(((d.data() as Map?)?['ad'] ?? '').toString()) == trKucult(ad)) ??
                   false;
               if (mevcut) {
@@ -911,7 +930,9 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
 
   void _siniflarArasiMacDialog(BuildContext context) async {
     final snapshot = await _db.siniflarGetir();
-    if (snapshot.docs.length < 2) {
+    // Yarışma yalnız bu yılın sınıfları arasında.
+    final buYil = snapshot.docs.where(_buYilin).toList();
+    if (buYil.length < 2) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: const Text("En az 2 sınıf gerekli."),
@@ -922,10 +943,11 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
       return;
     }
 
-    final siniflar = snapshot.docs.map((d) {
+    final siniflar = buYil.map((d) {
       final data = d.data() as Map<String, dynamic>?;
       return {'id': d.id, 'ad': data?['ad'] ?? d.id};
-    }).toList();
+    }).toList()
+      ..sort((a, b) => trKarsilastir(a['ad'].toString(), b['ad'].toString()));
 
     String? sinif1Id = siniflar[0]['id'] as String;
     String? sinif2Id = siniflar[1]['id'] as String;
@@ -1123,6 +1145,186 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
     MacDurumu().macBaslat(sinif1Id, takimlar);
     unawaited(AnalyticsService.macBasladi(takimSayisi: 2, oyuncuSayisi: gelenler1.length + gelenler2.length));
     return takimlar;
+  }
+
+  bool _buYilin(QueryDocumentSnapshot d) =>
+      EgitimYili.sinifin(d.data() as Map<String, dynamic>?).compareTo(EgitimYili.simdiki) >= 0;
+
+  Future<void> _arsiveTasi(BuildContext context, String sinifId, String sinifAdi) async {
+    final yil = EgitimYili.onceki(EgitimYili.simdiki);
+    try {
+      if (MacDurumu().sinifId == sinifId) MacDurumu().macBitir();
+      await _db.sinifEgitimYiliniGuncelle(sinifId, yil);
+      if (_seciliSinifId == sinifId && mounted) {
+        setState(() { _seciliSinifId = null; _seciliSinifAd = null; });
+      }
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text("$sinifAdi, $yil arşivine taşındı."),
+        action: SnackBarAction(
+          label: 'Geri Al',
+          onPressed: () => _db.sinifEgitimYiliniGuncelle(sinifId, EgitimYili.simdiki),
+        ),
+      ));
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text("Taşınamadı. ${FirestoreService.hataMesaji(e)}"),
+        backgroundColor: AppTema.tehlike,
+      ));
+    }
+  }
+
+  /// Bu yıl henüz sınıf yokken (ama geçmiş yıllar varken) gösterilir.
+  Widget _yeniYilKarti() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTema.vurguZemin,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Icon(Icons.auto_awesome_rounded, color: AppTema.vurguKoyu),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text("${EgitimYili.simdiki} eğitim yılı",
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppTema.vurguKoyu)),
+            const SizedBox(height: 4),
+            const Text(
+                "Bu yılın sınıflarını + ile ekle. Geçen yılın öğrencilerini her sınıfta ⋮ menüsünden \"Geçen Yıldan Ekle\" ile seçerek aktarabilirsin.",
+                style: TextStyle(fontSize: 13, color: AppTema.anaKoyu, height: 1.4)),
+          ]),
+        ),
+      ]),
+    );
+  }
+
+  /// Geçmiş yılların sınıfları, yıla göre gruplu ve katlanmış.
+  Widget _gecmisYillar(BuildContext context, List<QueryDocumentSnapshot> gecmis) {
+    final yillar = <String, List<QueryDocumentSnapshot>>{};
+    for (final d in gecmis) {
+      yillar.putIfAbsent(EgitimYili.sinifin(d.data() as Map<String, dynamic>?), () => []).add(d);
+    }
+    final sirali = yillar.keys.toList()..sort((a, b) => b.compareTo(a));
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Material(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        clipBehavior: Clip.antiAlias,
+        child: Theme(
+          data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+          child: ExpansionTile(
+            leading: const Icon(Icons.inventory_2_rounded, color: AppTema.ana),
+            title: const Text("Geçmiş Yıllar", style: TextStyle(fontWeight: FontWeight.w700, color: AppTema.anaKoyu)),
+            subtitle: Text("${gecmis.length} sınıf · salt okunur",
+                style: const TextStyle(fontSize: 12, color: AppTema.metinIkincil)),
+            childrenPadding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+            children: [
+              for (final yil in sirali) ...[
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(8, 8, 0, 0),
+                  child: Row(children: [
+                    Expanded(
+                      child: Text(yil,
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 1.1, color: AppTema.metinUcuncul)),
+                    ),
+                    TextButton.icon(
+                      style: TextButton.styleFrom(foregroundColor: AppTema.tehlike),
+                      onPressed: () => _yilArsiviniSilOnay(context, yil, yillar[yil]!),
+                      icon: const Icon(Icons.delete_outline_rounded, size: 18),
+                      label: const Text("Yılı Sil"),
+                    ),
+                  ]),
+                ),
+                for (final d in yillar[yil]!) _arsivSatiri(context, d, yil),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _arsivSatiri(BuildContext context, QueryDocumentSnapshot d, String yil) {
+    final ad = ((d.data() as Map?)?['ad'] ?? d.id).toString();
+    return ListTile(
+      dense: true,
+      leading: Icon(Icons.groups_rounded, color: Colors.grey.shade500),
+      title: Text(ad, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+      trailing: Icon(Icons.chevron_right_rounded, color: Colors.grey.shade400),
+      onTap: () => Navigator.push(context, MaterialPageRoute(
+        builder: (_) => ArsivSinifEkrani(sinifId: d.id, sinifAd: ad, egitimYili: yil),
+      )),
+    );
+  }
+
+  /// KVKK: eski öğrenci verisi gerektiğinden uzun tutulmamalı; bir yılın
+  /// arşivi tek seferde silinebilir.
+  void _yilArsiviniSilOnay(BuildContext context, String yil, List<QueryDocumentSnapshot> siniflar) {
+    bool siliniyor = false;
+    showDialog(
+      context: context,
+      builder: (dctx) => StatefulBuilder(
+        builder: (dctx, setDState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Row(children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(color: Colors.red.shade50, borderRadius: BorderRadius.circular(10)),
+              child: Icon(Icons.delete_forever_rounded, color: Colors.red.shade700),
+            ),
+            const SizedBox(width: 12),
+            Expanded(child: Text("$yil silinsin mi?", style: const TextStyle(fontWeight: FontWeight.w700))),
+          ]),
+          content: Text(
+              "$yil arşivindeki ${siniflar.length} sınıf, öğrencileri ve yoklama geçmişiyle birlikte kalıcı olarak silinecek. "
+              "Bu yıla aktardığın öğrenciler etkilenmez.\n\nBu işlem geri alınamaz.",
+              style: TextStyle(color: Colors.grey.shade700, height: 1.5)),
+          actions: [
+            TextButton(
+              onPressed: siliniyor ? null : () => Navigator.pop(dctx),
+              child: Text("İptal", style: TextStyle(color: Colors.grey.shade600)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red.shade600,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              ),
+              onPressed: siliniyor
+                  ? null
+                  : () async {
+                      setDState(() => siliniyor = true);
+                      var silinen = 0;
+                      for (final d in siniflar) {
+                        try {
+                          await _db.sinifSil(d.id);
+                          silinen++;
+                        } catch (_) {
+                          break;
+                        }
+                      }
+                      if (dctx.mounted) Navigator.pop(dctx);
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        content: Text(silinen == siniflar.length
+                            ? "$yil arşivi silindi."
+                            : "$silinen / ${siniflar.length} sınıf silindi. Bağlantı gerekiyor; kalanlar için tekrar dene."),
+                        backgroundColor: silinen == siniflar.length ? null : AppTema.tehlike,
+                      ));
+                    },
+              child: siliniyor
+                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  : const Text("Evet, Sil", style: TextStyle(fontWeight: FontWeight.w700)),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _sinifSilOnay(BuildContext context, String sinifId, String sinifAdi) {
