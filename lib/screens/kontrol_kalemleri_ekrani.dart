@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../widgets/girdi.dart';
 import '../tema.dart';
+import '../widgets/kalem_simgeleri.dart';
 import '../models/kontrol_kalemi.dart';
 import '../services/firestore_service.dart';
 import '../services/auth_service.dart';
@@ -114,7 +115,7 @@ class _KontrolKalemleriEkraniState extends State<KontrolKalemleriEkrani> {
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: secili ? AppTema.vurgu : Colors.transparent, width: 2),
                       ),
-                      child: Icon(kalemIkonu(anahtar), color: secili ? Colors.white : AppTema.ana, size: 22),
+                      child: KalemSimgesi(anahtar, color: secili ? Colors.white : AppTema.ana, size: 22),
                     ),
                   );
                 }).toList(),
@@ -271,7 +272,7 @@ class _KontrolKalemleriEkraniState extends State<KontrolKalemleriEkrani> {
                     leading: Container(
                       width: 40, height: 40,
                       decoration: BoxDecoration(color: AppTema.ana50, borderRadius: BorderRadius.circular(10)),
-                      child: Icon(kalemIkonu(k.ikon), color: AppTema.ana, size: 22),
+                      child: KalemSimgesi(k.ikon, color: AppTema.ana, size: 22),
                     ),
                     title: Text(k.ad, style: const TextStyle(fontWeight: FontWeight.w700)),
                     subtitle: Text(k.tip == KalemTipi.sayac ? 'Sayaç' : 'Günlük ✓/✗',

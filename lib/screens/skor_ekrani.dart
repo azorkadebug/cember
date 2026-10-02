@@ -1,4 +1,5 @@
 import '../tema.dart';
+import '../widgets/kalem_simgeleri.dart';
 import '../widgets/simgeler.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -215,7 +216,7 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
         backgroundColor: AppTema.panelKoyu2,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(children: [
-          Icon(Icons.front_hand_rounded, color: Colors.red.shade400, size: 22),
+          OzelSimgeWidget(OzelSimge.mola, color: Colors.red.shade400, size: 22),
           const SizedBox(width: 8),
           Text("2 dk Mola — ${t.renkAdi}", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16)),
         ]),
@@ -523,7 +524,7 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.front_hand_rounded, color: cezaMetin, size: 15),
+                    OzelSimgeWidget(OzelSimge.mola, color: cezaMetin, size: 16),
                     const SizedBox(width: 5),
                     Text(
                       cezaSayisi > 0 ? "Mola ($cezaSayisi)" : "2 dk Mola",
@@ -583,7 +584,7 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
             padding: const EdgeInsets.symmetric(vertical: 3),
             child: Row(
               children: [
-                Icon(Icons.front_hand_rounded, color: Colors.red.shade400, size: 14),
+                OzelSimgeWidget(OzelSimge.mola, color: Colors.red.shade400, size: 16),
                 const SizedBox(width: 6),
                 Container(
                   width: 8, height: 8,
@@ -860,7 +861,7 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
               // diyordu (denetim D5).
               if (isKaptan) const Icon(Icons.star_rounded, color: Colors.amber, size: 14),
               if (isCezali)
-                Icon(Icons.front_hand_rounded, color: Colors.red.shade400, size: 12),
+                OzelSimgeWidget(OzelSimge.mola, color: Colors.red.shade400, size: 16),
             ],
           ),
         ),
@@ -960,7 +961,7 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(color: const Color(0xFF8E1F1A), borderRadius: BorderRadius.circular(12)),
                     child: Row(mainAxisSize: MainAxisSize.min, children: [
-                      const Icon(Icons.front_hand_rounded, color: Colors.white, size: 16),
+                      const OzelSimgeWidget(OzelSimge.mola, color: Colors.white, size: 16),
                       const SizedBox(width: 6),
                       Text('Mola ($cezaSayisi)', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
                     ]),
