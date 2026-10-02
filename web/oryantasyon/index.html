@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Spor İstasyonu">
+<link rel="apple-touch-icon" href="/icons/Icon-192.png">
+<title>5. Sınıf Oryantasyon – Spor İstasyonu</title>
+<style>
+  html, body { margin:0; padding:0; background:#0f766e; font-family: Arial, Helvetica, sans-serif; color:#fff; -webkit-text-size-adjust:100%; -webkit-tap-highlight-color: rgba(0,0,0,0); }
+  body { min-height:100%; }
+  .ekran { display:none; padding:18px; text-align:center; }
+  .ekran.acik { display:block; }
+  h1 { font-size:34px; margin:20px 0 10px 0; }
+  h2 { font-size:22px; margin:0 0 20px 0; font-weight:normal; opacity:0.9; }
+  .ust { font-size:20px; margin-bottom:12px; opacity:0.9; }
+  .soru-ust { max-width:900px; margin:0 auto 14px auto; overflow:hidden; }
+  .soru-ust .sol { float:left; font-size:18px; opacity:0.85; padding-top:4px; }
+  .soru-ust .sag { float:right; }
+  .soru { background:#fff; color:#0f172a; border-radius:18px; padding:26px 22px 28px 22px; font-size:30px; line-height:1.35; margin:0 auto 18px auto; max-width:900px; box-shadow:0 6px 0 rgba(0,0,0,0.18); position:relative; box-sizing:border-box; }
+  .soru .etiket { display:inline-block; background:#fbbf24; color:#1f2937; font-size:15px; font-weight:bold; letter-spacing:1px; padding:5px 14px; border-radius:20px; margin-bottom:12px; }
+  .soru .metin { display:block; }
+  #secenekler { max-width:900px; margin:0 auto; font-size:0; }
+  .secenek { display:inline-block; vertical-align:top; width:49%; margin:0 0.5% 10px 0.5%; min-height:120px; padding:14px 14px 14px 14px; font-size:24px; line-height:1.25; color:#fff; border:0; border-radius:16px; cursor:pointer; -webkit-appearance:none; box-sizing:border-box; text-align:left; box-shadow:0 5px 0 rgba(0,0,0,0.22); position:relative; font-family:inherit; }
+  .secenek:active { top:4px; box-shadow:0 1px 0 rgba(0,0,0,0.22); }
+  .secenek .harf { display:inline-block; vertical-align:middle; width:46px; height:46px; line-height:46px; border-radius:23px; background:#fff; text-align:center; font-weight:bold; font-size:24px; margin-right:12px; }
+  .secenek .yazi { display:inline-block; vertical-align:middle; width:-webkit-calc(100% - 62px); width:calc(100% - 62px); }
+  .secenek.a { background:#e21b3c; } .secenek.a .harf { color:#e21b3c; }
+  .secenek.b { background:#1368ce; } .secenek.b .harf { color:#1368ce; }
+  .secenek.c { background:#d89e00; } .secenek.c .harf { color:#d89e00; }
+  .secenek.d { background:#26890c; } .secenek.d .harf { color:#26890c; }
+  @media (max-width: 520px) { .secenek { width:99%; min-height:0; } .soru { font-size:26px; } }
+  .buyuk { display:block; width:100%; max-width:760px; margin:20px auto 0 auto; padding:24px 14px; font-size:28px; background:#fff; color:#0f766e; border:0; border-radius:14px; cursor:pointer; -webkit-appearance:none; box-sizing:border-box; font-weight:bold; }
+  .buyuk:active { background:#e2e8f0; }
+  .istasyon-btn { background:#fbbf24; color:#1f2937; margin-bottom:14px; }
+  #cezaEkran { background:#b91c1c; position:absolute; top:0; left:0; right:0; min-height:100%; }
+  #dogruEkran { background:#15803d; position:absolute; top:0; left:0; right:0; min-height:100%; }
+  #bitisEkran { background:#1d4ed8; }
+  .dev { font-size:56px; margin:20px 0 6px 0; font-weight:bold; }
+  .ceza-metin { font-size:40px; font-weight:bold; margin:6px 0 10px 0; line-height:1.2; }
+  .kucuk { font-size:18px; opacity:0.8; margin-top:30px; }
+  .nokta { display:inline-block; width:22px; height:22px; border-radius:11px; background:rgba(255,255,255,0.35); margin:0 5px; }
+  .nokta.tamam { background:#fbbf24; }
+  .nokta.simdi { background:#fff; }
+  a.geri { color:#fff; font-size:16px; opacity:0.7; text-decoration:underline; }
+  .anim { display:none; margin:0 auto; width:260px; height:260px; }
+  .anim.acik { display:block; }
+  .anim svg { width:260px; height:260px; }
+  .anim path, .anim circle { stroke:#fff; stroke-width:9; stroke-linecap:round; stroke-linejoin:round; fill:none; }
+  .anim circle { fill:#fff; }
+  .anim .zemin { stroke:rgba(255,255,255,0.4); stroke-width:5; }
+  #sayac { display:none; font-size:96px; font-weight:bold; line-height:1; margin:6px 0; }
+  #sayacBtn { display:none; background:#fbbf24; color:#1f2937; margin-top:10px; }
+</style>
+</head>
+<body>
+
+<!-- ============ İSTASYON SEÇME ============ -->
+<div id="secimEkran" class="ekran acik">
+  <h1>Hoş Geldiniz 5. Sınıflar!</h1>
+  <h2>Öğretmen: bu tabletin istasyonunu seçin</h2>
+  <div id="istasyonListesi"></div>
+  <button class="buyuk" id="btnSesTesti" style="max-width:420px; font-size:22px; padding:16px;">🔊 Ses testi</button>
+  <div class="kucuk" id="sesDurum" style="margin-top:12px; font-size:15px;"></div>
+  <div class="kucuk"><b>cember.org/oryantasyon/1</b> ya da <b>/2</b> adresini açarsanız bu ekran atlanır.</div>
+</div>
+
+<!-- ============ SORU ============ -->
+<div id="soruEkran" class="ekran">
+  <div class="soru-ust">
+    <div class="sol" id="istasyonAdi"></div>
+    <div class="sag" id="ilerleme"></div>
+  </div>
+  <div class="soru">
+    <span class="etiket">SORU <span id="soruNo"></span> / <span id="soruToplam"></span></span>
+    <span class="metin" id="soruMetni"></span>
+  </div>
+  <div id="secenekler"></div>
+</div>
+
+<!-- ============ YANLIŞ / CEZA ============ -->
+<div id="cezaEkran" class="ekran">
+  <div class="dev">✗ YANLIŞ!</div>
+  <h2 style="margin-bottom:6px;">Hep birlikte cezayı yapın:</h2>
+  <div class="ceza-metin" id="cezaMetni"></div>
+
+  <!-- Çizgi adam animasyonları: her hareket iki poz, dönüşümlü gösterilir -->
+  <div class="anim" id="anim-squat">
+    <svg viewBox="0 0 200 200">
+      <path class="zemin" d="M15 176 L185 176"/>
+      <g><animate attributeName="opacity" values="1;0" keyTimes="0;0.5" dur="1.2s" calcMode="discrete" repeatCount="indefinite"/>
+        <circle cx="100" cy="32" r="13"/><path d="M100 45 L100 108 M100 60 L72 100 M100 60 L128 100 M100 108 L86 174 M100 108 L114 174"/></g>
+      <g opacity="0"><animate attributeName="opacity" values="0;1" keyTimes="0;0.5" dur="1.2s" calcMode="discrete" repeatCount="indefinite"/>
+        <circle cx="100" cy="72" r="13"/><path d="M100 85 L100 128 M100 98 L150 92 M100 128 L64 122 L70 174 M100 128 L136 122 L130 174"/></g>
+    </svg>
+  </div>
+  <div class="anim" id="anim-ziplama">
+    <svg viewBox="0 0 200 200">
+      <path class="zemin" d="M15 176 L185 176"/>
+      <g><animate attributeName="opacity" values="1;0" keyTimes="0;0.5" dur="1s" calcMode="discrete" repeatCount="indefinite"/>
+        <circle cx="100" cy="32" r="13"/><path d="M100 45 L100 108 M100 60 L78 104 M100 60 L122 104 M100 108 L92 174 M100 108 L108 174"/></g>
+      <g opacity="0"><animate attributeName="opacity" values="0;1" keyTimes="0;0.5" dur="1s" calcMode="discrete" repeatCount="indefinite"/>
+        <circle cx="100" cy="24" r="13"/><path d="M100 37 L100 100 M100 52 L60 16 M100 52 L140 16 M100 100 L66 168 M100 100 L134 168"/></g>
+    </svg>
+  </div>
+  <div class="anim" id="anim-mekik">
+    <svg viewBox="0 0 200 200">
+      <path class="zemin" d="M15 176 L185 176"/>
+      <g><animate attributeName="opacity" values="1;0" keyTimes="0;0.5" dur="1.4s" calcMode="discrete" repeatCount="indefinite"/>
+        <circle cx="34" cy="154" r="13"/><path d="M48 158 L130 160 M60 156 L95 142 M130 160 L150 122 L172 172"/></g>
+      <g opacity="0"><animate attributeName="opacity" values="0;1" keyTimes="0;0.5" dur="1.4s" calcMode="discrete" repeatCount="indefinite"/>
+        <circle cx="96" cy="72" r="13"/><path d="M104 84 L130 160 M108 100 L145 118 M130 160 L150 122 L172 172"/></g>
+    </svg>
+  </div>
+  <div class="anim" id="anim-sinav">
+    <svg viewBox="0 0 200 200">
+      <path class="zemin" d="M15 176 L185 176"/>
+      <g><animate attributeName="opacity" values="1;0" keyTimes="0;0.5" dur="1.4s" calcMode="discrete" repeatCount="indefinite"/>
+        <circle cx="38" cy="100" r="13"/><path d="M52 108 L165 122 M56 108 L56 172 M165 122 L176 172"/></g>
+      <g opacity="0"><animate attributeName="opacity" values="0;1" keyTimes="0;0.5" dur="1.4s" calcMode="discrete" repeatCount="indefinite"/>
+        <circle cx="38" cy="146" r="13"/><path d="M52 152 L165 152 M56 152 L30 166 L62 172 M165 152 L176 172"/></g>
+    </svg>
+  </div>
+  <div class="anim" id="anim-plank">
+    <svg viewBox="0 0 200 200">
+      <path class="zemin" d="M15 176 L185 176"/>
+      <circle cx="36" cy="106" r="13"/><path d="M50 112 L165 140 M54 112 L44 170 L80 170 M165 140 L178 172"/>
+    </svg>
+  </div>
+
+  <div id="sayac"></div>
+  <button class="buyuk" id="sayacBtn">Pozisyon alın, süreyi başlat</button>
+  <button class="buyuk" id="btnCeza">Cezayı yaptık, tekrar deneyelim</button>
+</div>
+
+<!-- ============ DOĞRU ============ -->
+<div id="dogruEkran" class="ekran">
+  <div class="dev">✓ DOĞRU!</div>
+  <h2 id="dogruMesaj">Harika, sıradaki soruya geçiyoruz.</h2>
+  <button class="buyuk" id="btnSonraki">Sıradaki soru</button>
+</div>
+
+<!-- ============ BİTİŞ ============ -->
+<div id="bitisEkran" class="ekran">
+  <div class="dev">🏆 TEBRİKLER!</div>
+  <h1>Bu istasyonu tamamladınız.</h1>
+  <h2 id="bitisMesaj">Şimdi diğer istasyona geçin!</h2>
+  <div class="kucuk" id="bitisOzet"></div>
+  <button class="buyuk" id="btnYeniGrup">Sıradaki grup için başlat</button>
+  <div class="kucuk"><a class="geri" href="#" id="lnkDegistir">İstasyon değiştir</a></div>
+</div>
+
+<script src="/oryantasyon/istasyon.js"></script>
+</body>
+</html>
