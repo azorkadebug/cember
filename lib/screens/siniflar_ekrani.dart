@@ -10,6 +10,8 @@ import '../services/firestore_service.dart';
 import '../services/mac_durumu.dart';
 import '../models/kontrol_kalemi.dart';
 import '../widgets/yardim_diyalogu.dart';
+import '../widgets/yoklama_halkasi.dart';
+import '../utils/sinif_ozeti.dart';
 import 'ogrenci_listesi_ekrani.dart';
 import 'ogrenci_arama_ekrani.dart';
 import 'admin_ekrani.dart';
@@ -57,6 +59,15 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
   /// Aynı akışa yeniden abone olunca ilk olay gelene kadar veri yok sayılıp
   /// "0 öğrenci" yazılıyordu (denetim #4 Y2); son değer saklanır.
   final Map<String, QuerySnapshot> _sonSayaclar = {};
+
+  /// Sınıf kartındaki yoklama halkasının akışları; sayaçlarla aynı nedenle
+  /// sınıf id'sine göre önbelleklenir ve son değer saklanır.
+  final Map<String, Stream<QuerySnapshot>> _sonYoklamaAkislari = {};
+  final Map<String, QuerySnapshot> _sonYoklamalar = {};
+
+  Stream<QuerySnapshot> _sonYoklamaAkisi(String sinifId) =>
+      _sonYoklamaAkislari.putIfAbsent(
+          sinifId, () => _db.sonYoklamaStream(sinifId));
   QuerySnapshot? _sonSiniflar;
 
   @override
@@ -492,54 +503,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
                 padding: const EdgeInsets.all(16),
                 child: Row(
                   children: [
-                    Container(
-                      width: 52,
-                      height: 52,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: _sinifPaleti(ad),
-                        ),
-                        borderRadius: BorderRadius.circular(14),
-                        boxShadow: [BoxShadow(color: _sinifPaleti(ad).first.withAlpha(60), blurRadius: 8, offset: const Offset(0, 2))],
-                      ),
-                      child: const Icon(Icons.groups_rounded, color: Colors.white, size: 28),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(ad, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-                          const SizedBox(height: 4),
-                          StreamBuilder<QuerySnapshot>(
-                            stream: _ogrenciSayisiAkisi(docId),
-                            initialData: _sonSayaclar[docId],
-                            builder: (context, snap) {
-                              if (snap.hasData) _sonSayaclar[docId] = snap.data!;
-                              final count = snap.hasData ? snap.data!.docs.length : 0;
-                              // Boş sınıf listede diğerleriyle aynı görünüyordu;
-                              // öğretmeni bir sonraki adıma yönlendir.
-                              if (snap.hasData && count == 0) {
-                                return Row(mainAxisSize: MainAxisSize.min, children: [
-                                  const Icon(Icons.person_add_alt_rounded,
-                                      size: 14, color: AppTema.uyari),
-                                  const SizedBox(width: 5),
-                                  Text("Öğrenci ekle",
-                                      style: TextStyle(
-                                          color: AppTema.uyari,
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w600)),
-                                ]);
-                              }
-                              return Text("$count öğrenci",
-                                  style: const TextStyle(color: AppTema.metinIkincil, fontSize: 13));
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
+                    Expanded(child: _sinifOzeti(docId, ad, secili)),
                     Icon(Icons.chevron_right_rounded, color: Colors.grey.shade400),
                   ],
                 ),
@@ -548,6 +512,88 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
           ),
         ),
       ),
+    );
+  }
+
+  /// Kartın solu ve ortası: yoklama halkası, sınıf adı, son yoklama özeti.
+  /// Öğrenci listesi (mevcut) ile son yoklama dokümanı birlikte okunur.
+  Widget _sinifOzeti(String docId, String ad, bool secili) {
+    final kisaltma = sinifKisaltmasi(ad);
+    return StreamBuilder<QuerySnapshot>(
+      stream: _ogrenciSayisiAkisi(docId),
+      initialData: _sonSayaclar[docId],
+      builder: (context, ogrSnap) {
+        if (ogrSnap.hasData) _sonSayaclar[docId] = ogrSnap.data!;
+        return StreamBuilder<QuerySnapshot>(
+          stream: _sonYoklamaAkisi(docId),
+          initialData: _sonYoklamalar[docId],
+          builder: (context, yokSnap) {
+            if (yokSnap.hasData) _sonYoklamalar[docId] = yokSnap.data!;
+            final ogrenciIdleri =
+                ogrSnap.hasData ? ogrSnap.data!.docs.map((d) => d.id).toList() : const <String>[];
+            final count = ogrenciIdleri.length;
+            final bos = ogrSnap.hasData && count == 0;
+            final yoklamaDoc = (yokSnap.hasData && yokSnap.data!.docs.isNotEmpty)
+                ? yokSnap.data!.docs.first
+                : null;
+            final ozet = yoklamaDoc == null
+                ? null
+                : yoklamaOzeti({
+                    'tarih': yoklamaDoc.id,
+                    ...?(yoklamaDoc.data() as Map<String, dynamic>?),
+                  }, ogrenciIdleri);
+            final gunEtiketi =
+                ozet == null ? null : yoklamaGunEtiketi(ozet.tarih, DateTime.now());
+
+            final Widget alt;
+            final String semantik;
+            if (bos) {
+              // Boş sınıf listede diğerleriyle aynı görünüyordu;
+              // öğretmeni bir sonraki adıma yönlendir.
+              alt = Row(mainAxisSize: MainAxisSize.min, children: [
+                const Icon(Icons.person_add_alt_rounded, size: 14, color: AppTema.uyari),
+                const SizedBox(width: 5),
+                Text("Öğrenci ekle",
+                    style: TextStyle(color: AppTema.uyari, fontSize: 13, fontWeight: FontWeight.w600)),
+              ]);
+              semantik = "$ad, öğrenci yok";
+            } else if (ozet == null || count == 0) {
+              final metin = ogrSnap.hasData && yokSnap.hasData
+                  ? "$count öğrenci · yoklama alınmadı"
+                  : "$count öğrenci";
+              alt = Text(metin, style: const TextStyle(color: AppTema.metinIkincil, fontSize: 13));
+              semantik = "$ad, $metin";
+            } else {
+              final metin = "${ozet.gelen} / ${ozet.toplam} geldi · $gunEtiketi";
+              alt = Text(metin, style: const TextStyle(color: AppTema.metinIkincil, fontSize: 13));
+              semantik = "$ad, $gunEtiketi ${ozet.gelen} / ${ozet.toplam} geldi";
+            }
+
+            return Row(
+              children: [
+                YoklamaHalkasi(
+                  kisaltma: kisaltma,
+                  oran: ozet?.oran,
+                  bos: bos,
+                  secili: secili,
+                  semantik: semantik,
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(ad, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+                      const SizedBox(height: 4),
+                      alt,
+                    ],
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 
@@ -881,28 +927,6 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
         );
       },
     ).then((_) => c.dispose());
-  }
-
-  // 8 palet + `ad.hashCode % 8` ile 5-6 sınıfta bile aynı renk iki kez
-  // düşebiliyordu (listede iki turuncu, iki mor yan yana). Havuz 12'ye
-  // çıkarıldı — çakışma olasılığı belirgin düştü.
-  static const _sinifPaletleri = [
-    [Color(0xFFE94B6A), Color(0xFFFF6B35)], // pembe → turuncu
-    [Color(0xFF4A90E2), Color(0xFF50C9C3)], // mavi → turkuaz
-    [Color(0xFF00C896), Color(0xFF7FE5C5)], // yeşil → mint
-    [Color(0xFF9B59B6), Color(0xFFD16BA5)], // mor → pembe
-    [Color(0xFFF5C544), Color(0xFFFF8C42)], // sarı → turuncu
-    [Color(0xFF26A69A), Color(0xFF4DB6AC)], // teal
-    [Color(0xFFEF5350), Color(0xFFEC407A)], // kırmızı
-    [Color(0xFF5C6BC0), Color(0xFF7986CB)], // indigo
-    [Color(0xFF7E57C2), Color(0xFFB39DDB)], // menekşe
-    [Color(0xFF0288D1), Color(0xFF4FC3F7)], // gök mavisi
-    [Color(0xFF8D6E63), Color(0xFFBCAAA4)], // kahve
-    [Color(0xFF43A047), Color(0xFF9CCC65)], // çim yeşili
-  ];
-
-  List<Color> _sinifPaleti(String ad) {
-    return _sinifPaletleri[ad.hashCode.abs() % _sinifPaletleri.length];
   }
 
   static const _renkSecenekleri = AppTema.formaRenkAdlari;
