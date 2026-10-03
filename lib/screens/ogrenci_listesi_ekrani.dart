@@ -758,7 +758,12 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
               // Hızlı not (Sabri'nin isteği, 2026-08-28) satırdaki simge
               // yerine basılı tutunca; içerik listede hiç görünmez.
               onLongPress: () => _notHizliDuzenle(o),
-                child: Row(
+                // Alt satırı/çıkartması olmayan öğrencide satır kısalıyor,
+                // yuvarlak kartın kenarına değiyordu (Sabri): hepsi aynı
+                // asgari yükseklikte, içerik ortada.
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(minHeight: 62),
+                  child: Row(
                   children: [
                     // Cinsiyet şeridi yerine baş harfli renkli yuvarlak (renk
                     // öğrenciye sabit); cinsiyet adın yanındaki simgede.
@@ -825,6 +830,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                   ),
                 )),
                   ],
+                ),
                 ),
             ),
           ),
