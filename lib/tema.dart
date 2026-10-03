@@ -26,6 +26,20 @@ class AppTema {
     Color(0xFFFFA63D), // portakal
   ];
 
+  /// Öğrenci baş harf yuvarlaklarının renkleri (açık tonlar; üstünde
+  /// mürekkep yazı en az 7:1). Öğrenciye kimliğinden sabit renk düşer.
+  static const List<Color> ogrenciRenkleri = [
+    Color(0xFFFFD84D), // limon
+    Color(0xFF8CC4FA), // gök
+    Color(0xFF8FD9A0), // çimen
+    Color(0xFFFFB4A8), // şeftali
+    Color(0xFFC9B5FA), // lila
+    Color(0xFFFFC27A), // portakal
+  ];
+
+  static Color ogrenciRengi(String id) =>
+      ogrenciRenkleri[id.codeUnits.fold<int>(0, (a, b) => a * 31 + b) % ogrenciRenkleri.length];
+
   /// Sınıflarım dışından (arama, etkinlik bandı) açılan sınıfa sabit renk.
   static Color sinifRengiKimlikten(String id) =>
       sinifRenkleri[id.codeUnits.fold<int>(0, (a, b) => a + b) % sinifRenkleri.length];

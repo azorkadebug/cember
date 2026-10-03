@@ -735,8 +735,8 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
               onTap: () => _ogrenciKartiAc(o, tumOgrenciler),
                 child: Row(
                   children: [
-                    // Cinsiyet şeridi yerine baş harfli yuvarlak: kız pembe,
-                    // erkek mavi; ekran okuyucu için etiketli.
+                    // Cinsiyet şeridi yerine baş harfli renkli yuvarlak (renk
+                    // öğrenciye sabit); cinsiyet adın yanındaki simgede.
                     Padding(
                       padding: const EdgeInsets.only(left: 10),
                       child: Semantics(
@@ -746,9 +746,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                           height: 42,
                           alignment: Alignment.center,
                           decoration: BoxDecoration(
-                            color: !o.buradaMi
-                                ? const Color(0xFFE6E2DA)
-                                : (o.isMale ? const Color(0xFFB9DCFF) : const Color(0xFFFFC2D1)),
+                            color: !o.buradaMi ? const Color(0xFFE6E2DA) : AppTema.ogrenciRengi(o.id),
                             shape: BoxShape.circle,
                             border: Border.all(color: AppTema.ana, width: 2),
                           ),
@@ -770,7 +768,9 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(
-                              children: [
+                                  children: [
+                                CinsiyetSimgesi(o.isMale, boyut: 16),
+                                const SizedBox(width: 3),
                                 Flexible(
                                   child: Text(o.gorunenAd,
                                       maxLines: 1, overflow: TextOverflow.ellipsis,
