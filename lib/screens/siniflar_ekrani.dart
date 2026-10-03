@@ -110,12 +110,25 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
         title: Semantics(
           label: 'Çember',
           excludeSemantics: true,
-          child: Row(mainAxisSize: MainAxisSize.min, children: [
-            SvgPicture.asset('assets/images/logo_simge.svg', width: 38, height: 38),
-            const SizedBox(width: 6),
-            Text('Çember',
-                style: TextStyle(fontFamily: AppTema.baslikFontu, fontSize: 24, fontWeight: FontWeight.w700, color: r.metin)),
-          ]),
+          // Dar telefonda 5-6 simge yazıya yer bırakmıyor, arama simgesi
+          // "Çember"in üstüne biniyordu (Sabri'nin telefonu): yazı yalnız
+          // yer varsa görünür, yoksa yalnız logo kalır.
+          child: LayoutBuilder(builder: (context, c) {
+            final yaziSigar = c.maxWidth >= 140;
+            return Row(mainAxisSize: MainAxisSize.min, children: [
+              SvgPicture.asset('assets/images/logo_simge.svg', width: 38, height: 38),
+              if (yaziSigar) ...[
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text('Çember',
+                      maxLines: 1,
+                      overflow: TextOverflow.clip,
+                      softWrap: false,
+                      style: TextStyle(fontFamily: AppTema.baslikFontu, fontSize: 24, fontWeight: FontWeight.w700, color: r.metin)),
+                ),
+              ],
+            ]);
+          }),
         ),
         centerTitle: false,
         backgroundColor: r.sayfa,
