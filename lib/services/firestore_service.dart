@@ -252,8 +252,8 @@ class FirestoreService {
   /// Eski kayıtlar şifreli yazılmıştı; ham `ad` alanını okumak şifreli
   /// metni düz metinle karşılaştırmak demekti ve mükerrer kontrolü
   /// sessizce hiç çalışmıyordu. `Ogrenci.fromMap` bayrağa göre çözüyor.
-  Future<Set<String>> mevcutOgrenciAdlari(String sinifId) async {
-    final ogrenciler = await ogrencileriGetir(sinifId);
+  Future<Set<String>> mevcutOgrenciAdlari(String sinifId, {bool sadeceOnbellek = false}) async {
+    final ogrenciler = await ogrencileriGetir(sinifId, sadeceOnbellek: sadeceOnbellek);
     return ogrenciler.map((o) => o.ad.trim()).where((a) => a.isNotEmpty).toSet();
   }
 
@@ -368,12 +368,12 @@ class FirestoreService {
     await batch.commit();
   }
 
-  Future<List<Ogrenci>> ogrencileriGetir(String sinifId) async {
+  Future<List<Ogrenci>> ogrencileriGetir(String sinifId, {bool sadeceOnbellek = false}) async {
     final snap = await _db
         .collection('siniflar')
         .doc(sinifId)
         .collection('ogrenciler')
-        .get();
+        .get(sadeceOnbellek ? const GetOptions(source: Source.cache) : null);
     return snap.docs
         .map((d) => Ogrenci.fromMap(d.id, d.data()))
         .toList();
