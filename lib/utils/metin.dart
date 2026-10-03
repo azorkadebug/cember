@@ -9,6 +9,16 @@ String trKucult(String s) => s.replaceAll('İ', 'i').replaceAll('I', 'ı').toLow
 /// `trKucult`'un tersi: "i" → "İ", "ı" → "I".
 String trBuyut(String s) => s.replaceAll('i', 'İ').replaceAll('ı', 'I').toUpperCase();
 
+/// "Ayşe Yılmaz" → "AY", "Can" → "C" (Türkçe büyük harf). Liste, yoklama ve
+/// takım dağılımındaki baş harf yuvarlakları için.
+String basHarfler(String ad) {
+  final parca = ad.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
+  if (parca.isEmpty) return '?';
+  final ilk = String.fromCharCodes(parca.first.runes.take(1));
+  final son = parca.length > 1 ? String.fromCharCodes(parca.last.runes.take(1)) : '';
+  return trBuyut('$ilk$son');
+}
+
 const _sira = 'aâbcçdefgğhıiîjklmnoöprsştuüûvyz';
 
 /// Türk alfabesine göre karşılaştırma (a < b → negatif). Harf dışı

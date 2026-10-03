@@ -5,6 +5,9 @@ import '../utils/metin.dart';
 import '../utils/egitim_yili.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import '../widgets/cikartma.dart';
 import '../widgets/girdi.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/analytics_service.dart';
@@ -36,6 +39,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
   static const double _ikiSutunEsigi = 900;
   String? _seciliSinifId;
   String? _seciliSinifAd;
+  Color? _seciliSinifRenk;
 
   late final FirestoreService _db = FirestoreService(uid: AuthService().uid);
   bool _migrationYapildi = false;
@@ -58,8 +62,11 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
   final Map<String, Stream<QuerySnapshot>> _ogrenciSayaclari = {};
 
   Stream<QuerySnapshot> _ogrenciSayisiAkisi(String sinifId) =>
+      // Çok aboneli: kart yeniden kurulunca (yeni sınıf eklenince, sınıftan
+      // geri dönünce) aynı akışa ikinci kez abone olunuyor; tek abonelikli
+      // akışta bu hata verip kart yenilenene kadar sayı hiç gelmiyordu.
       _ogrenciSayaclari.putIfAbsent(
-          sinifId, () => _db.ogrencilerStream(sinifId));
+          sinifId, () => _db.ogrencilerStream(sinifId).asBroadcastStream());
   /// Aynı akışa yeniden abone olunca ilk olay gelene kadar veri yok sayılıp
   /// "0 öğrenci" yazılıyordu (denetim #4 Y2); son değer saklanır.
   final Map<String, QuerySnapshot> _sonSayaclar = {};
@@ -71,7 +78,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
 
   Stream<QuerySnapshot> _sonYoklamaAkisi(String sinifId) =>
       _sonYoklamaAkislari.putIfAbsent(
-          sinifId, () => _db.sonYoklamaStream(sinifId));
+          sinifId, () => _db.sonYoklamaStream(sinifId).asBroadcastStream());
   QuerySnapshot? _sonSiniflar;
 
   @override
@@ -95,11 +102,26 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
     final r = context.renk;
     return Scaffold(
       backgroundColor: r.sayfa,
+      // "Teneffüs": koyu çubuk yerine krem zemin; büyük başlık aşağıda
+      // (_solPanel). Küre logonun kendisi küçükte karalamaya dönüyordu
+      // (Sabri, 2026-10-04); yerine küçük boy için çizilmiş kalın çizgili
+      // simge (assets/images/logo_simge.svg) + yazı.
       appBar: AppBar(
-        title: const Text('Sınıflarım'),
+        title: Semantics(
+          label: 'Çember',
+          excludeSemantics: true,
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            SvgPicture.asset('assets/images/logo_simge.svg', width: 38, height: 38),
+            const SizedBox(width: 6),
+            Text('Çember',
+                style: TextStyle(fontFamily: AppTema.baslikFontu, fontSize: 24, fontWeight: FontWeight.w700, color: r.metin)),
+          ]),
+        ),
         centerTitle: false,
-        backgroundColor: r.bar,
-        foregroundColor: r.barMetin,
+        backgroundColor: r.sayfa,
+        foregroundColor: r.metin,
+        surfaceTintColor: Colors.transparent,
+        scrolledUnderElevation: 0,
         elevation: 0,
         actions: [
           // Demo modu yalnız admin'e çiziliyordu; tanıtım, yardım, mağaza
@@ -117,7 +139,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
                   content: Text(DemoModu.aktif ? "Demo modu açık — isimler gizli" : "Demo modu kapalı"),
                   behavior: SnackBarBehavior.floating,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  backgroundColor: DemoModu.aktif ? Colors.orange.shade700 : Colors.green.shade700,
+                  backgroundColor: DemoModu.aktif ? AppTema.uyari : AppTema.basari,
                 ));
               },
             ),
@@ -207,6 +229,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
                     sinifId: _seciliSinifId!,
                     sinifAd: _seciliSinifAd,
                     gomulu: true,
+                    renk: _seciliSinifRenk,
                   ),
           ),
         ]);
@@ -220,31 +243,25 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
     final r = context.renk;
     return Column(
         children: [
-          // Header gradient — kompakt
+          // Büyük başlık: tarih ve hesap altında.
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 14),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [r.bar, r.barAcik],
-              ),
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(20),
-                bottomRight: Radius.circular(20),
-              ),
-            ),
-            child: Row(
+            padding: const EdgeInsets.fromLTRB(20, 4, 20, 6),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text("👋", style: TextStyle(fontSize: 16, color: r.barMetin.withAlpha(220))),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    AuthService().currentUser?.email ?? '',
-                    style: TextStyle(color: r.barMetin.withAlpha(220), fontSize: 13, fontWeight: FontWeight.w500),
-                    overflow: TextOverflow.ellipsis,
-                  ),
+                Text('Sınıfların',
+                    style: TextStyle(
+                        fontFamily: AppTema.baslikFontu, fontSize: 36, fontWeight: FontWeight.w700, color: r.metin, height: 1.1)),
+                const SizedBox(height: 2),
+                Text(
+                  [
+                    DateFormat('d MMMM EEEE', 'tr').format(DateTime.now()),
+                    if ((AuthService().currentUser?.email ?? '').isNotEmpty) AuthService().currentUser!.email!,
+                  ].join(' · '),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: r.metinIkincil, fontSize: 14, fontWeight: FontWeight.w600),
                 ),
               ],
             ),
@@ -279,10 +296,10 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.error_outline, size: 48, color: r.koyuMu ? r.tehlike : Colors.red.shade300),
+                          Icon(Icons.error_outline, size: 48, color: r.tehlike),
                           const SizedBox(height: 12),
                           Text(FirestoreService.hataMesaji(snapshot.error!), textAlign: TextAlign.center,
-                              style: TextStyle(color: r.koyuMu ? r.tehlike : Colors.red.shade700)),
+                              style: TextStyle(color: r.tehlike)),
                         ],
                       ),
                     ),
@@ -301,7 +318,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
                           Icon(Icons.class_outlined, size: 72, color: r.bosDurumIkonu),
                           const SizedBox(height: 16),
                           Text("Hoş geldin! 👋",
-                              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: r.koyuMu ? r.metinIkincil : Colors.grey.shade600)),
+                              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: r.metinIkincil)),
                           const SizedBox(height: 6),
                           Text("Üç adımda hazırsın:",
                               style: TextStyle(color: r.metinIkincil)),
@@ -347,10 +364,12 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
                       final aktif = docs.where(_buYilin).toList();
                       final gecmis = docs.where((d) => !_buYilin(d)).toList();
                       return ListView(
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 180),
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 180),
                         children: [
                           if (aktif.isEmpty) _yeniYilKarti(),
-                          for (final d in aktif) _sinifKarti(context, d, ikiSutun),
+                          for (var i = 0; i < aktif.length; i++)
+                            _sinifKarti(context, aktif[i], ikiSutun,
+                                AppTema.sinifRenkleri[i % AppTema.sinifRenkleri.length]),
                           if (gecmis.isNotEmpty) _gecmisYillar(context, gecmis),
                         ],
                       );
@@ -373,24 +392,29 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          FloatingActionButton.small(
-            heroTag: 'mac',
-            onPressed: () => _siniflarArasiMacDialog(context),
-            backgroundColor: AppTema.panelKoyu1,
-            foregroundColor: Colors.white,
-            elevation: 3,
-            tooltip: 'Sınıflar Arası Yarışma',
-            child: const Icon(Icons.emoji_events_rounded),
+          SertGolgeli(
+            daire: true,
+            kayma: 3,
+            child: FloatingActionButton(
+              heroTag: 'mac',
+              onPressed: () => _siniflarArasiMacDialog(context),
+              // Limon sarısıydı; sarı sınıf kartının üstüne gelince
+              // kayboluyordu (Sabri'nin ekranı, 5C). Beyaz her kartta seçilir.
+              backgroundColor: Colors.white,
+              foregroundColor: AppTema.ana,
+              shape: const CircleBorder(side: BorderSide(color: AppTema.ana, width: 2.5)),
+              tooltip: 'Sınıflar Arası Yarışma',
+              child: const Icon(Icons.emoji_events_rounded, size: 28),
+            ),
           ),
           const SizedBox(height: 12),
-          FloatingActionButton.extended(
-            heroTag: 'ekle',
-            onPressed: () => _sinifEkle(context),
-            backgroundColor: context.renk.vurgu,
-            foregroundColor: context.renk.vurguMetin,
-            elevation: 4,
-            icon: const Icon(Icons.add_rounded),
-            label: const Text("Sınıf Ekle", style: TextStyle(fontWeight: FontWeight.w700)),
+          SertGolgeli(
+            child: FloatingActionButton.extended(
+              heroTag: 'ekle',
+              onPressed: () => _sinifEkle(context),
+              icon: const Icon(Icons.add_rounded, size: 26),
+              label: const Text("Sınıf Ekle"),
+            ),
           ),
         ],
       );
@@ -437,17 +461,15 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
     ]);
   }
 
-  Widget _sinifKarti(BuildContext context, QueryDocumentSnapshot doc, bool ikiSutun) {
+  Widget _sinifKarti(BuildContext context, QueryDocumentSnapshot doc, bool ikiSutun, Color renk) {
     final data = doc.data() as Map<String, dynamic>?;
     final ad = data?['ad'] ?? doc.id;
     final docId = doc.id;
     final secili = ikiSutun && _seciliSinifId == docId;
     final r = context.renk;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: Dismissible(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Dismissible(
           key: Key(docId),
           direction: DismissDirection.endToStart,
           confirmDismiss: (direction) async {
@@ -474,8 +496,8 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
                       onTap: () => Navigator.pop(ctx, 'arsiv'),
                     ),
                     ListTile(
-                      leading: Icon(Icons.delete_rounded, color: ctx.renk.koyuMu ? ctx.renk.tehlike : Colors.red.shade600),
-                      title: Text("Sınıfı Sil", style: TextStyle(fontWeight: FontWeight.w600, color: ctx.renk.koyuMu ? ctx.renk.tehlike : Colors.red.shade600)),
+                      leading: Icon(Icons.delete_rounded, color: ctx.renk.tehlike),
+                      title: Text("Sınıfı Sil", style: TextStyle(fontWeight: FontWeight.w600, color: ctx.renk.tehlike)),
                       onTap: () => Navigator.pop(ctx, 'sil'),
                     ),
                     const SizedBox(height: 8),
@@ -495,46 +517,37 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
           background: Container(
             alignment: Alignment.centerRight,
             padding: const EdgeInsets.only(right: 24),
+            margin: const EdgeInsets.only(right: 4, bottom: 4),
             decoration: BoxDecoration(
               color: r.cizgi,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(22),
             ),
-            child: Icon(Icons.more_horiz_rounded, color: r.koyuMu ? r.metinGovde : Colors.grey.shade700, size: 28),
+            child: Icon(Icons.more_horiz_rounded, color: r.metinGovde, size: 28),
           ),
-          child: Material(
-            borderRadius: BorderRadius.circular(16),
-            color: secili ? r.vurguZemin : r.kart,
-            elevation: 2,
-            shadowColor: r.golge,
-            shape: secili
-                ? RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    side: BorderSide(color: r.vurgu, width: 2))
-                : null,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(16),
-              onTap: () {
-                if (ikiSutun) {
-                  setState(() { _seciliSinifId = docId; _seciliSinifAd = ad; });
-                } else {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => OgrenciListesiEkrani(sinifId: docId, sinifAd: ad)),
-                  );
-                }
-              },
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    Expanded(child: _sinifOzeti(docId, ad, secili)),
-                    Icon(Icons.chevron_right_rounded, color: r.ikonPasif),
-                  ],
-                ),
-              ),
+          // Sınıfın rengi; seçili kart (iki sütun) kalın kenarla belli olur.
+          child: Cikartma(
+            renk: renk,
+            kenarRengi: AppTema.ana,
+            kenarKalinligi: secili ? 4 : 2.5,
+            kayma: secili ? 6 : 4,
+            dolgu: const EdgeInsets.fromLTRB(14, 14, 10, 14),
+            onTap: () {
+              if (ikiSutun) {
+                setState(() { _seciliSinifId = docId; _seciliSinifAd = ad; _seciliSinifRenk = renk; });
+              } else {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => OgrenciListesiEkrani(sinifId: docId, sinifAd: ad, renk: renk)),
+                );
+              }
+            },
+            child: Row(
+              children: [
+                Expanded(child: _sinifOzeti(docId, ad, secili)),
+                const Icon(Icons.chevron_right_rounded, color: AppTema.ana, size: 28),
+              ],
             ),
           ),
-        ),
       ),
     );
   }
@@ -569,46 +582,63 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
             final gunEtiketi =
                 ozet == null ? null : yoklamaGunEtiketi(ozet.tarih, DateTime.now());
 
-            final r = context.renk;
             final Widget alt;
             final String semantik;
             if (bos) {
               // Boş sınıf listede diğerleriyle aynı görünüyordu;
               // öğretmeni bir sonraki adıma yönlendir.
               alt = Row(mainAxisSize: MainAxisSize.min, children: [
-                Icon(Icons.person_add_alt_rounded, size: 14, color: r.uyari),
+                const Icon(Icons.person_add_alt_rounded, size: 15, color: AppTema.ana),
                 const SizedBox(width: 5),
                 Text("Öğrenci ekle",
-                    style: TextStyle(color: r.uyari, fontSize: 13, fontWeight: FontWeight.w600)),
+                    style: const TextStyle(color: AppTema.ana, fontSize: 14, fontWeight: FontWeight.w800)),
               ]);
               semantik = "$ad, öğrenci yok";
             } else if (ozet == null || count == 0) {
-              final metin = ogrSnap.hasData && yokSnap.hasData
-                  ? "$count öğrenci · yoklama alınmadı"
-                  : "$count öğrenci";
-              alt = Text(metin, style: TextStyle(color: r.metinIkincil, fontSize: 13));
+              // Akış gelmeden "0 öğrenci" yazıyordu (denetim #3 doğrulaması).
+              final metin = !ogrSnap.hasData
+                  ? "…"
+                  : yokSnap.hasData
+                      ? "$count öğrenci · yoklama alınmadı"
+                      : "$count öğrenci";
+              alt = Text(metin, style: const TextStyle(color: AppTema.ana, fontSize: 14, fontWeight: FontWeight.w700));
               semantik = "$ad, $metin";
             } else {
               final metin = "${ozet.gelen} / ${ozet.toplam} geldi · $gunEtiketi";
-              alt = Text(metin, style: TextStyle(color: r.metinIkincil, fontSize: 13));
+              alt = Text(metin, style: const TextStyle(color: AppTema.ana, fontSize: 14, fontWeight: FontWeight.w700));
               semantik = "$ad, $gunEtiketi ${ozet.gelen} / ${ozet.toplam} geldi";
             }
 
             return Row(
               children: [
-                YoklamaHalkasi(
-                  kisaltma: kisaltma,
-                  oran: ozet?.oran,
-                  bos: bos,
-                  secili: secili,
-                  semantik: semantik,
+                // Renkli kartta halka beyaz yuvarlağın içinde.
+                Container(
+                  width: 62, height: 62,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: AppTema.ana, width: 2.5),
+                  ),
+                  child: YoklamaHalkasi(
+                    kisaltma: kisaltma,
+                    oran: ozet?.oran,
+                    bos: bos,
+                    secili: secili,
+                    semantik: semantik,
+                    renkler: CemberRenkleri.acik,
+                  ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 14),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(ad, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+                      Text(ad,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                              fontFamily: AppTema.baslikFontu, fontSize: 22, fontWeight: FontWeight.w600, color: AppTema.ana, height: 1.15)),
                       const SizedBox(height: 4),
                       alt,
                     ],
@@ -624,20 +654,17 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
 
   Widget _macBanner(BuildContext context) {
     final mac = MacDurumu();
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(colors: AppTema.panelGradient),
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.black.withAlpha(20), blurRadius: 8, offset: const Offset(0, 2))],
-      ),
+    // "Teneffüs": limon sarısı bilet.
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 10),
+      child: Cikartma(
+      renk: const Color(0xFFFFD84D),
+      kenarRengi: AppTema.ana,
+      yaricap: 18,
+      dolgu: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       child: Row(
         children: [
-          Container(
-            width: 8, height: 8,
-            decoration: BoxDecoration(color: mac.duraklatildi ? Colors.orange : Colors.green, shape: BoxShape.circle),
-          ),
+          Icon(mac.duraklatildi ? Icons.pause_circle_rounded : Icons.timer_rounded, color: AppTema.ana, size: 24),
           const SizedBox(width: 10),
           Expanded(
             child: Semantics(
@@ -663,8 +690,9 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
                   child: Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
-                      mac.duraklatildi ? "Etkinlik duraklatıldı" : "Etkinlik devam ediyor",
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13),
+                      mac.duraklatildi ? "Etkinlik duraklatıldı" : "Etkinlik sürüyor",
+                      style: const TextStyle(
+                          color: AppTema.ana, fontFamily: AppTema.baslikFontu, fontWeight: FontWeight.w600, fontSize: 18),
                     ),
                   ),
                 ),
@@ -677,29 +705,30 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
             tooltip: mac.duraklatildi ? 'Etkinliğe devam et' : 'Etkinliği duraklat',
             constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
             style: IconButton.styleFrom(
-              backgroundColor: Colors.orange.withAlpha(40),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              backgroundColor: Colors.white,
+              side: const BorderSide(color: AppTema.ana, width: 2),
             ),
             icon: Icon(
               mac.duraklatildi ? Icons.play_arrow_rounded : Icons.pause_rounded,
-              color: Colors.orange, size: 20,
+              color: AppTema.ana, size: 22,
             ),
             onPressed: () => mac.duraklatildi ? mac.devamEt() : mac.duraklat(),
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: 8),
           // Durdur
           IconButton(
             tooltip: 'Etkinliği bitir',
             constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
             style: IconButton.styleFrom(
-              backgroundColor: Colors.red.withAlpha(40),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              backgroundColor: AppTema.ana,
+              side: const BorderSide(color: AppTema.ana, width: 2),
             ),
-            icon: Icon(Icons.stop_rounded, color: Colors.red.shade300, size: 20),
+            icon: const Icon(Icons.stop_rounded, color: Colors.white, size: 22),
             onPressed: () => _macBitirOnay(context),
           ),
         ],
       ),
+    ),
     );
   }
 
@@ -707,29 +736,27 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(children: [
           Container(
             padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: ctx.renk.koyuMu ? ctx.renk.tehlikeZemin : Colors.red.shade50, borderRadius: BorderRadius.circular(10)),
-            child: Icon(Icons.stop_rounded, color: ctx.renk.koyuMu ? ctx.renk.tehlike : Colors.red.shade700),
+            decoration: BoxDecoration(color: ctx.renk.tehlikeZemin, borderRadius: BorderRadius.circular(10)),
+            child: Icon(Icons.stop_rounded, color: ctx.renk.tehlike),
           ),
           const SizedBox(width: 12),
           const Text("Etkinliği Bitir", style: TextStyle(fontWeight: FontWeight.w700)),
         ]),
         content: Text(
           "Etkinliği tamamen bitirmek istediğine emin misin? Skorlar sıfırlanacak.",
-          style: TextStyle(color: ctx.renk.koyuMu ? ctx.renk.metinGovde : Colors.grey.shade700, height: 1.5),
+          style: TextStyle(color: ctx.renk.metinGovde, height: 1.5),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text("İptal", style: TextStyle(color: ctx.renk.koyuMu ? ctx.renk.metinIkincil : Colors.grey.shade600)),
+            child: Text("İptal", style: TextStyle(color: ctx.renk.metinIkincil)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: ctx.renk.silDolgu, foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             onPressed: () {
               MacDurumu().macBitir();
@@ -747,7 +774,6 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(
           children: [
             Container(
@@ -770,23 +796,17 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
           buildCounter: gizliSayac,
           decoration: InputDecoration(
             hintText: 'Örn: 8/B',
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: ctx.renk.koyuMu ? ctx.renk.vurgu : ctx.renk.ikonAna, width: 2),
-            ),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('İptal', style: TextStyle(color: ctx.renk.koyuMu ? ctx.renk.metinIkincil : Colors.grey.shade600)),
+            child: Text('İptal', style: TextStyle(color: ctx.renk.metinIkincil)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: ctx.renk.vurgu,
               foregroundColor: ctx.renk.vurguMetin,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
             onPressed: () {
@@ -811,7 +831,6 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
         String secilenBrans = 'beden_egitimi';
         return StatefulBuilder(
           builder: (context, setLocal) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(
           children: [
             Container(
@@ -839,16 +858,11 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
                 buildCounter: gizliSayac,
                 decoration: InputDecoration(
                   hintText: 'Örn: 8/B',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide(color: context.renk.koyuMu ? context.renk.vurgu : context.renk.ikonAna, width: 2),
-                  ),
                 ),
               ),
               const SizedBox(height: 18),
               Text('Branş',
-                  style: TextStyle(fontWeight: FontWeight.w600, color: context.renk.koyuMu ? context.renk.metinGovde : Colors.grey.shade700, fontSize: 13)),
+                  style: TextStyle(fontWeight: FontWeight.w600, color: context.renk.metinGovde, fontSize: 13)),
               const SizedBox(height: 6),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -907,18 +921,17 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('İptal', style: TextStyle(color: context.renk.koyuMu ? context.renk.metinIkincil : Colors.grey.shade600)),
+            child: Text('İptal', style: TextStyle(color: context.renk.metinIkincil)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: context.renk.vurgu,
               foregroundColor: context.renk.vurguMetin,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
             onPressed: () async {
               if (c.text.trim().isEmpty) return;
-              final ad = c.text.toUpperCase().trim();
+              final ad = trBuyut(c.text).trim();
               // Aynı adla ikinci sınıf uyarısız oluşuyordu (denetim #4 O8).
               // Yalnız bu yıl: geçen yılın 7E'si varken bu yıl yeni bir 7E
               // açılabilmeli.
@@ -940,7 +953,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                     content: Text("Sınıf eklenemedi. ${FirestoreService.hataMesaji(e)}"),
-                    backgroundColor: Colors.red.shade700,
+                    backgroundColor: AppTema.tehlike,
                     behavior: SnackBarBehavior.floating,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ));
@@ -968,7 +981,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: const Text("En az 2 sınıf gerekli."),
-          backgroundColor: Colors.red.shade700, behavior: SnackBarBehavior.floating,
+          backgroundColor: AppTema.tehlike, behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ));
       }
@@ -991,12 +1004,11 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Row(children: [
             Container(
               padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(color: ctx.renk.koyuMu ? ctx.renk.yuzeyAna : Colors.indigo.shade50, borderRadius: BorderRadius.circular(10)),
-              child: Icon(Icons.sports_rounded, color: ctx.renk.koyuMu ? ctx.renk.ikonAna : Colors.indigo),
+              decoration: BoxDecoration(color: ctx.renk.yuzeyAna, borderRadius: BorderRadius.circular(10)),
+              child: Icon(Icons.sports_rounded, color: ctx.renk.ikonAna),
             ),
             const SizedBox(width: 12),
             const Text("Sınıflar Arası Yarışma", style: TextStyle(fontWeight: FontWeight.w700)),
@@ -1013,12 +1025,10 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: Text("İptal", style: TextStyle(color: ctx.renk.koyuMu ? ctx.renk.metinIkincil : Colors.grey.shade600)),
+              child: Text("İptal", style: TextStyle(color: ctx.renk.metinIkincil)),
             ),
             ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppTema.panelKoyu1, foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               ),
               icon: const Icon(Icons.sports_rounded, size: 20),
@@ -1026,7 +1036,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
                 if (sinif1Id == sinif2Id) {
                   ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
                     content: const Text("Aynı sınıfı iki kez seçemezsin."),
-                    backgroundColor: Colors.red.shade700, behavior: SnackBarBehavior.floating,
+                    backgroundColor: AppTema.tehlike, behavior: SnackBarBehavior.floating,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ));
                   return;
@@ -1036,7 +1046,6 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
                   final onay = await showDialog<bool>(
                     context: ctx,
                     builder: (c) => AlertDialog(
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                       title: const Text('Süren etkinlik silinsin mi?'),
                       content: const Text('Devam eden etkinliğin skoru ve süresi silinip yarışma başlatılacak.'),
                       actions: [
@@ -1088,14 +1097,13 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
         border: Border.all(color: _renkBul(secilenRenk).withAlpha(60)),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(etiket, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: context.renk.koyuMu ? context.renk.metinIkincil : Colors.grey.shade600)),
+        Text(etiket, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: context.renk.metinIkincil)),
         const SizedBox(height: 6),
         DropdownButtonFormField<String>(
           initialValue: secilenId,
           isExpanded: true,
           decoration: InputDecoration(
             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
             isDense: true,
           ),
           items: siniflar.map((s) => DropdownMenuItem(value: s['id'] as String, child: Text(s['ad'] as String, style: const TextStyle(fontWeight: FontWeight.w600)))).toList(),
@@ -1150,7 +1158,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text("${gelenler1.isEmpty ? ad1 : ad2} sınıfında hazır öğrenci yok."),
-          backgroundColor: Colors.red.shade700, behavior: SnackBarBehavior.floating,
+          backgroundColor: AppTema.tehlike, behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ));
       }
@@ -1210,13 +1218,11 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
   /// Bu yıl henüz sınıf yokken (ama geçmiş yıllar varken) gösterilir.
   Widget _yeniYilKarti() {
     final r = context.renk;
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: r.vurguZemin,
-        borderRadius: BorderRadius.circular(16),
-      ),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Cikartma(
+      renk: r.vurguZemin,
+      dolgu: const EdgeInsets.all(16),
       child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Icon(Icons.auto_awesome_rounded, color: r.vurguKoyu),
         const SizedBox(width: 12),
@@ -1231,6 +1237,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
           ]),
         ),
       ]),
+    ),
     );
   }
 
@@ -1244,10 +1251,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
     final r = context.renk;
     return Padding(
       padding: const EdgeInsets.only(top: 8),
-      child: Material(
-        color: r.kart,
-        borderRadius: BorderRadius.circular(16),
-        clipBehavior: Clip.antiAlias,
+      child: Cikartma(
         child: Theme(
           data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
           child: ExpansionTile(
@@ -1286,7 +1290,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
     final ad = ((d.data() as Map?)?['ad'] ?? d.id).toString();
     return ListTile(
       dense: true,
-      leading: Icon(Icons.groups_rounded, color: context.renk.koyuMu ? context.renk.metinUcuncul : Colors.grey.shade500),
+      leading: Icon(Icons.groups_rounded, color: context.renk.metinUcuncul),
       title: Text(ad, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
       trailing: Icon(Icons.chevron_right_rounded, color: context.renk.ikonPasif),
       onTap: () => Navigator.push(context, MaterialPageRoute(
@@ -1303,7 +1307,6 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
       context: context,
       builder: (dctx) => StatefulBuilder(
         builder: (dctx, setDState) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Row(children: [
             Container(
               padding: const EdgeInsets.all(8),
@@ -1326,7 +1329,6 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: dctx.renk.silDolgu,
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               ),
               onPressed: siliniyor
@@ -1365,16 +1367,15 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: context.renk.koyuMu ? context.renk.tehlikeZemin : Colors.red.shade50,
+                color: context.renk.tehlikeZemin,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(Icons.warning_amber_rounded, color: context.renk.koyuMu ? context.renk.tehlike : Colors.red.shade700),
+              child: Icon(Icons.warning_amber_rounded, color: context.renk.tehlike),
             ),
             const SizedBox(width: 12),
             const Text("Sınıfı Sil", style: TextStyle(fontWeight: FontWeight.w700)),
@@ -1382,18 +1383,17 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
         ),
         content: Text(
           "$sinifAdi sınıfını ve tüm öğrencilerini silmek istediğine emin misin?\n\nBu işlem geri alınamaz.",
-          style: TextStyle(color: context.renk.koyuMu ? context.renk.metinGovde : Colors.grey.shade700, height: 1.5),
+          style: TextStyle(color: context.renk.metinGovde, height: 1.5),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text("İptal", style: TextStyle(color: context.renk.koyuMu ? context.renk.metinIkincil : Colors.grey.shade600)),
+            child: Text("İptal", style: TextStyle(color: context.renk.metinIkincil)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: context.renk.silDolgu,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
             onPressed: () async {

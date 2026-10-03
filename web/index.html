@@ -22,12 +22,14 @@
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="theme-color" content="#FFF6EA">
   <meta name="apple-mobile-web-app-title" content="Çember">
-  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 
   <!-- Favicon -->
-  <link rel="icon" type="image/png" href="favicon.png?v=2"/>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg?v=3"/>
+  <link rel="icon" type="image/png" href="favicon.png?v=3"/>
 
   <title>Çember</title>
   <link rel="manifest" href="manifest.json">
@@ -46,15 +48,15 @@
        firebase.json'daki CSP engeller. -->
   <style>
     #cember-splash{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
-      gap:14px;background:#37474F;color:#fff;font-family:-apple-system,"Segoe UI",Roboto,sans-serif;z-index:9999;
+      gap:14px;background:#FFF6EA;color:#1F2430;font-family:-apple-system,"Segoe UI",Roboto,sans-serif;z-index:9999;
       transition:opacity .3s}
-    #cember-splash img{width:88px;height:88px;border-radius:22px}
-    #cember-splash b{font-size:22px;letter-spacing:2px}
-    #cember-splash span{font-size:13px;opacity:.75}
+    #cember-splash img{width:104px;height:104px}
+    #cember-splash b{font-size:28px;font-weight:800}
+    #cember-splash span{font-size:14px;font-weight:600;color:#4A5060}
   </style>
   <div id="cember-splash" role="status" aria-live="polite">
-    <img src="icons/Icon-192.png" alt="">
-    <b>ÇEMBER</b>
+    <img src="favicon.svg?v=3" alt="">
+    <b>Çember</b>
     <span>Yükleniyor…</span>
   </div>
   <script src="splash.js"></script>

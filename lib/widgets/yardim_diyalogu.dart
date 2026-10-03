@@ -167,7 +167,7 @@ class _BolumKart extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 14,
                   height: 1.5,
-                  color: r.koyuMu ? r.metinGovde : Colors.grey.shade700,
+                  color: r.metinGovde,
                 ),
               ),
             ],

@@ -55,7 +55,6 @@ class _ArsivSinifEkraniState extends State<ArsivSinifEkrani> {
       builder: (ctx) {
         final r = ctx.renk;
         return AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(children: [
           Container(
             padding: const EdgeInsets.all(8),
@@ -68,14 +67,13 @@ class _ArsivSinifEkraniState extends State<ArsivSinifEkrani> {
         content: Text(
             "${widget.sinifAd} (${widget.egitimYili}) sınıfı, öğrencileri ve yoklama geçmişiyle birlikte kalıcı olarak silinecek. "
             "Bu yıla aktardığın öğrenciler etkilenmez.",
-            style: TextStyle(color: r.koyuMu ? r.metinGovde : Colors.grey.shade700, height: 1.5)),
+            style: TextStyle(color: r.metinGovde, height: 1.5)),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text("İptal")),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: r.silDolgu,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             onPressed: () => Navigator.pop(ctx, true),
             child: const Text("Evet, Sil"),
@@ -103,8 +101,10 @@ class _ArsivSinifEkraniState extends State<ArsivSinifEkrani> {
     return Scaffold(
       backgroundColor: r.sayfa,
       appBar: AppBar(
-        backgroundColor: r.bar,
-        foregroundColor: r.barMetin,
+        backgroundColor: r.sayfa,
+        surfaceTintColor: Colors.transparent,
+        scrolledUnderElevation: 0,
+        foregroundColor: r.metin,
         elevation: 0,
         title: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(widget.sinifAd, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
@@ -127,8 +127,8 @@ class _ArsivSinifEkraniState extends State<ArsivSinifEkrani> {
                 value: 'sil',
                 child: ListTile(
                   contentPadding: EdgeInsets.zero,
-                  leading: Icon(Icons.delete_rounded, color: r.koyuMu ? r.tehlike : Colors.red.shade600),
-                  title: Text('Sınıfı Sil', style: TextStyle(color: r.koyuMu ? r.tehlike : Colors.red.shade600, fontWeight: FontWeight.w600)),
+                  leading: Icon(Icons.delete_rounded, color: r.tehlike),
+                  title: Text('Sınıfı Sil', style: TextStyle(color: r.tehlike, fontWeight: FontWeight.w600)),
                 ),
               ),
             ],

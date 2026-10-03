@@ -35,7 +35,11 @@ class CinsiyetSimgesi extends StatelessWidget {
 
   static Color rengi(bool isMale) => isMale ? const Color(0xFF1E88E5) : const Color(0xFFD81B60);
 
+  /// Koyu zeminde açık ton: koyu kartta pembe 2,7:1'di.
+  static Color koyuRengi(bool isMale) => isMale ? const Color(0xFF64B5F6) : const Color(0xFFF06292);
+
   @override
-  Widget build(BuildContext context) =>
-      Icon(isMale ? Icons.male_rounded : Icons.female_rounded, size: boyut, color: renk ?? rengi(isMale));
+  Widget build(BuildContext context) => Icon(isMale ? Icons.male_rounded : Icons.female_rounded,
+      size: boyut,
+      color: renk ?? (Theme.of(context).brightness == Brightness.dark ? koyuRengi(isMale) : rengi(isMale)));
 }

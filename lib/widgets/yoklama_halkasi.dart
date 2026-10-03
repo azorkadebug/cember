@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../tema.dart';
 import '../tema_renkleri.dart';
 
 /// Sınıf kartının solundaki yoklama halkası (tasarım sistemi: SinifKarti).
@@ -18,6 +19,7 @@ class YoklamaHalkasi extends StatelessWidget {
     this.bos = false,
     this.secili = false,
     this.semantik,
+    this.renkler,
   });
 
   final String kisaltma;
@@ -26,13 +28,17 @@ class YoklamaHalkasi extends StatelessWidget {
   final bool secili;
   final String? semantik;
 
+  /// Renkli sınıf kartında halka beyaz yuvarlağın üstünde durur; koyu temada
+  /// da açık renklerle çizilsin diye.
+  final CemberRenkleri? renkler;
+
   static const double boyut = 52;
 
   @override
   Widget build(BuildContext context) {
     final hareketYok = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
     final hedef = bos ? 0.0 : (oran ?? 0.0);
-    final r = context.renk;
+    final r = renkler ?? context.renk;
     return Semantics(
       label: semantik,
       excludeSemantics: true,
@@ -59,8 +65,9 @@ class YoklamaHalkasi extends StatelessWidget {
               maxLines: 1,
               textScaler: TextScaler.noScaling,
               style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w800,
+                fontFamily: AppTema.baslikFontu,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
                 letterSpacing: -0.3,
                 color: bos ? r.metinUcuncul : r.metin,
               ),

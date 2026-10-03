@@ -1,5 +1,26 @@
+import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 class DemoModu {
-  static bool aktif = false;
+  /// Ekranlar ve üst şerit dinler. Tercih cihazda saklanır: sunum sırasında
+  /// sayfa yenilenince demo kapanıp gerçek adlar görünüyordu (denetim #3).
+  static final ValueNotifier<bool> durum = ValueNotifier(false);
+  static const _anahtar = 'demo_modu';
+
+  static bool get aktif => durum.value;
+  static set aktif(bool v) {
+    if (durum.value == v) return;
+    durum.value = v;
+    if (!v) sifirla();
+    SharedPreferences.getInstance().then((p) => p.setBool(_anahtar, v)).catchError((_) => false);
+  }
+
+  static Future<void> yukle() async {
+    try {
+      final p = await SharedPreferences.getInstance();
+      durum.value = p.getBool(_anahtar) ?? false;
+    } catch (_) {}
+  }
 
   static const _kizIsimleri = [
     'Elif Yıldız', 'Zeynep Kaya', 'Defne Arslan', 'Ecrin Demir', 'Azra Çelik',

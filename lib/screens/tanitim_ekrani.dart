@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/cikartma.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../tema.dart';
 import '../tema_renkleri.dart';
@@ -43,28 +44,28 @@ class _TanitimEkraniState extends State<TanitimEkrani> {
       'Sınıfını Kur',
       'Sınıflarını ekle, branşını seç. Derste ne takip ediyorsan '
           '— forma, kitap, boya, enstrüman — branşına göre hazır gelir.',
-      Color(0xFF43A047),
+      Color(0xFF63C77A),
     ),
     _TanitimSayfasi(
       Icons.fact_check_rounded,
       'Yoklamanı Tek Dokunuşla Al',
       'Kim geldi, kim gelmedi? Dokun, işaretle. Kitabını ya da formasını '
           'unutanı da aynı ekranda not et. Hepsi tarihiyle kaydedilir.',
-      Color(0xFF1976D2),
+      Color(0xFF4FA3F7),
     ),
     _TanitimSayfasi(
       Icons.emoji_events_rounded,
       'Adil Takımlar Kur',
       'Bir dokunuşla dengeli takımlar oluştur. Uygulama, anlaşamayan '
           'öğrencileri ayrı takımlara koyar. Skor tablosu ve süre sayacı da hazır.',
-      Color(0xFFC77B46),
+      Color(0xFFFFD84D),
     ),
     _TanitimSayfasi(
       Icons.visibility_off_rounded,
       'Öğrenci Bilgileri Güvende',
       'Sunum yaparken ya da ekran görüntüsü paylaşırken demo modunu aç: '
           'gerçek isimler gizlenir, yerlerine rastgele isimler görünür.',
-      Color(0xFF8E24AA),
+      Color(0xFFB794F6),
     ),
   ];
 
@@ -85,7 +86,7 @@ class _TanitimEkraniState extends State<TanitimEkrani> {
   Widget build(BuildContext context) {
     final r = context.renk;
     return Scaffold(
-      backgroundColor: r.kart,
+      backgroundColor: r.sayfa,
       body: SafeArea(
         child: Column(
           children: [
@@ -101,7 +102,7 @@ class _TanitimEkraniState extends State<TanitimEkrani> {
                   ),
                   // grey.shade500 beyaz üzerinde 2,8:1 veriyordu.
                   child: Text('Atla',
-                      style: TextStyle(color: r.metinIkincil, fontWeight: FontWeight.w600)),
+                      style: TextStyle(color: r.metin, fontWeight: FontWeight.w600, fontSize: 17)),
                 ),
               ),
             ),
@@ -115,28 +116,48 @@ class _TanitimEkraniState extends State<TanitimEkrani> {
                   // İçerik bloğu, Expanded'ın verdiği tüm alanın ortasına
                   // hizalanınca üstte yarım ekran ölü alan kalıyordu.
                   // Oranlı Spacer'larla denge yukarı çekildi (2 üst / 3 alt).
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 36),
-                    child: Column(
-                      children: [
-                        const Spacer(flex: 2),
-                        Container(
-                          padding: const EdgeInsets.all(36),
-                          decoration: BoxDecoration(color: s.renk.withAlpha(20), shape: BoxShape.circle),
-                          child: Icon(s.ikon, size: 80, color: s.renk),
+                  // Kaydırılabilir: yatay telefonda ve büyük yazıda açıklama
+                  // kesiliyor, 4. sayfadaki mahremiyet notu kayboluyordu
+                  // (denetim #3). Geniş ekranda 520 px'e sınırlı.
+                  return LayoutBuilder(builder: (context, c) {
+                    final kisa = c.maxHeight < 440;
+                    return SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(horizontal: 32),
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(minHeight: c.maxHeight),
+                        child: Center(
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 520),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const SizedBox(height: 12),
+                                Container(
+                                  padding: EdgeInsets.all(kisa ? 18 : 30),
+                                  decoration: ShapeDecoration(
+                                    color: s.renk,
+                                    shape: const CircleBorder(side: BorderSide(color: AppTema.ana, width: 3)),
+                                    shadows: const [BoxShadow(color: AppTema.ana, offset: Offset(6, 6))],
+                                  ),
+                                  child: Icon(s.ikon, size: kisa ? 44 : 76, color: AppTema.ana),
+                                ),
+                                SizedBox(height: kisa ? 16 : 32),
+                                Text(s.baslik,
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                        fontFamily: AppTema.baslikFontu, fontSize: 30, fontWeight: FontWeight.w700, color: r.metin, height: 1.15)),
+                                const SizedBox(height: 12),
+                                Text(s.aciklama,
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(fontSize: 17, height: 1.5, fontWeight: FontWeight.w600, color: r.metinIkincil)),
+                                const SizedBox(height: 12),
+                              ],
+                            ),
+                          ),
                         ),
-                        const SizedBox(height: 36),
-                        Text(s.baslik,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: r.koyuMu ? r.metin : AppTema.panelKoyu1)),
-                        const SizedBox(height: 16),
-                        Text(s.aciklama,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(fontSize: 16, height: 1.6, color: r.metinIkincil)),
-                        const Spacer(flex: 3),
-                      ],
-                    ),
-                  );
+                      ),
+                    );
+                  });
                 },
               ),
             ),
@@ -154,7 +175,7 @@ class _TanitimEkraniState extends State<TanitimEkrani> {
                   width: aktif ? 24 : 8,
                   height: 8,
                   decoration: BoxDecoration(
-                    color: aktif ? r.vurgu : r.cizgi,
+                    color: aktif ? r.metin : r.cizgi,
                     borderRadius: BorderRadius.circular(4),
                   ),
                 );
@@ -163,15 +184,13 @@ class _TanitimEkraniState extends State<TanitimEkrani> {
             ),
             // İleri / Başla düğmesi
             Padding(
-              padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
-              child: SizedBox(
+              padding: const EdgeInsets.fromLTRB(24, 20, 24, 20),
+              child: SertGolgeli(
+                child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: r.vurgu,
-                    foregroundColor: r.vurguMetin,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    padding: const EdgeInsets.symmetric(vertical: 15),
                   ),
                   onPressed: () {
                     if (_sonSayfa) {
@@ -181,8 +200,9 @@ class _TanitimEkraniState extends State<TanitimEkrani> {
                     }
                   },
                   child: Text(_sonSayfa ? 'Hadi Başlayalım!' : 'İleri',
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                      style: const TextStyle(fontSize: 20)),
                 ),
+              ),
               ),
             ),
           ],

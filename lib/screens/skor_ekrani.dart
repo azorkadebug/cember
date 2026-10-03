@@ -1,4 +1,6 @@
 import '../tema.dart';
+import '../tema_renkleri.dart';
+import '../widgets/cikartma.dart';
 import '../widgets/kalem_simgeleri.dart';
 import '../widgets/simgeler.dart';
 import 'dart:async';
@@ -9,6 +11,7 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 import '../widgets/girdi.dart';
 import '../models/ogrenci.dart';
 import '../services/mac_durumu.dart';
+import '../services/demo_modu.dart';
 import '../widgets/yardim_diyalogu.dart';
 
 class TakimBilgi {
@@ -213,12 +216,10 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppTema.panelKoyu2,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(children: [
-          OzelSimgeWidget(OzelSimge.mola, color: Colors.red.shade400, size: 22),
+          OzelSimgeWidget(OzelSimge.mola, color: ctx.renk.tehlike, size: 22),
           const SizedBox(width: 8),
-          Text("2 dk Mola — ${t.renkAdi}", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16)),
+          Expanded(child: Text("2 dk Mola — ${t.renkAdi}")),
         ]),
         content: SizedBox(
           width: double.maxFinite,
@@ -231,12 +232,12 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
               final zatenCezali = _cezalar.any((c) => c.oyuncu.id == o.id);
               return ListTile(
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                leading: CinsiyetSimgesi(o.isMale, boyut: 18, renk: o.isMale ? Colors.blue.shade300 : Colors.pink.shade300),
+                leading: CinsiyetSimgesi(o.isMale, boyut: 18),
                 title: Text(o.gorunenAd, style: TextStyle(
-                    color: zatenCezali ? Colors.white30 : Colors.white,
-                    fontWeight: FontWeight.w600)),
+                    color: zatenCezali ? ctx.renk.metinUcuncul : ctx.renk.metin,
+                    fontWeight: FontWeight.w700)),
                 trailing: zatenCezali
-                    ? Text("Molada", style: TextStyle(color: Colors.red.shade300, fontSize: 12))
+                    ? Text("Molada", style: TextStyle(color: ctx.renk.tehlike, fontSize: 13, fontWeight: FontWeight.w700))
                     : null,
                 enabled: !zatenCezali,
                 onTap: () {
@@ -250,7 +251,7 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text("İptal", style: TextStyle(color: Colors.white60)),
+            child: const Text("İptal"),
           ),
         ],
       ),
@@ -281,16 +282,10 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppTema.panelKoyu2,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: Colors.green.withAlpha(30), borderRadius: BorderRadius.circular(10)),
-            child: const Icon(Icons.check_circle_rounded, color: Colors.green, size: 24),
-          ),
-          const SizedBox(width: 12),
-          const Expanded(child: Text("Mola bitti", style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800))),
+          Icon(Icons.check_circle_rounded, color: ctx.renk.basari, size: 28),
+          const SizedBox(width: 10),
+          const Expanded(child: Text("Mola bitti")),
         ]),
         content: Row(children: [
           Container(width: 10, height: 10, decoration: BoxDecoration(color: t.renk, shape: BoxShape.circle)),
@@ -298,8 +293,8 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
           Expanded(
             child: Text.rich(TextSpan(children: [
               // gorunenAd: demo modunda gerçek ad ekranda görünmemeli
-              TextSpan(text: oyuncu.gorunenAd, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
-              TextSpan(text: " oyuna dönebilir!", style: TextStyle(color: Colors.white.withAlpha(180))),
+              TextSpan(text: oyuncu.gorunenAd, style: TextStyle(color: ctx.renk.metin, fontWeight: FontWeight.w800)),
+              TextSpan(text: " oyuna dönebilir!", style: TextStyle(color: ctx.renk.metinGovde)),
             ])),
           ),
         ]),
@@ -308,8 +303,6 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
             width: double.infinity,
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green, foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 padding: const EdgeInsets.symmetric(vertical: 14),
               ),
               onPressed: () => Navigator.pop(ctx),
@@ -341,10 +334,12 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
         Navigator.pop(context, 'geridon');
       },
       child: Scaffold(
-      backgroundColor: AppTema.panelKoyu1,
+      backgroundColor: context.renk.sayfa,
       appBar: _sunum ? null : AppBar(
-        backgroundColor: AppTema.panelKoyu1,
-        foregroundColor: Colors.white,
+        backgroundColor: context.renk.sayfa,
+        foregroundColor: context.renk.metin,
+        surfaceTintColor: Colors.transparent,
+        scrolledUnderElevation: 0,
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
@@ -352,7 +347,7 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
           tooltip: 'Sınıfa dön',
           onPressed: () => Navigator.pop(context, 'geridon'),
         ),
-        title: const Text("Skor Tablosu", style: TextStyle(fontWeight: FontWeight.w800, letterSpacing: 1)),
+        title: Text("Skor Tablosu", style: TextStyle(color: context.renk.metin)),
         actions: [
           IconButton(
             icon: const Icon(Icons.fullscreen_rounded),
@@ -414,19 +409,20 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
           // 1440 px'te 700 px'lik kartların ortasında 44 px'lik düğmeler
           // kalıyordu; masaüstü/iPad'de gövde 720'ye sınırlı (Center değil
           // Align — iPad kaydırma notu, tema.dart).
-          Align(
-            alignment: Alignment.topCenter,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: AppTema.icerikMaxGenislik),
-              child: Column(
-                children: [
-                  Padding(padding: const EdgeInsets.fromLTRB(16, 8, 16, 8), child: _skorPaneli()),
-                  _timerWidget(),
-                  // Ceza bannerleri
-                  if (_cezalar.isNotEmpty) _cezaBannerleri(),
-                  const SizedBox(height: 8),
-                  Expanded(child: _takimListeleri()),
-                ],
+          SingleChildScrollView(
+            child: Align(
+              alignment: Alignment.topCenter,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: AppTema.icerikMaxGenislik),
+                child: Column(
+                  children: [
+                    Padding(padding: const EdgeInsets.fromLTRB(16, 4, 16, 4), child: _skorPaneli()),
+                    _timerWidget(),
+                    if (_cezalar.isNotEmpty) _cezaBannerleri(),
+                    const SizedBox(height: 16),
+                    _takimListeleri(),
+                  ],
+                ),
               ),
             ),
           ),
@@ -436,126 +432,172 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
     );
   }
 
+  // ------------------------------------------------------------------
+  // "Teneffüs" skor ekranı (2026-10-04): krem zemin, her takım kendi forma
+  // renginde çıkartma kart. Sayfa kaydırılır: yatay telefonda ve 4 takımda
+  // sayaç ve kadrolar ekran dışında kalıyordu (denetim #3).
+  // ------------------------------------------------------------------
+  static const _tabular = [FontFeature.tabularFigures()];
+
+  String _takimAdi(TakimBilgi t) => t.isim.isNotEmpty ? t.isim : t.renkAdi;
+
   Widget _skorPaneli() {
     final n = widget.takimlar.length;
-    // İki takımda yan yana; üç ve üstünde 2 sütunlu sarma. Eskiden hepsi
-    // tek satırda Expanded'dı: 430 px'te 4 takımda kart 90 px kalıyor,
-    // −/+ düğmeleri (44+10+22+10+44 = 130 px) kartın dışında kalıyordu —
-    // puan girilemiyordu (denetim K1).
     if (n <= 2) {
-      return Row(
-        children: List.generate(n, (i) => Expanded(
-          child: Padding(
-            padding: EdgeInsets.only(left: i == 0 ? 0 : 4, right: i == n - 1 ? 0 : 4),
-            child: _skorKarti(i),
-          ),
-        )),
-      );
+      return Column(children: [
+        for (var i = 0; i < n; i++)
+          Padding(padding: const EdgeInsets.only(bottom: 8), child: _skorKarti(i, genis: true)),
+      ]);
     }
     return LayoutBuilder(builder: (context, c) {
-      final kartGenislik = (c.maxWidth - 8) / 2;
+      final w = (c.maxWidth - 8) / 2;
       return Wrap(
-        spacing: 8, runSpacing: 8,
-        children: List.generate(n, (i) => SizedBox(width: kartGenislik, child: _skorKarti(i))),
+        spacing: 8,
+        runSpacing: 8,
+        children: [for (var i = 0; i < n; i++) SizedBox(width: w, child: _skorKarti(i, genis: false))],
       );
     });
   }
 
-  Widget _skorKarti(int i) {
+  Widget _skorKarti(int i, {required bool genis}) {
     final t = widget.takimlar[i];
     final cezaSayisi = _takimCezalari(i).length;
-    // Sarı/beyaz formada beyaz metin 1,5:1'e düşüyordu (denetim Y4);
-    // zemine göre beyaz ya da koyu seçiliyor.
+    // Sarı/beyaz formada beyaz yazı okunmuyordu (denetim Y4).
     final metin = AppTema.ustMetin(t.renk);
-    final dolgu = AppTema.ustDolgu(t.renk);
-    // 3+ takımda kartlar iki satıra bölündüğü için dikeyde sıkı tutuluyor;
-    // yoksa oyuncu listelerine yer kalmıyor.
-    final kompakt = widget.takimlar.length > 2;
-    // Siyah formada siyah-saydam ceza düğmesi görünmüyordu; sarıda koyu
-    // metin koyu pill üstüne düşüyordu. Metin rengine göre pill.
-    final cezaZemin = cezaSayisi > 0
-        ? const Color(0xFF8E1F1A)
-        : metin == Colors.white
-            ? (t.renk.computeLuminance() < 0.08 ? Colors.white.withAlpha(50) : Colors.black.withAlpha(115))
-            : Colors.white.withAlpha(170);
-    final cezaMetin = cezaSayisi > 0 ? Colors.white : metin;
-    return Container(
-      padding: EdgeInsets.symmetric(vertical: kompakt ? 8 : 12),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [t.renk.withAlpha(200), t.renk]),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: t.renk.withAlpha(60), blurRadius: 12, offset: const Offset(0, 4))],
+    final ad = _takimAdi(t);
+    // Skor kutusuna sığacak kadar küçülür: 100'e çıkınca +/− düğmeleri
+    // kartın dışına itiliyordu (denetim #3, 320 px).
+    final skor = Semantics(
+      liveRegion: true,
+      label: '$ad skoru ${t.skor}',
+      excludeSemantics: true,
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Text('${t.skor}',
+            style: TextStyle(
+                fontFamily: AppTema.baslikFontu,
+                fontWeight: FontWeight.w700,
+                fontSize: genis ? 96 : 64,
+                height: 1,
+                color: metin,
+                fontFeatures: _tabular)),
       ),
-      child: Column(
-        children: [
-          Text(t.isim, style: TextStyle(color: metin, fontWeight: FontWeight.w800, fontSize: 13),
-              textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis),
-          Text(t.renkAdi, style: TextStyle(color: metin.withAlpha(200), fontSize: 12)),
-          SizedBox(height: kompakt ? 2 : 6),
-          // Skor
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _skorBtn(Icons.remove_rounded, '${t.isim} skorunu azalt', metin, dolgu,
-                  () => setState(() { if (t.skor > 0) { t.skor--; MacDurumu().kaydet(); } })),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                child: Semantics(
-                  liveRegion: true,
-                  label: '${t.isim} skoru ${t.skor}',
-                  excludeSemantics: true,
-                  child: Text("${t.skor}", style: TextStyle(color: metin, fontSize: kompakt ? 30 : 38, fontWeight: FontWeight.w900)),
-                ),
-              ),
-              _skorBtn(Icons.add_rounded, '${t.isim} skorunu artır', metin, dolgu,
-                  () => setState(() { t.skor++; MacDurumu().kaydet(); })),
-            ],
-          ),
-          SizedBox(height: kompakt ? 2 : 6),
-          // Ceza butonu
-          Material(
-            color: cezaZemin,
-            borderRadius: BorderRadius.circular(10),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(10),
-              onTap: () => _cezaVer(i),
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 14, vertical: kompakt ? 8 : 10),
-                child: Row(
+    );
+    // Dar kartta (3+ takım) 44/52 px; 320 px'te 48/64 sığmıyordu.
+    final dugmeler = Row(mainAxisSize: MainAxisSize.min, children: [
+      _yuvarlakDugme(Icons.remove_rounded, '$ad skorunu azalt',
+          () => setState(() { if (t.skor > 0) { t.skor--; MacDurumu().kaydet(); } }), kucuk: !genis),
+      SizedBox(width: genis ? 10 : 6),
+      _yuvarlakDugme(Icons.add_rounded, '$ad skorunu artır',
+          () => setState(() { t.skor++; MacDurumu().kaydet(); }), ana: true, kucuk: !genis),
+    ]);
+    final baslik = Column(
+      crossAxisAlignment: genis ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(ad,
+            maxLines: genis ? 2 : 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: genis ? TextAlign.start : TextAlign.center,
+            style: TextStyle(
+                fontFamily: AppTema.baslikFontu, fontSize: genis ? 24 : 18, fontWeight: FontWeight.w600, color: metin, height: 1.1)),
+        const SizedBox(height: 2),
+        Text('${t.renkAdi} · ${t.oyuncular.length} kişi',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(color: metin, fontSize: 13, fontWeight: FontWeight.w700)),
+      ],
+    );
+    // Mola −/+'dan ayrı satırda: 4 takımda aralarında 2 px kalıyordu (denetim #3).
+    final mola = _molaDugmesi(i, cezaSayisi);
+    return Cikartma(
+      renk: t.renk,
+      kenarRengi: AppTema.ana,
+      dolgu: EdgeInsets.all(genis ? 16 : 12),
+      child: genis
+          ? Row(children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
-                  children: [
-                    OzelSimgeWidget(OzelSimge.mola, color: cezaMetin, size: 16),
-                    const SizedBox(width: 5),
-                    Text(
-                      cezaSayisi > 0 ? "Mola ($cezaSayisi)" : "2 dk Mola",
-                      style: TextStyle(color: cezaMetin, fontSize: 12, fontWeight: FontWeight.w700),
-                    ),
-                  ],
+                  children: [baslik, const SizedBox(height: 14), mola],
                 ),
               ),
-            ),
-          ),
-        ],
-      ),
+              const SizedBox(width: 12),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 170),
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  SizedBox(height: 92, child: skor),
+                  const SizedBox(height: 8),
+                  dugmeler,
+                ]),
+              ),
+            ])
+          : Column(mainAxisSize: MainAxisSize.min, children: [
+              baslik,
+              const SizedBox(height: 4),
+              SizedBox(height: 64, child: skor),
+              const SizedBox(height: 8),
+              dugmeler,
+              const SizedBox(height: 12),
+              mola,
+            ]),
     );
   }
 
-  Widget _skorBtn(IconData icon, String etiket, Color ikonRengi, Color dolgu, VoidCallback onTap) {
-    // Ekranın en sık basılan düğmeleri semantik ağaçta isimsizdi (denetim K2).
+  /// Beyaz yuvarlak (−, sıfırla) ya da limon hap (+) çıkartma düğme.
+  Widget _yuvarlakDugme(IconData icon, String etiket, VoidCallback onTap, {bool ana = false, bool kucuk = false}) {
+    const kenar = BorderSide(color: AppTema.ana, width: 2.5);
+    final ShapeBorder sekil = ana ? const StadiumBorder(side: kenar) : const CircleBorder(side: kenar);
     return Semantics(
       button: true,
       label: etiket,
       excludeSemantics: true,
-      child: Material(
-        color: dolgu,
-        borderRadius: BorderRadius.circular(12),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(12),
-          onTap: onTap,
-          // 38x38'di; maç temposunda ayakta, tek elle basılıyor — 44'e çıktı.
-          child: SizedBox(
-            width: 44, height: 44,
-            child: Icon(icon, color: ikonRengi, size: 22),
+      child: SertGolgeli(
+        daire: !ana,
+        kayma: 3,
+        child: Material(
+          color: ana ? const Color(0xFFFFD84D) : Colors.white,
+          shape: sekil,
+          child: InkWell(
+            customBorder: sekil,
+            onTap: onTap,
+            child: SizedBox(
+              width: ana ? (kucuk ? 52 : 64) : (kucuk ? 44 : 48),
+              height: kucuk ? 44 : 48,
+              child: Icon(icon, color: AppTema.ana, size: kucuk ? 24 : 28),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _molaDugmesi(int i, int cezaSayisi) {
+    final aktif = cezaSayisi > 0;
+    final yazi = aktif ? Colors.white : AppTema.ana;
+    const sekil = StadiumBorder(side: BorderSide(color: AppTema.ana, width: 2));
+    return Material(
+      color: aktif ? AppTema.ana : Colors.white,
+      shape: sekil,
+      child: InkWell(
+        customBorder: sekil,
+        onTap: () => _cezaVer(i),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 44),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            // "2 dk" diyalog başlığında; dar kartta etiket sığsın diye kısa.
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              OzelSimgeWidget(OzelSimge.mola, color: yazi, size: 18),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(aktif ? 'Mola ($cezaSayisi)' : 'Mola',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: yazi, fontSize: 15, fontWeight: FontWeight.w800)),
+              ),
+            ]),
           ),
         ),
       ),
@@ -563,207 +605,193 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
   }
 
   Widget _cezaBannerleri() {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: Colors.red.withAlpha(20),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.red.withAlpha(40)),
-      ),
-      // Üçten fazla ceza aynı anda olursa şerit sınırsız büyüyüp altındaki
-      // takım listesini eziyordu; artık kendi içinde kayıyor.
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxHeight: 132),
-        child: SingleChildScrollView(
-          child: Column(
-        children: _cezalar.map((c) {
-          final t = widget.takimlar[c.takimIndex];
-          final progress = c.kalanSaniye / 120;
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 3),
-            child: Row(
-              children: [
-                OzelSimgeWidget(OzelSimge.mola, color: Colors.red.shade400, size: 16),
-                const SizedBox(width: 6),
-                Container(
-                  width: 8, height: 8,
-                  decoration: BoxDecoration(color: t.renk, shape: BoxShape.circle),
-                ),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text(c.oyuncu.gorunenAd,
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 12),
-                      overflow: TextOverflow.ellipsis),
-                ),
-                // Mini progress bar
-                SizedBox(
-                  width: 40,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(2),
-                    child: LinearProgressIndicator(
-                      value: progress,
-                      backgroundColor: Colors.white.withAlpha(20),
-                      valueColor: AlwaysStoppedAnimation(
-                        c.kalanSaniye <= 10 ? Colors.red : Colors.red.shade300,
+    final r = context.renk;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+      child: Cikartma(
+        renk: r.yokZemin,
+        kayma: 3,
+        dolgu: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        // Üçten fazla ceza aynı anda olursa şerit sınırsız büyüyüp altındaki
+        // takım listesini eziyordu; artık kendi içinde kayıyor.
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxHeight: 150),
+          child: SingleChildScrollView(
+            child: Column(
+              children: _cezalar.map((c) {
+                final t = widget.takimlar[c.takimIndex];
+                final progress = c.kalanSaniye / 120;
+                return Row(
+                  children: [
+                    OzelSimgeWidget(OzelSimge.mola, color: r.yokMetin, size: 18),
+                    const SizedBox(width: 6),
+                    Container(
+                      width: 12, height: 12,
+                      decoration: BoxDecoration(color: t.renk, shape: BoxShape.circle, border: Border.all(color: AppTema.ana, width: 1.5)),
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(c.oyuncu.gorunenAd,
+                          style: TextStyle(color: r.metin, fontWeight: FontWeight.w700, fontSize: 14),
+                          overflow: TextOverflow.ellipsis),
+                    ),
+                    SizedBox(
+                      width: 44,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: LinearProgressIndicator(
+                          value: progress,
+                          backgroundColor: r.kart,
+                          valueColor: AlwaysStoppedAnimation(r.yokMetin),
+                          minHeight: 8,
+                        ),
                       ),
-                      minHeight: 7,
                     ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  _sureFmt(c.kalanSaniye),
-                  style: TextStyle(
-                    color: c.kalanSaniye <= 10 ? Colors.red : Colors.red.shade300,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 13,
-                    fontFamily: 'monospace',
-                  ),
-                ),
-                const SizedBox(width: 4),
-                // İptal butonu
-                InkWell(
-                  onTap: () {
-                    c.timer.cancel();
-                    setState(() => _cezalar.remove(c));
-                  },
-                  customBorder: const CircleBorder(),
-                  child: Semantics(
-                    label: '${c.oyuncu.gorunenAd} cezasını iptal et',
-                    button: true,
-                    child: SizedBox(
-                      width: 44, height: 44,
-                      child: Icon(Icons.close_rounded, color: Colors.white.withAlpha(160), size: 18),
+                    const SizedBox(width: 8),
+                    Text(
+                      _sureFmt(c.kalanSaniye),
+                      style: TextStyle(color: r.yokMetin, fontWeight: FontWeight.w800, fontSize: 14, fontFeatures: _tabular),
                     ),
-                  ),
-                ),
-              ],
+                    InkWell(
+                      onTap: () {
+                        c.timer.cancel();
+                        setState(() => _cezalar.remove(c));
+                      },
+                      customBorder: const CircleBorder(),
+                      child: Semantics(
+                        label: '${c.oyuncu.gorunenAd} cezasını iptal et',
+                        button: true,
+                        child: SizedBox(width: 44, height: 44, child: Icon(Icons.close_rounded, color: r.metin, size: 20)),
+                      ),
+                    ),
+                  ],
+                );
+              }).toList(),
             ),
-          );
-        }).toList(),
           ),
         ),
       ),
     );
   }
 
-  Widget _timerWidget() {
-    final progress = _toplamSaniye > 0 ? _kalanSaniye / _toplamSaniye : 0.0;
-    final timerColor = _timerBitti
-        ? Colors.red
-        : _kalanSaniye <= 10 && _kalanSaniye > 0 && _timerCalisiyor
-            ? Colors.orange
-            : Colors.white;
+  Color _sureRengi() {
+    final r = context.renk;
+    if (_timerBitti) return r.tehlike;
+    if (_kalanSaniye <= 10 && _kalanSaniye > 0 && _timerCalisiyor) return r.uyari;
+    return r.metin;
+  }
 
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTema.panelKoyu2,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withAlpha(15)),
-      ),
-      child: Column(
-        children: [
-          AnimatedBuilder(
-            animation: _pulseCtrl,
-            builder: (context, child) {
-              final scale = _timerCalisiyor && _kalanSaniye <= 10 ? 1.0 + _pulseCtrl.value * 0.05 : 1.0;
-              return Transform.scale(
-                scale: scale,
-                child: Text(_sureFmt(_kalanSaniye), style: TextStyle(
-                    color: timerColor, fontSize: 48, fontWeight: FontWeight.w900, fontFamily: 'monospace', letterSpacing: 4)),
-              );
-            },
-          ),
-          if (_toplamSaniye > 0) ...[
-            const SizedBox(height: 8),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: LinearProgressIndicator(
-                value: progress, backgroundColor: Colors.white.withAlpha(20),
-                valueColor: AlwaysStoppedAnimation(timerColor.withAlpha(200)), minHeight: 4,
+  Widget _timerWidget() {
+    final r = context.renk;
+    final progress = _toplamSaniye > 0 ? _kalanSaniye / _toplamSaniye : 0.0;
+    final sureRengi = _sureRengi();
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Cikartma(
+        dolgu: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+        child: Column(
+          children: [
+            AnimatedBuilder(
+              animation: _pulseCtrl,
+              builder: (context, child) {
+                final scale = _timerCalisiyor && _kalanSaniye <= 10 ? 1.0 + _pulseCtrl.value * 0.05 : 1.0;
+                return Transform.scale(
+                  scale: scale,
+                  child: Text(_sureFmt(_kalanSaniye),
+                      style: TextStyle(
+                          fontFamily: AppTema.baslikFontu,
+                          color: sureRengi,
+                          fontSize: 56,
+                          fontWeight: FontWeight.w700,
+                          height: 1.05,
+                          fontFeatures: _tabular)),
+                );
+              },
+            ),
+            if (_toplamSaniye > 0) ...[
+              const SizedBox(height: 8),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: LinearProgressIndicator(
+                  value: progress,
+                  backgroundColor: r.yuzeyGri,
+                  valueColor: AlwaysStoppedAnimation(sureRengi == r.metin ? r.vurgu : sureRengi),
+                  minHeight: 8,
+                ),
               ),
+            ],
+            const SizedBox(height: 12),
+            Wrap(alignment: WrapAlignment.center, spacing: 6, runSpacing: 8, children: [
+              _presetBtn("0:30", 30), _presetBtn("1:00", 60), _presetBtn("2:00", 120),
+              _presetBtn("3:00", 180), _presetBtn("5:00", 300), _presetBtn("10:00", 600),
+            ]),
+            const SizedBox(height: 14),
+            Wrap(
+              alignment: WrapAlignment.center,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 14,
+              runSpacing: 10,
+              children: [
+                Tooltip(message: 'Süreyi sıfırla', child: _yuvarlakDugme(Icons.replay_rounded, 'Süreyi sıfırla', _sifirla)),
+                _baslatDugmesi(),
+              ],
             ),
           ],
-          const SizedBox(height: 12),
-          // Row'du: 360 px'te 6 × 58 px = 348 px, kartın 296 px'lik iç
-          // genişliğine sığmayıp "10:00" kesiliyordu (denetim Y3).
-          Wrap(alignment: WrapAlignment.center, runSpacing: 6, children: [
-            _presetBtn("0:30", 30), _presetBtn("1:00", 60), _presetBtn("2:00", 120),
-            _presetBtn("3:00", 180), _presetBtn("5:00", 300), _presetBtn("10:00", 600),
-          ]),
-          const SizedBox(height: 12),
-          Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-            Semantics(
-              button: true, label: 'Süreyi sıfırla', excludeSemantics: true,
-              child: Tooltip(
-                message: 'Süreyi sıfırla',
-                child: Material(
-                  color: Colors.white.withAlpha(15), borderRadius: BorderRadius.circular(14),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(14), onTap: _sifirla,
-                    child: const Padding(padding: EdgeInsets.all(12), child: Icon(Icons.replay_rounded, color: Colors.white70, size: 24)),
-                  ),
-                ),
+        ),
+      ),
+    );
+  }
+
+  Widget _baslatDugmesi({bool kisa = false}) {
+    final r = context.renk;
+    final zemin = _timerBitti ? r.tehlike : _timerCalisiyor ? r.murekkepDolgu : r.vurgu;
+    final yazi = _timerBitti ? Colors.white : _timerCalisiyor ? r.murekkepUstu : r.vurguMetin;
+    final etiket = _timerBitti ? (kisa ? "BİTTİ" : "SÜRE BİTTİ") : _timerCalisiyor ? "DURDUR" : "BAŞLAT";
+    final sekil = StadiumBorder(side: BorderSide(color: r.kenar, width: 2.5));
+    return SertGolgeli(
+      kayma: 3,
+      child: Material(
+        color: zemin,
+        shape: sekil,
+        child: InkWell(
+          customBorder: sekil,
+          onTap: _baslaDurdur,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 11),
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              Icon(
+                _timerBitti ? Icons.alarm_off_rounded : _timerCalisiyor ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                color: yazi, size: 28,
               ),
-            ),
-            const SizedBox(width: 16),
-            Material(
-              color: _timerBitti ? Colors.red.withAlpha(40) : _timerCalisiyor ? Colors.orange.withAlpha(40) : Colors.green.withAlpha(40),
-              borderRadius: BorderRadius.circular(18),
-              child: InkWell(
-                borderRadius: BorderRadius.circular(18), onTap: _baslaDurdur,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
-                  child: Row(children: [
-                    Icon(
-                      _timerBitti ? Icons.alarm_off_rounded : _timerCalisiyor ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                      color: _timerBitti ? Colors.red : _timerCalisiyor ? Colors.orange : Colors.green, size: 28,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      _timerBitti ? "SÜRE BİTTİ" : _timerCalisiyor ? "DURDUR" : "BAŞLAT",
-                      style: TextStyle(
-                        color: _timerBitti ? Colors.red : _timerCalisiyor ? Colors.orange : Colors.green,
-                        fontWeight: FontWeight.w800, fontSize: 16,
-                      ),
-                    ),
-                  ]),
-                ),
-              ),
-            ),
-          ]),
-        ],
+              const SizedBox(width: 8),
+              Text(etiket,
+                  style: TextStyle(fontFamily: AppTema.baslikFontu, color: yazi, fontWeight: FontWeight.w600, fontSize: 19)),
+            ]),
+          ),
+        ),
       ),
     );
   }
 
   Widget _presetBtn(String label, int saniye) {
+    final r = context.renk;
     final secili = _toplamSaniye == saniye;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 3),
-      child: Material(
-        // Seçili hâl koyu lacivert zeminde AppTema.ana (charcoal) metinle
-        // neredeyse okunmuyordu; artık açık zemin + koyu metin ile net.
-        color: secili ? Colors.white.withAlpha(235) : Colors.white.withAlpha(28),
-        borderRadius: BorderRadius.circular(10),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(10), onTap: () => _sureAyarla(saniye),
-          // Yükseklik ~27px'di; dokunma hedefi 44'e çıkarıldı.
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 44, minWidth: 52),
-            // Wrap gevşek ama sınırlı genişlik verir; widthFactor olmadan
-            // Center tüm satıra yayılıyordu.
-            child: Center(
-              widthFactor: 1,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                child: Text(label, style: TextStyle(
-                  color: secili ? AppTema.panelKoyu1 : Colors.white70,
-                  fontWeight: FontWeight.w700, fontSize: 13)),
-              ),
+    final sekil = StadiumBorder(side: BorderSide(color: secili ? AppTema.ana : r.kenar, width: 2));
+    return Material(
+      color: secili ? const Color(0xFFFFD84D) : r.kart,
+      shape: sekil,
+      child: InkWell(
+        customBorder: sekil,
+        onTap: () => _sureAyarla(saniye),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 44, minWidth: 56),
+          child: Center(
+            widthFactor: 1,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Text(label,
+                  style: TextStyle(
+                      color: secili ? AppTema.ana : r.metin, fontWeight: FontWeight.w800, fontSize: 15, fontFeatures: _tabular)),
             ),
           ),
         ),
@@ -772,11 +800,16 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
   }
 
   void _isimDuzenle(Ogrenci o) {
+    // Demo modunda pencere gerçek adı gösteriyordu (denetim #3).
+    if (DemoModu.aktif) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Demo modunda ad düzenlenemez.')));
+      return;
+    }
     final c = TextEditingController(text: o.ad);
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text("İsim Düzenle"),
         content: TextField(
           controller: c,
@@ -785,8 +818,6 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
           maxLength: GirdiSiniri.ogrenciAdi,
           buildCounter: gizliSayac,
           decoration: InputDecoration(
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: AppTema.vurgu, width: 2)),
           ),
         ),
         actions: [
@@ -797,7 +828,6 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTema.vurgu, foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             onPressed: () {
               final yeniAd = c.text.trim();
@@ -814,6 +844,7 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
   }
 
   Widget _oyuncuSatiri(Ogrenci o, {required bool isKaptan, required bool isCezali, required Color takimRenk}) {
+    final r = context.renk;
     final elementAdi = o.element != null ? ElementSistemi.etiketler[o.element] : null;
     final etiket = [
       o.gorunenAd,
@@ -823,45 +854,41 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
       ?elementAdi,
       o.isMale ? 'erkek' : 'kız',
     ].join(', ');
-    // Satır 21 px'ti ve ekran okuyucu yalnız sembolleri okuyordu (denetim
-    // O9); 32 px asgari yükseklik, tek birleşik etiket.
+    // 32 px'ti, satırlar bitişikti (denetim #3): 44 px.
     return Semantics(
       button: true,
       label: '$etiket. İsmi düzenlemek için dokun, taşımak için basılı tut',
       excludeSemantics: true,
       child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: 32),
+        constraints: const BoxConstraints(minHeight: 44),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
           child: Row(
             children: [
-              CinsiyetSimgesi(o.isMale, boyut: 14, renk: o.isMale ? Colors.blue.shade300 : Colors.pink.shade300),
+              CinsiyetSimgesi(o.isMale, boyut: 16),
               if (o.element != null) ...[
                 const SizedBox(width: 3),
-                ElementSimgesi(o.element!, boyut: 13, sade: true),
+                ElementSimgesi(o.element!, boyut: 14, sade: true),
               ],
               if (o.eslesenIdler.isNotEmpty) ...[
                 const SizedBox(width: 3),
-                Icon(Icons.link_rounded, size: 13, color: Colors.white.withAlpha(180)),
+                Icon(Icons.link_rounded, size: 14, color: r.metinUcuncul),
               ],
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
                   o.gorunenAd,
                   style: TextStyle(
-                    color: isCezali ? Colors.red.shade300 : isKaptan ? Colors.amber : Colors.white70,
-                    fontWeight: isKaptan ? FontWeight.w800 : FontWeight.w400,
-                    fontSize: 12,
+                    color: isCezali ? r.tehlike : r.metin,
+                    fontWeight: isKaptan ? FontWeight.w800 : FontWeight.w600,
+                    fontSize: 14,
                     fontStyle: isCezali ? FontStyle.italic : FontStyle.normal,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              // "©" telif işareti kaptan demekti; ekran okuyucu "telif hakkı"
-              // diyordu (denetim D5).
-              if (isKaptan) const Icon(Icons.star_rounded, color: Colors.amber, size: 14),
-              if (isCezali)
-                OzelSimgeWidget(OzelSimge.mola, color: Colors.red.shade400, size: 16),
+              if (isKaptan) Icon(Icons.star_rounded, color: r.uyari, size: 18),
+              if (isCezali) OzelSimgeWidget(OzelSimge.mola, color: r.tehlike, size: 16),
             ],
           ),
         ),
@@ -884,26 +911,18 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
             Expanded(child: Padding(padding: const EdgeInsets.all(6), child: _sunumTakimPaneli(i))),
         ]);
       } else {
+        // Yükseklik azken oran negatife/sıfıra düşebiliyordu (denetim #3).
+        final satir = (n + 1) ~/ 2;
+        final hucreY = ((c.maxHeight - 200).clamp(160.0, double.infinity)) / satir;
         paneller = GridView.count(
           crossAxisCount: 2,
           physics: const NeverScrollableScrollPhysics(),
-          childAspectRatio: (c.maxWidth / 2) / ((c.maxHeight - 150) / ((n + 1) ~/ 2)),
+          childAspectRatio: (c.maxWidth / 2) / hucreY,
           children: [for (var i = 0; i < n; i++) Padding(padding: const EdgeInsets.all(6), child: _sunumTakimPaneli(i))],
         );
       }
       return Column(children: [
-        Expanded(child: Stack(children: [
-          paneller,
-          Positioned(
-            top: 4, right: 4,
-            child: IconButton(
-              tooltip: 'Sunum modundan çık',
-              style: IconButton.styleFrom(backgroundColor: Colors.black.withAlpha(90)),
-              icon: const Icon(Icons.fullscreen_exit_rounded, color: Colors.white),
-              onPressed: _sunumuAcKapa,
-            ),
-          ),
-        ])),
+        Expanded(child: paneller),
         _sunumSureSeridi(),
       ]);
     });
@@ -913,63 +932,82 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
     final t = widget.takimlar[i];
     final metin = AppTema.ustMetin(t.renk);
     final cezaSayisi = _takimCezalari(i).length;
+    final sekil = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(28),
+      side: const BorderSide(color: AppTema.ana, width: 3),
+    );
     return Semantics(
       button: true,
-      label: '${t.isim} skoru ${t.skor}. Artırmak için dokun, azaltmak için basılı tut',
+      label: '${_takimAdi(t)} skoru ${t.skor}. Artırmak için dokun, azaltmak için basılı tut',
       excludeSemantics: true,
-      child: Material(
-        color: t.renk,
-        borderRadius: BorderRadius.circular(24),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(24),
-          onTap: () => setState(() { t.skor++; MacDurumu().kaydet(); }),
-          onLongPress: () => setState(() { if (t.skor > 0) { t.skor--; MacDurumu().kaydet(); } }),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 18, 16, 12),
-            child: Column(children: [
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(t.isim,
-                    style: TextStyle(color: metin, fontWeight: FontWeight.w800, fontSize: 30, letterSpacing: .5)),
-              ),
-              Text(t.renkAdi, style: TextStyle(color: metin.withAlpha(200), fontSize: 14)),
-              Expanded(
-                child: Center(
-                  child: FittedBox(
-                    fit: BoxFit.contain,
-                    child: Text('${t.skor}',
-                        style: TextStyle(color: metin, fontWeight: FontWeight.w900, fontSize: 260, height: 1)),
+      // Sunumda büyük yazı ayarı adı büyütüp skoru 12 px'e eziyordu
+      // (denetim #3): panel kendi ölçeğinde kalır.
+      child: MediaQuery.withNoTextScaling(
+        child: Container(
+          margin: const EdgeInsets.only(right: 5, bottom: 5),
+          decoration: ShapeDecoration(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+            shadows: const [BoxShadow(color: AppTema.ana, offset: Offset(5, 5))],
+          ),
+          child: Material(
+            color: t.renk,
+            shape: sekil,
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              onTap: () => setState(() { t.skor++; MacDurumu().kaydet(); }),
+              onLongPress: () => setState(() { if (t.skor > 0) { t.skor--; MacDurumu().kaydet(); } }),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+                child: Column(children: [
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(_takimAdi(t),
+                        style: TextStyle(fontFamily: AppTema.baslikFontu, color: metin, fontWeight: FontWeight.w600, fontSize: 30)),
                   ),
-                ),
-              ),
-              Row(children: [
-                Semantics(
-                  button: true, label: '${t.isim} skorunu azalt', excludeSemantics: true,
-                  child: Material(
-                    color: AppTema.ustDolgu(t.renk),
-                    borderRadius: BorderRadius.circular(14),
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(14),
-                      onTap: () => setState(() { if (t.skor > 0) { t.skor--; MacDurumu().kaydet(); } }),
-                      child: SizedBox(width: 52, height: 52, child: Icon(Icons.remove_rounded, color: metin, size: 28)),
+                  Text(t.renkAdi, style: TextStyle(color: metin, fontSize: 15, fontWeight: FontWeight.w700)),
+                  Expanded(
+                    child: Center(
+                      child: FittedBox(
+                        fit: BoxFit.contain,
+                        child: Text('${t.skor}',
+                            style: TextStyle(
+                                fontFamily: AppTema.baslikFontu,
+                                color: metin,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 260,
+                                height: 1,
+                                fontFeatures: _tabular)),
+                      ),
                     ),
                   ),
-                ),
-                const Spacer(),
-                if (cezaSayisi > 0)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(color: const Color(0xFF8E1F1A), borderRadius: BorderRadius.circular(12)),
-                    child: Row(mainAxisSize: MainAxisSize.min, children: [
-                      const OzelSimgeWidget(OzelSimge.mola, color: Colors.white, size: 16),
-                      const SizedBox(width: 6),
-                      Text('Mola ($cezaSayisi)', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
-                    ]),
-                  )
-                else
-                  Text('dokun +1', style: TextStyle(color: metin.withAlpha(110), fontSize: 12)),
-              ]),
-            ]),
+                  Row(children: [
+                    _yuvarlakDugme(Icons.remove_rounded, '${_takimAdi(t)} skorunu azalt',
+                        () => setState(() { if (t.skor > 0) { t.skor--; MacDurumu().kaydet(); } })),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: cezaSayisi > 0
+                    ? Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: const ShapeDecoration(color: AppTema.ana, shape: StadiumBorder()),
+                        child: Row(mainAxisSize: MainAxisSize.min, children: [
+                          const OzelSimgeWidget(OzelSimge.mola, color: Colors.white, size: 16),
+                          const SizedBox(width: 6),
+                          Text('Mola ($cezaSayisi)', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
+                        ]),
+                      )
+                    // alpha 110 ile neredeyse görünmüyordu (denetim #3).
+                    : Text('dokun +1', style: TextStyle(color: metin, fontSize: 14, fontWeight: FontWeight.w800)),
+                        ),
+                      ),
+                    ),
+                  ]),
+                ]),
+              ),
+            ),
           ),
         ),
       ),
@@ -977,83 +1015,68 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
   }
 
   Widget _sunumSureSeridi() {
+    final r = context.renk;
     final progress = _toplamSaniye > 0 ? _kalanSaniye / _toplamSaniye : 0.0;
-    final renk = _timerBitti
-        ? Colors.red
-        : _kalanSaniye <= 10 && _kalanSaniye > 0 && _timerCalisiyor
-            ? Colors.orange
-            : Colors.white;
-    return Container(
-      margin: const EdgeInsets.fromLTRB(6, 0, 6, 6),
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
-      decoration: BoxDecoration(
-        color: AppTema.panelKoyu2,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withAlpha(15)),
-      ),
-      child: Column(mainAxisSize: MainAxisSize.min, children: [
-        Row(children: [
-          Expanded(
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerLeft,
-              child: Text(_sureFmt(_kalanSaniye),
-                  style: TextStyle(color: renk, fontSize: 72, fontWeight: FontWeight.w900, fontFamily: 'monospace', letterSpacing: 4, height: 1)),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Semantics(
-            button: true, label: 'Süreyi sıfırla', excludeSemantics: true,
-            child: Material(
-              color: Colors.white.withAlpha(15), borderRadius: BorderRadius.circular(14),
-              child: InkWell(
-                borderRadius: BorderRadius.circular(14), onTap: _sifirla,
-                child: const Padding(padding: EdgeInsets.all(14), child: Icon(Icons.replay_rounded, color: Colors.white70, size: 28)),
-              ),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Material(
-            color: _timerBitti ? Colors.red.withAlpha(40) : _timerCalisiyor ? Colors.orange.withAlpha(40) : Colors.green.withAlpha(40),
-            borderRadius: BorderRadius.circular(18),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(18), onTap: _baslaDurdur,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 16),
-                child: Row(children: [
-                  Icon(
-                    _timerBitti ? Icons.alarm_off_rounded : _timerCalisiyor ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                    color: _timerBitti ? Colors.red : _timerCalisiyor ? Colors.orange : Colors.green, size: 30,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    _timerBitti ? "BİTTİ" : _timerCalisiyor ? "DURDUR" : "BAŞLAT",
+    final sureRengi = _sureRengi();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(6, 0, 6, 6),
+      child: Cikartma(
+        dolgu: const EdgeInsets.fromLTRB(16, 10, 12, 10),
+        child: LayoutBuilder(builder: (context, c) {
+        // Dar ekranda (320 px) süre ve dört düğme tek satıra sığmıyordu.
+        final dar = c.maxWidth < 440;
+        final sure = FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(_sureFmt(_kalanSaniye),
                     style: TextStyle(
-                      color: _timerBitti ? Colors.red : _timerCalisiyor ? Colors.orange : Colors.green,
-                      fontWeight: FontWeight.w800, fontSize: 18,
-                    ),
-                  ),
-                ]),
+                        fontFamily: AppTema.baslikFontu,
+                        color: sureRengi,
+                        fontSize: 72,
+                        fontWeight: FontWeight.w700,
+                        height: 1,
+                        fontFeatures: _tabular)),
+              );
+        // Takım adının üstüne biniyordu (denetim #3); şeritte.
+        final cik = _yuvarlakDugme(Icons.fullscreen_exit_rounded, 'Sunum modundan çık', _sunumuAcKapa);
+        final kontroller = [
+          _yuvarlakDugme(Icons.replay_rounded, 'Süreyi sıfırla', _sifirla),
+          const SizedBox(width: 6),
+          _baslatDugmesi(kisa: true),
+        ];
+        return Column(mainAxisSize: MainAxisSize.min, children: [
+          if (dar) ...[
+            Row(children: [Expanded(child: sure), const SizedBox(width: 8), cik]),
+            const SizedBox(height: 6),
+            Row(mainAxisAlignment: MainAxisAlignment.center, children: kontroller),
+          ] else
+            Row(children: [
+              Expanded(child: sure),
+              const SizedBox(width: 8),
+              ...kontroller,
+              const SizedBox(width: 6),
+              cik,
+            ]),
+          if (_toplamSaniye > 0) ...[
+            const SizedBox(height: 8),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: LinearProgressIndicator(
+                value: progress,
+                backgroundColor: r.yuzeyGri,
+                valueColor: AlwaysStoppedAnimation(sureRengi == r.metin ? r.vurgu : sureRengi),
+                minHeight: 8,
               ),
             ),
-          ),
-        ]),
-        if (_toplamSaniye > 0) ...[
+          ],
           const SizedBox(height: 8),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: progress, backgroundColor: Colors.white.withAlpha(20),
-              valueColor: AlwaysStoppedAnimation(renk.withAlpha(200)), minHeight: 6,
-            ),
-          ),
-        ],
-        const SizedBox(height: 8),
-        Wrap(alignment: WrapAlignment.center, runSpacing: 6, children: [
-          _presetBtn("0:30", 30), _presetBtn("1:00", 60), _presetBtn("2:00", 120),
-          _presetBtn("3:00", 180), _presetBtn("5:00", 300), _presetBtn("10:00", 600),
-        ]),
-      ]),
+          Wrap(alignment: WrapAlignment.center, spacing: 6, runSpacing: 6, children: [
+            _presetBtn("0:30", 30), _presetBtn("1:00", 60), _presetBtn("2:00", 120),
+            _presetBtn("3:00", 180), _presetBtn("5:00", 300), _presetBtn("10:00", 600),
+          ]),
+        ]);
+        }),
+      ),
     );
   }
 
@@ -1073,7 +1096,7 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
                 const SizedBox(height: 16),
                 FittedBox(
                   child: Text('SÜRE BİTTİ',
-                      style: TextStyle(color: Colors.white, fontSize: 72, fontWeight: FontWeight.w900, letterSpacing: 6)),
+                      style: TextStyle(fontFamily: AppTema.baslikFontu, color: Colors.white, fontSize: 72, fontWeight: FontWeight.w700, letterSpacing: 2)),
                 ),
                 const SizedBox(height: 12),
                 Text(
@@ -1082,7 +1105,8 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
                   style: TextStyle(color: Colors.white.withAlpha(230), fontSize: 22, fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 40),
-                Text('Kapatmak için dokun', style: TextStyle(color: Colors.white.withAlpha(180), fontSize: 16)),
+                // %70 beyaz 3,7:1'di (denetim #3).
+                const Text('Kapatmak için dokun', style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w700)),
               ]),
             ),
           ),
@@ -1091,94 +1115,103 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
     );
   }
 
+  /// Kadrolar: en çok 2 sütun. 4 takımda 4 dar sütun ~85 px'e iniyor, adlar
+  /// "Asy…" oluyordu (denetim #3). Sayfa kaydığı için listeler tam boy.
   Widget _takimListeleri() {
+    final n = widget.takimlar.length;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: List.generate(widget.takimlar.length, (i) {
-          final t = widget.takimlar[i];
-          final cezaliIdler = _takimCezalari(i).map((c) => c.oyuncu.id).toSet();
-          return Expanded(
-            child: DragTarget<_SuruklenenOgrenci>(
-              onWillAcceptWithDetails: (details) => details.data.kaynakTakimIndex != i,
-              onAcceptWithDetails: (details) {
-                setState(() {
-                  final kaynak = widget.takimlar[details.data.kaynakTakimIndex];
-                  kaynak.oyuncular.remove(details.data.ogrenci);
-                  t.oyuncular.add(details.data.ogrenci);
-                });
-              },
-              builder: (context, candidateData, rejectedData) {
-                final uzerindeHover = candidateData.isNotEmpty;
-                return Container(
-                  margin: EdgeInsets.only(left: i == 0 ? 0 : 4, right: i == widget.takimlar.length - 1 ? 0 : 4),
-                  decoration: BoxDecoration(
-                    color: AppTema.panelKoyu2, borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: uzerindeHover ? t.renk : t.renk.withAlpha(60), width: uzerindeHover ? 2 : 1),
-                  ),
-                  child: Column(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        decoration: BoxDecoration(
-                          color: t.renk.withAlpha(uzerindeHover ? 60 : 30),
-                          borderRadius: const BorderRadius.only(topLeft: Radius.circular(15), topRight: Radius.circular(15)),
-                        ),
-                        child: Center(
-                          child: Text(
-                            "${t.isim.isNotEmpty ? t.isim : t.renkAdi} (${t.oyuncular.length})",
-                            // Takım renginde yazılıyordu: siyah formada 1,3:1,
-                            // turuncuda 1,6:1 (denetim O6). Renk artık zeminde.
-                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+      child: LayoutBuilder(builder: (context, c) {
+        final sutun = n < 2 ? 1 : 2;
+        final w = (c.maxWidth - 8 * (sutun - 1)) / sutun;
+        return Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [for (var i = 0; i < n; i++) SizedBox(width: w, child: _takimListesi(i))],
+        );
+      }),
+    );
+  }
+
+  Widget _takimListesi(int i) {
+    final r = context.renk;
+    final t = widget.takimlar[i];
+    final cezaliIdler = _takimCezalari(i).map((c) => c.oyuncu.id).toSet();
+    final ustMetin = AppTema.ustMetin(t.renk);
+    return DragTarget<_SuruklenenOgrenci>(
+      onWillAcceptWithDetails: (details) => details.data.kaynakTakimIndex != i,
+      onAcceptWithDetails: (details) {
+        setState(() {
+          final kaynak = widget.takimlar[details.data.kaynakTakimIndex];
+          kaynak.oyuncular.remove(details.data.ogrenci);
+          t.oyuncular.add(details.data.ogrenci);
+        });
+      },
+      builder: (context, candidateData, rejectedData) {
+        final uzerindeHover = candidateData.isNotEmpty;
+        return Cikartma(
+          kayma: 3,
+          yaricap: 18,
+          kenarKalinligi: uzerindeHover ? 3.5 : 2,
+          kenarRengi: uzerindeHover ? r.vurgu : r.kenar,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+                decoration: BoxDecoration(
+                  color: t.renk,
+                  border: Border(bottom: BorderSide(color: r.kenar, width: 2)),
+                ),
+                child: Text(
+                  "${_takimAdi(t)} (${t.oyuncular.length})",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontFamily: AppTema.baslikFontu, color: ustMetin, fontWeight: FontWeight.w600, fontSize: 16),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Column(
+                  children: [
+                    for (final o in t.oyuncular)
+                      Builder(builder: (context) {
+                        final isKaptan = t.kaptan != null && o.id == t.kaptan!.id;
+                        final isCezali = cezaliIdler.contains(o.id);
+                        return LongPressDraggable<_SuruklenenOgrenci>(
+                          data: _SuruklenenOgrenci(ogrenci: o, kaynakTakimIndex: i),
+                          delay: const Duration(milliseconds: 200),
+                          feedback: Material(
+                            color: Colors.transparent,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                              decoration: ShapeDecoration(
+                                color: t.renk,
+                                shape: const StadiumBorder(side: BorderSide(color: AppTema.ana, width: 2)),
+                                shadows: const [BoxShadow(color: AppTema.ana, offset: Offset(3, 3))],
+                              ),
+                              child: Text(o.gorunenAd,
+                                  style: TextStyle(color: ustMetin, fontWeight: FontWeight.w800, fontSize: 14)),
+                            ),
                           ),
-                        ),
-                      ),
-                      Expanded(
-                        child: ListView.builder(
-                          padding: const EdgeInsets.symmetric(vertical: 4),
-                          itemCount: t.oyuncular.length,
-                          itemBuilder: (context, j) {
-                            final o = t.oyuncular[j];
-                            final isKaptan = t.kaptan != null && o.id == t.kaptan!.id;
-                            final isCezali = cezaliIdler.contains(o.id);
-                            return LongPressDraggable<_SuruklenenOgrenci>(
-                              data: _SuruklenenOgrenci(ogrenci: o, kaynakTakimIndex: i),
-                              delay: const Duration(milliseconds: 200),
-                              feedback: Material(
-                                color: Colors.transparent,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                  decoration: BoxDecoration(
-                                    color: t.renk.withAlpha(200),
-                                    borderRadius: BorderRadius.circular(10),
-                                    boxShadow: [BoxShadow(color: Colors.black.withAlpha(80), blurRadius: 8)],
-                                  ),
-                                  child: Text(o.gorunenAd, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13)),
-                                ),
-                              ),
-                              childWhenDragging: Opacity(
-                                opacity: 0.3,
-                                child: _oyuncuSatiri(o, isKaptan: isKaptan, isCezali: isCezali, takimRenk: t.renk),
-                              ),
-                              child: GestureDetector(
-                                onTap: () => _isimDuzenle(o),
-                                child: _oyuncuSatiri(o, isKaptan: isKaptan, isCezali: isCezali, takimRenk: t.renk),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          );
-        }),
-      ),
+                          childWhenDragging: Opacity(
+                            opacity: 0.3,
+                            child: _oyuncuSatiri(o, isKaptan: isKaptan, isCezali: isCezali, takimRenk: t.renk),
+                          ),
+                          child: InkWell(
+                            onTap: () => _isimDuzenle(o),
+                            child: _oyuncuSatiri(o, isKaptan: isKaptan, isCezali: isCezali, takimRenk: t.renk),
+                          ),
+                        );
+                      }),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

@@ -84,7 +84,6 @@ class _OgrenciAramaEkraniState extends State<OgrenciAramaEkrani> {
       if (mounted) setState(() { _hata = true; _yukleniyor = false; });
       return;
     }
-    kayitlar.sort((a, b) => trKarsilastir(a.ogrenci.ad, b.ogrenci.ad));
     if (!mounted) return;
     setState(() {
       _tumu = kayitlar;
@@ -120,7 +119,10 @@ class _OgrenciAramaEkraniState extends State<OgrenciAramaEkrani> {
           .toList();
     }
     // Demo modunda kullanıcı ekranda gördüğü (maskeli) ada göre arar.
-    return _tumu.where((k) => trKucult(k.ogrenci.gorunenAd).contains(_metin)).toList();
+    // Görünen ada göre sırala: gerçek ada göre sıralama demo modunda
+    // sahte adların sırasından gerçek kişiyi ele veriyordu (denetim #3).
+    return _tumu.where((k) => trKucult(k.ogrenci.gorunenAd).contains(_metin)).toList()
+      ..sort((a, b) => trKarsilastir(a.ogrenci.gorunenAd, b.ogrenci.gorunenAd));
   }
 
   @override
@@ -131,8 +133,10 @@ class _OgrenciAramaEkraniState extends State<OgrenciAramaEkrani> {
     return Scaffold(
       backgroundColor: r.sayfa,
       appBar: AppBar(
-        backgroundColor: r.bar,
-        foregroundColor: r.barMetin,
+        backgroundColor: r.sayfa,
+        surfaceTintColor: Colors.transparent,
+        scrolledUnderElevation: 0,
+        foregroundColor: r.metin,
         elevation: 0,
         titleSpacing: 0,
         title: Semantics(
@@ -141,17 +145,17 @@ class _OgrenciAramaEkraniState extends State<OgrenciAramaEkrani> {
             controller: _ctrl,
             autofocus: true,
             textInputAction: TextInputAction.search,
-            style: TextStyle(color: r.barMetin, fontSize: 16),
-            cursorColor: r.barMetin,
+            style: TextStyle(color: r.metin, fontSize: 16),
+            cursorColor: r.metin,
             onChanged: (v) => setState(() => _metin = trKucult(v.trim())),
             decoration: InputDecoration(
               hintText: 'Öğrenci ara…',
-              hintStyle: TextStyle(color: r.barMetin.withAlpha(170)),
+              hintStyle: TextStyle(color: r.metinUcuncul),
               border: InputBorder.none,
               suffixIcon: _metin.isEmpty
                   ? null
                   : IconButton(
-                      icon: Icon(Icons.close_rounded, color: r.barMetin),
+                      icon: Icon(Icons.close_rounded, color: r.metin),
                       tooltip: 'Aramayı temizle',
                       onPressed: () {
                         _ctrl.clear();

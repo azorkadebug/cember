@@ -4,6 +4,8 @@ import '../tema_renkleri.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import '../widgets/cikartma.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import '../services/analytics_service.dart';
@@ -155,7 +157,7 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
   void _hataGoster(String mesaj) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(mesaj),
-      backgroundColor: Colors.red.shade700,
+      backgroundColor: AppTema.tehlike,
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       margin: const EdgeInsets.all(16),
@@ -180,72 +182,66 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
       backgroundColor: r.sayfa,
       body: Column(
         children: [
-          // Üst kısım: Charcoal gradient + logo
+          // Üst kısım: "Teneffüs" — limon sarısı, çıkartma logo.
           Expanded(
             flex: 4,
             child: Container(
               width: double.infinity,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [r.barKoyu, r.bar, r.barAcik],
-                ),
-                borderRadius: const BorderRadius.only(
+              decoration: const BoxDecoration(
+                color: Color(0xFFFFD84D),
+                borderRadius: BorderRadius.only(
                   bottomLeft: Radius.circular(40),
                   bottomRight: Radius.circular(40),
                 ),
+                border: Border(bottom: BorderSide(color: AppTema.ana, width: 2.5)),
               ),
               child: SafeArea(
                 child: FadeTransition(
                   opacity: _fadeCtrl,
-                  // Klavye açıkken üst bölüm de orantılı olarak sıkışıyor ama
-                  // içindeki 110px logo + iki metin sabit yükseklikteydi —
-                  // kısa cihazlarda taşma riski vardı. Klavye açıldığında
-                  // logo küçülüyor, alt başlık gizleniyor; forma da yer açılıyor.
+                  // Küçülme klavyeye (viewInsets) bakıyordu; web/PWA'da klavye
+                  // viewInsets vermediği için hiç çalışmıyordu (denetim #3).
+                  // Artık bölümün yüksekliğine bakıyor; sığmazsa ölçekleniyor
+                  // (yatay telefonda yazı açık zemine taşıyordu).
                   child: LayoutBuilder(builder: (context, c) {
-                    final klavyeAcik = MediaQuery.viewInsetsOf(context).bottom > 0;
-                    final logoBoyut = klavyeAcik ? 64.0 : 110.0;
-                    return Column(
-                      mainAxisSize: MainAxisSize.min,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          width: logoBoyut,
-                          height: logoBoyut,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(klavyeAcik ? 18 : 28),
-                            boxShadow: [
-                              BoxShadow(color: Colors.black.withAlpha(60), blurRadius: 24, offset: const Offset(0, 10)),
+                    final kucuk = c.maxHeight < 230;
+                    final logoBoyut = kucuk ? 64.0 : 104.0;
+                    return Center(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // Teneffüs logosu (2026-10-04, Sabri'nin Gemini çizimi);
+                              // kenarı logonun kendi mürekkep çemberi.
+                              Container(
+                                width: logoBoyut,
+                                height: logoBoyut,
+                                decoration: const ShapeDecoration(
+                                  color: Colors.white,
+                                  shape: CircleBorder(),
+                                  shadows: [BoxShadow(color: AppTema.ana, offset: Offset(5, 5))],
+                                ),
+                                child: SvgPicture.asset('assets/images/logo_simge.svg', fit: BoxFit.contain),
+                              ),
+                              SizedBox(height: kucuk ? 8 : 16),
+                              Text("Çember",
+                                  style: TextStyle(
+                                      fontFamily: AppTema.baslikFontu,
+                                      fontSize: kucuk ? 30 : 42,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppTema.ana,
+                                      height: 1)),
+                              if (!kucuk) ...[
+                                const SizedBox(height: 6),
+                                const Text("Sınıf Yönetimi Asistanı",
+                                    style: TextStyle(color: AppTema.ana, fontSize: 15, fontWeight: FontWeight.w700)),
+                              ],
                             ],
                           ),
-                          // Kodla çizilen nokta-çember yerine App Store'daki
-                          // gerçek logo — iki farklı logo vardı (2026-09-05).
-                          child: Padding(
-                            padding: EdgeInsets.all(klavyeAcik ? 8 : 12),
-                            child: // 1024 px / 546 KB'lık dosya 100 px'te gösteriliyordu (denetim #3 O11).
-                            Image.asset('assets/images/logo_256.png', fit: BoxFit.contain),
-                          ),
                         ),
-                        SizedBox(height: klavyeAcik ? 10 : 20),
-                        Text("ÇEMBER",
-                            style: TextStyle(
-                                fontSize: klavyeAcik ? 22 : 30,
-                                fontWeight: FontWeight.w900,
-                                color: r.barMetin,
-                                letterSpacing: 6)),
-                        if (!klavyeAcik) ...[
-                          const SizedBox(height: 6),
-                          Text("Sınıf Yönetimi Asistanı",
-                              style: TextStyle(
-                                  // withAlpha(180) gradyanın açık ucunda 3,6:1
-                                  // veriyordu; 220 ile AA eşiğini geçiyor.
-                                  color: r.barMetin.withAlpha(220),
-                                  fontSize: 13,
-                                  letterSpacing: 1.5)),
-                        ],
-                      ],
+                      ),
                     );
                   }),
                 ),
@@ -270,9 +266,9 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
                       // Tab: Giriş / Kayıt
                       Container(
                         padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: r.cizgiAcik,
-                          borderRadius: BorderRadius.circular(14),
+                        decoration: ShapeDecoration(
+                          color: r.kart,
+                          shape: StadiumBorder(side: BorderSide(color: r.kenar, width: 2.5)),
                         ),
                         child: Row(
                           children: [
@@ -321,7 +317,7 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
                           suffixIcon: IconButton(
                             tooltip: _obscurePass ? 'Şifreyi göster' : 'Şifreyi gizle',
                             icon: Icon(_obscurePass ? Icons.visibility_off_rounded : Icons.visibility_rounded,
-                                color: r.koyuMu ? r.metinUcuncul : Colors.grey.shade500, size: 20),
+                                color: r.metinUcuncul, size: 20),
                             onPressed: () => setState(() => _obscurePass = !_obscurePass),
                           ),
                         ),
@@ -333,7 +329,7 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
                           child: TextButton(
                             onPressed: _loading ? null : _sifremiUnuttum,
                             style: TextButton.styleFrom(
-                              foregroundColor: r.vurgu,
+                              foregroundColor: r.vurguKoyu,
                               padding: const EdgeInsets.symmetric(vertical: 4),
                               // 32px dokunma hedefi, şifre kurtarma gibi
                               // kritik bir işlev için fazla küçüktü.
@@ -341,7 +337,7 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
                               tapTargetSize: MaterialTapTargetSize.padded,
                             ),
                             child: const Text("Şifremi unuttum",
-                                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                                style: TextStyle(fontFamily: AppTema.govdeFontu, fontSize: 14, fontWeight: FontWeight.w800)),
                           ),
                         ),
                       if (_kayitModu)
@@ -368,20 +364,17 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
                       // Submit
                       SizedBox(
                         width: double.infinity,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            // Sabit height büyütülmüş yazıda kırpıyordu (denetim D8).
-                            minimumSize: const Size.fromHeight(52),
-                            backgroundColor: r.vurgu,
-                            foregroundColor: r.vurguMetin,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                            elevation: 2,
+                        child: SertGolgeli(
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              // Sabit height büyütülmüş yazıda kırpıyordu (denetim D8).
+                              minimumSize: const Size.fromHeight(54),
+                            ),
+                            onPressed: _loading ? null : _emailGirisKayit,
+                            child: _loading
+                                ? SizedBox(height: 22, width: 22, child: CircularProgressIndicator(color: r.vurguMetin, strokeWidth: 2.5))
+                                : Text(_kayitModu ? "Hesap Oluştur" : "Hesabıma Gir", style: const TextStyle(fontSize: 20)),
                           ),
-                          onPressed: _loading ? null : _emailGirisKayit,
-                          child: _loading
-                              ? SizedBox(height: 22, width: 22, child: CircularProgressIndicator(color: r.vurguMetin, strokeWidth: 2.5))
-                              : Text(_kayitModu ? "Hesap Oluştur" : "Hesabıma Gir",
-                                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
                         ),
                       ),
                       const SizedBox(height: 24),
@@ -392,7 +385,7 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
                         Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             // Zemin grey.shade100; metinUcuncul burada 4,36:1 kalıyordu.
-                            child: Text("veya devam et", style: TextStyle(color: r.metinIkincil, fontSize: 12))),
+                            child: Text("veya", style: TextStyle(color: r.metinIkincil, fontSize: 14, fontWeight: FontWeight.w700))),
                         Expanded(child: Divider(color: r.cizgi)),
                       ]),
                       const SizedBox(height: 24),
@@ -415,7 +408,8 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
                       ],
                       SizedBox(
                         width: double.infinity,
-                        child: _socialBtn(Icons.g_mobiledata, "Google ile Giriş", Colors.red, _googleGiris),
+                        // Google'ın çok renkli G'si; g_mobiledata ikonu kırmızı tek renkti (denetim #3).
+                        child: _socialBtn(SvgPicture.asset('assets/images/google_g.svg', width: 22, height: 22), "Google ile Giriş", _googleGiris),
                       ),
                       const SizedBox(height: 12),
                       // Sosyal girişte de politika görünür olsun.
@@ -454,24 +448,30 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
 
   Widget _tabBtn(String label, bool active, VoidCallback onTap) {
     final r = context.renk;
+    // Seçili sekme limon sarısı çıkartma; 44 px, ekran okuyucuda seçili.
     return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          decoration: BoxDecoration(
-            color: active ? r.vurgu : Colors.transparent,
-            borderRadius: BorderRadius.circular(10),
+      child: Semantics(
+        button: true,
+        selected: active,
+        child: GestureDetector(
+          onTap: onTap,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            constraints: const BoxConstraints(minHeight: 44),
+            alignment: Alignment.center,
+            decoration: ShapeDecoration(
+              color: active ? const Color(0xFFFFD84D) : Colors.transparent,
+              shape: StadiumBorder(side: BorderSide(color: active ? AppTema.ana : Colors.transparent, width: 2)),
+            ),
+            child: Text(label,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: AppTema.baslikFontu,
+                  color: active ? AppTema.ana : r.metinIkincil,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 17,
+                )),
           ),
-          child: Text(label,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                // grey.shade500, grey.shade200 zeminde 2,3:1'di (denetim Y7).
-                color: active ? r.vurguMetin : r.metinIkincil,
-                fontWeight: active ? FontWeight.w700 : FontWeight.w600,
-                fontSize: 14,
-              )),
         ),
       ),
     );
@@ -492,39 +492,32 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
       // (denetim Y8).
       labelText: hint,
       floatingLabelBehavior: FloatingLabelBehavior.never,
-      labelStyle: TextStyle(color: r.koyuMu ? r.metinUcuncul : Colors.grey.shade500),
-      prefixIcon: Icon(icon, color: r.koyuMu ? r.ikonAna : AppTema.anaAcik, size: 20),
-      filled: true,
-      fillColor: r.koyuMu ? r.kart : Colors.grey.shade50,
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: r.cizgiAcik)),
-      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: r.cizgiAcik)),
-      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: r.vurgu, width: 2)),
+      // Çerçeve ve dolgu temadan (mürekkep kenarlı çıkartma); eski gri 500
+      // etiket 2,6:1'di (denetim #3).
+      labelStyle: TextStyle(color: r.metinUcuncul, fontWeight: FontWeight.w600),
+      prefixIcon: Icon(icon, color: r.ikonAna, size: 20),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
     );
   }
 
-  Widget _socialBtn(IconData icon, String label, Color iconColor, VoidCallback onTap) {
+  Widget _socialBtn(Widget ikon, String label, VoidCallback onTap) {
     final r = context.renk;
+    final sekil = StadiumBorder(side: BorderSide(color: r.kenar, width: 2.5));
     return Material(
-      color: r.kart,
-      borderRadius: BorderRadius.circular(14),
-      elevation: 1,
-      shadowColor: Colors.black.withAlpha(10),
+      // Google logosu beyaz zemin ister; koyu temada da beyaz hap.
+      color: Colors.white,
+      shape: sekil,
       child: InkWell(
-        borderRadius: BorderRadius.circular(14),
+        customBorder: sekil,
         onTap: _loading ? null : onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: r.cizgiAcik),
-          ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 13),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, color: iconColor, size: 24),
-              const SizedBox(width: 8),
-              Text(label, style: TextStyle(color: r.koyuMu ? r.metinGovde : Colors.grey.shade700, fontWeight: FontWeight.w600, fontSize: 14)),
+              ikon,
+              const SizedBox(width: 10),
+              Text(label, style: const TextStyle(color: AppTema.ana, fontWeight: FontWeight.w800, fontSize: 15)),
             ],
           ),
         ),

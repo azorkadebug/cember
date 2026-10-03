@@ -4,21 +4,69 @@ import 'package:flutter/material.dart';
 const String gizlilikPolitikasiUrl = 'https://cemberapp-2a101.web.app/privacy.html';
 
 class AppTema {
-  static const Color ana = Color(0xFF37474F);        // Charcoal
-  static const Color anaKoyu = Color(0xFF263238);    // Koyu ton
-  static const Color anaAcik = Color(0xFF546E7A);    // Açık ton
-  static final Color ana50 = Colors.blueGrey.shade50;
+  // "Teneffüs" görünümü (Sabri'nin seçimi, 2026-10-04): charcoal yerine
+  // mürekkep laciverti; kenar çizgileri ve sert gölgeler de bu renkte.
+  static const Color ana = Color(0xFF1F2430);        // Mürekkep
+  static const Color anaKoyu = Color(0xFF151923);    // Koyu ton
+  static const Color anaAcik = Color(0xFF2E3446);    // Açık ton
+  static const Color ana50 = Color(0xFFF1E8DA);
+
+  /// Başlık yazı tipi (yuvarlak, tok). Gövde: tema `fontFamily` = Nunito.
+  static const String baslikFontu = 'Fredoka';
+  static const String govdeFontu = 'Nunito';
+
+  /// Sınıflara sırayla verilen renkler — logodaki halkaların renkleri.
+  /// Hepsinin üstünde mürekkep yazı en az 4,5:1.
+  static const List<Color> sinifRenkleri = [
+    Color(0xFFFF6B57), // domates
+    Color(0xFF4FA3F7), // gök
+    Color(0xFF63C77A), // çimen
+    Color(0xFFFFD84D), // limon
+    Color(0xFFB794F6), // mürdüm
+    Color(0xFFFFA63D), // portakal
+  ];
+
+  /// Öğrenci baş harf yuvarlaklarının renkleri (açık tonlar; üstünde
+  /// mürekkep yazı en az 7:1). Öğrenciye kimliğinden sabit renk düşer.
+  static const List<Color> ogrenciRenkleri = [
+    Color(0xFFFFD84D), // limon
+    Color(0xFF8CC4FA), // gök
+    Color(0xFF8FD9A0), // çimen
+    Color(0xFFFFB4A8), // şeftali
+    Color(0xFFC9B5FA), // lila
+    Color(0xFFFFC27A), // portakal
+    Color(0xFF7FDBCA), // nane
+    Color(0xFFFF9EC4), // pembe
+  ];
+
+  /// Sınıfın alfabetik listesindeki sıraya göre renk: yan yana iki öğrenci
+  /// hiç aynı rengi almaz (kimlikten hesaplayınca "AB, AB" aynı renk
+  /// düşebiliyordu). Liste, yoklama ve takım dağılımı aynı haritayı kullanır.
+  static Map<String, Color> ogrenciRenkHaritasi(Iterable<String> alfabetikIdler) {
+    var i = 0;
+    return {for (final id in alfabetikIdler) id: ogrenciRenkleri[i++ % ogrenciRenkleri.length]};
+  }
+
+  /// Haritada yoksa (yeni eklenmiş, henüz listelenmemiş) kimlikten sabit renk.
+  static Color ogrenciRengi(String id, [Map<String, Color>? harita]) =>
+      harita?[id] ??
+      ogrenciRenkleri[id.codeUnits.fold<int>(0, (a, b) => a * 31 + b) % ogrenciRenkleri.length];
+
+  /// Sınıflarım dışından (arama, etkinlik bandı) açılan sınıfa sabit renk.
+  static Color sinifRengiKimlikten(String id) =>
+      sinifRenkleri[id.codeUnits.fold<int>(0, (a, b) => a + b) % sinifRenkleri.length];
 
   // ---------------------------------------------------------------
   // Marka vurgu rengi (Sabri seçti, 2026-09-05): turkuaz. Yalnız ANA
   // EYLEMLERDE kullanılır — birincil düğmeler, FAB'lar, odak çerçevesi,
   // seçili durum, ilerleme göstergesi. AppBar ve koyu paneller charcoal
   // kalır; yeşil/sarı/kırmızı başarı/uyarı/tehlike için ayrılmıştır.
-  // Beyaz üzerinde 4,6:1 (AA).
+  // Beyaz yazıyla 5,3:1. Eski #00897B 4,32:1'di; yorumdaki "4,6" yanlıştı
+  // (denetim #3, piksel ölçümü).
   // ---------------------------------------------------------------
-  static const Color vurgu = Color(0xFF00897B);
+  static const Color vurgu = Color(0xFF00796B);
   static const Color vurguKoyu = Color(0xFF00695C);
-  static const Color vurguZemin = Color(0xFFE0F2F1);
+  static const Color vurguZemin = Color(0xFFDDF2EE);
 
   static final gradient = [ana, anaKoyu];
   static final gradientAcik = [ana, anaAcik];
@@ -35,8 +83,8 @@ class AppTema {
   // İkincil metin renkleri. Kullanılan gri tonları (shade300/400/500)
   // beyaz zeminde WCAG AA eşiğini (4.5:1) geçmiyordu — bunlar geçiyor.
   // ---------------------------------------------------------------
-  static const Color metinIkincil = Color(0xFF5A6870);  // beyaz üzerinde 5.7:1
-  static const Color metinUcuncul = Color(0xFF67757D);  // beyaz üzerinde 4.8:1
+  static const Color metinIkincil = Color(0xFF4A5060);  // krem zeminde 7,4:1
+  static const Color metinUcuncul = Color(0xFF5F6575);  // krem zeminde 5,6:1
 
   // ---------------------------------------------------------------
   // Semantik renkler. "Koyu" varyantlar açık zemin üzerinde METİN için;
@@ -54,11 +102,12 @@ class AppTema {
   // (9,10,11,12,13,14,15,16,17,18,20,22,24,26,28,30,38,48); yeni kod
   // buradan çeksin.
   // ---------------------------------------------------------------
+  // Büyük başlıklar Fredoka (en kalını 700), gerisi Nunito.
   static const TextTheme textTheme = TextTheme(
-    displaySmall:    TextStyle(fontSize: 30, fontWeight: FontWeight.w900),
-    headlineMedium:  TextStyle(fontSize: 26, fontWeight: FontWeight.w900),
-    headlineSmall:   TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
-    titleLarge:      TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+    displaySmall:    TextStyle(fontFamily: baslikFontu, fontSize: 32, fontWeight: FontWeight.w700),
+    headlineMedium:  TextStyle(fontFamily: baslikFontu, fontSize: 28, fontWeight: FontWeight.w700),
+    headlineSmall:   TextStyle(fontFamily: baslikFontu, fontSize: 24, fontWeight: FontWeight.w600),
+    titleLarge:      TextStyle(fontFamily: baslikFontu, fontSize: 21, fontWeight: FontWeight.w600),
     titleMedium:     TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
     titleSmall:      TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
     bodyLarge:       TextStyle(fontSize: 16),
