@@ -5,6 +5,7 @@ import '../utils/metin.dart';
 import '../utils/sinif_ozeti.dart';
 import 'dart:math';
 import 'dart:async';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import '../widgets/girdi.dart';
 import '../widgets/simgeler.dart';
@@ -1901,8 +1902,9 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
           return Container(
             height: MediaQuery.of(context).size.height * 0.85,
             decoration: BoxDecoration(
-              color: r.kartUstu,
+              color: r.sayfa,
               borderRadius: const BorderRadius.only(topLeft: Radius.circular(28), topRight: Radius.circular(28)),
+              border: Border.all(color: r.kenar, width: 2.5),
             ),
             child: Column(
               children: [
@@ -1911,13 +1913,11 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
                   child: Row(children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(color: r.yuzeyAna, borderRadius: BorderRadius.circular(12)),
-                      child: Icon(Icons.group_add_rounded, color: r.ikonAna, size: 24),
-                    ),
-                    const SizedBox(width: 12),
-                    const Expanded(child: Text("Hızlı Öğrenci Ekle", style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800))),
+                    Icon(Icons.group_add_rounded, color: r.metin, size: 28),
+                    const SizedBox(width: 10),
+                    const Expanded(
+                        child: Text("Hızlı Öğrenci Ekle",
+                            style: TextStyle(fontFamily: AppTema.baslikFontu, fontSize: 24, fontWeight: FontWeight.w600))),
                   ]),
                 ),
                 if (geriYuklenen > 0 && !durum.taslakTemizlendi)
@@ -1960,14 +1960,23 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                 const Divider(height: 12),
                 Expanded(
                   child: ListView(
-                    padding: EdgeInsets.fromLTRB(16, 0, 16, MediaQuery.of(sheetContext).viewInsets.bottom),
+                    // iPhone Safari'de (web) klavye yüksekliği gelmiyor
+                    // (viewInsets 0); son satırlar klavyenin altında kalıp
+                    // yukarı kaydırılamıyordu (Sabri'nin ekranı, iPad'de
+                    // "~10. öğrencide takılıyor"). Web'de yarım ekran pay.
+                    padding: EdgeInsets.fromLTRB(16, 4, 16,
+                        kIsWeb
+                            ? MediaQuery.of(sheetContext).size.height * 0.5
+                            : MediaQuery.of(sheetContext).viewInsets.bottom + 16),
                     children: List.generate(satirlar.length, (i) {
                       final satir = satirlar[i];
                       void scrollToRow() {
                         WidgetsBinding.instance.addPostFrameCallback((_) {
                           final ctx = satir.rowKey.currentContext;
                           if (ctx != null) {
-                            Scrollable.ensureVisible(ctx, duration: const Duration(milliseconds: 250), curve: Curves.easeInOut, alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtEnd);
+                            // Listenin ÜSTÜNE hizala: alta hizalayınca satır
+                            // klavyenin tam arkasına düşüyordu.
+                            Scrollable.ensureVisible(ctx, duration: const Duration(milliseconds: 250), curve: Curves.easeInOut, alignment: 0.08);
                           }
                         });
                       }
@@ -1987,11 +1996,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                               decoration: InputDecoration(
                                 hintText: "Ad Soyad",
                                 hintStyle: TextStyle(color: r.metinUcuncul, fontSize: 14),
-                                filled: true,
-                                fillColor: r.yuzeyGri,
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: r.cizgiAcik)),
-                                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: r.cizgiAcik)),
-                                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: r.vurgu, width: 1.5)),
+                                // Çerçeve ve dolgu temadan (mürekkep kenar, beyaz).
                                 contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10), isDense: true,
                               ),
                               style: const TextStyle(fontSize: 16),
@@ -2014,15 +2019,15 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                               width: 44, height: 44,
                               decoration: BoxDecoration(
                                 color: !satir.cinsiyetSecildi
-                                    ? r.yuzeyGri
-                                    : (satir.isMale ? Colors.blue.shade400 : Colors.pink.shade400),
-                                borderRadius: BorderRadius.circular(10),
-                                border: !satir.cinsiyetSecildi ? Border.all(color: r.cizgi) : null,
+                                    ? r.kart
+                                    : (satir.isMale ? const Color(0xFF4FA3F7) : const Color(0xFFFF8FB1)),
+                                shape: BoxShape.circle,
+                                border: Border.all(color: r.kenar, width: 2),
                               ),
                               child: Center(
                                 child: !satir.cinsiyetSecildi
                                     ? Icon(Icons.question_mark_rounded, size: 18, color: r.metinUcuncul)
-                                    : CinsiyetSimgesi(satir.isMale, boyut: 22, renk: Colors.white),
+                                    : CinsiyetSimgesi(satir.isMale, boyut: 22, renk: AppTema.ana),
                               ),
                             ),
                             ),
@@ -2040,11 +2045,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                               decoration: InputDecoration(
                                 hintText: "100",
                                 hintStyle: TextStyle(color: r.metinUcuncul, fontWeight: FontWeight.w600),
-                                filled: true,
-                                fillColor: r.yuzeyGri,
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: r.cizgiAcik)),
-                                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: r.cizgiAcik)),
-                                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: r.vurgu, width: 1.5)),
+                                // Çerçeve ve dolgu temadan (mürekkep kenar, beyaz).
                                 contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10), isDense: true,
                               ),
                               style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
