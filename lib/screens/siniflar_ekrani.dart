@@ -918,7 +918,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
             ),
             onPressed: () async {
               if (c.text.trim().isEmpty) return;
-              final ad = c.text.toUpperCase().trim();
+              final ad = trBuyut(c.text).trim();
               // Aynı adla ikinci sınıf uyarısız oluşuyordu (denetim #4 O8).
               // Yalnız bu yıl: geçen yılın 7E'si varken bu yıl yeni bir 7E
               // açılabilmeli.

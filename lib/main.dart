@@ -12,6 +12,7 @@ import 'screens/siniflar_ekrani.dart';
 import 'screens/tanitim_ekrani.dart';
 import 'services/analytics_service.dart';
 import 'services/firestore_service.dart';
+import 'services/demo_modu.dart';
 import 'services/mac_durumu.dart';
 import 'services/sifreleme_service.dart';
 import 'tema.dart';
@@ -24,6 +25,7 @@ void main() async {
   Intl.defaultLocale = 'tr';
   await initializeDateFormatting('tr');
   await TemaTercihi.yukle();
+  await DemoModu.yukle();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   // Çevrimdışı önbellek: spor salonunda internet gidince liste ve yoklama
   // önbellekten gelsin, yazmalar kuyruğa girip bağlanınca gitsin. Kapalıyken
@@ -62,12 +64,58 @@ class CemberApp extends StatelessWidget {
         final mq = MediaQuery.of(context);
         return MediaQuery(
           data: mq.copyWith(textScaler: mq.textScaler.clamp(maxScaleFactor: 1.5)),
-          child: child ?? const SizedBox.shrink(),
+          child: _DemoSeridi(child: child ?? const SizedBox.shrink()),
         );
       },
       navigatorObservers: [AnalyticsService.observer],
       home: const AuthWrapper(),
       ),
+    );
+  }
+}
+
+/// Demo modu açıkken her ekranın üstünde ince turuncu şerit: sunum yapan
+/// öğretmen adların gizli olduğunu her an görsün (denetim #3 — önceden
+/// yalnız ana sayfadaki göz simgesi ve geçici bir bildirim vardı).
+class _DemoSeridi extends StatelessWidget {
+  final Widget child;
+  const _DemoSeridi({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<bool>(
+      valueListenable: DemoModu.durum,
+      builder: (context, aktif, _) {
+        if (!aktif) return child;
+        final mq = MediaQuery.of(context);
+        return Column(children: [
+          Material(
+            color: const Color(0xFF8A5300),
+            child: Semantics(
+              liveRegion: true,
+              child: Padding(
+                padding: EdgeInsets.only(top: mq.padding.top),
+                child: const SizedBox(
+                  height: 24,
+                  width: double.infinity,
+                  child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                    Icon(Icons.visibility_off_rounded, size: 14, color: Colors.white),
+                    SizedBox(width: 6),
+                    Text('DEMO MODU · isimler gizli',
+                        style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 0.5)),
+                  ]),
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            child: MediaQuery(
+              data: mq.removePadding(removeTop: true),
+              child: child,
+            ),
+          ),
+        ]);
+      },
     );
   }
 }

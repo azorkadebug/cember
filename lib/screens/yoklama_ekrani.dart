@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../tema.dart';
 import '../tema_renkleri.dart';
+import '../utils/metin.dart';
 import '../widgets/kalem_simgeleri.dart';
 import '../models/ogrenci.dart';
 import '../models/kontrol_kalemi.dart';
@@ -74,7 +75,7 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
       // Akış açıp ilk olayı beklemek yerine tek seferlik okuma — dinleyici
       // kurup hemen iptal etmek gereksiz maliyet.
       final ogrenciler = (await _db.ogrencileriGetir(widget.sinifId))
-        ..sort((a, b) => a.gorunenAd.toLowerCase().compareTo(b.gorunenAd.toLowerCase()));
+        ..sort((a, b) => trKarsilastir(a.gorunenAd, b.gorunenAd));
       final yoklama = await _db.yoklamaGetir(widget.sinifId, _tarihKey);
       final kayitlarRaw = (yoklama?['kayitlar'] as Map?) ?? {};
       _kayitVar = yoklama != null;

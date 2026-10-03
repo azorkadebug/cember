@@ -84,7 +84,6 @@ class _OgrenciAramaEkraniState extends State<OgrenciAramaEkrani> {
       if (mounted) setState(() { _hata = true; _yukleniyor = false; });
       return;
     }
-    kayitlar.sort((a, b) => trKarsilastir(a.ogrenci.ad, b.ogrenci.ad));
     if (!mounted) return;
     setState(() {
       _tumu = kayitlar;
@@ -120,7 +119,10 @@ class _OgrenciAramaEkraniState extends State<OgrenciAramaEkrani> {
           .toList();
     }
     // Demo modunda kullanıcı ekranda gördüğü (maskeli) ada göre arar.
-    return _tumu.where((k) => trKucult(k.ogrenci.gorunenAd).contains(_metin)).toList();
+    // Görünen ada göre sırala: gerçek ada göre sıralama demo modunda
+    // sahte adların sırasından gerçek kişiyi ele veriyordu (denetim #3).
+    return _tumu.where((k) => trKucult(k.ogrenci.gorunenAd).contains(_metin)).toList()
+      ..sort((a, b) => trKarsilastir(a.ogrenci.gorunenAd, b.ogrenci.gorunenAd));
   }
 
   @override

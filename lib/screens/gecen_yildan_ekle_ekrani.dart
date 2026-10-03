@@ -64,8 +64,7 @@ class _GecenYildanEkleEkraniState extends State<GecenYildanEkleEkrani> {
       }).toList();
       final sonuc = await Future.wait(eskiler.map((d) async {
         final data = d.data() as Map<String, dynamic>?;
-        final ogrenciler = await _db.ogrencileriGetir(d.id)
-          ..sort((a, b) => trKarsilastir(a.ad, b.ad));
+        final ogrenciler = await _db.ogrencileriGetir(d.id);
         return _EskiSinif(d.id, (data?['ad'] ?? d.id).toString(), EgitimYili.sinifin(data), ogrenciler);
       }));
       // En yeni yıl üstte, yıl içinde sınıf adına göre.
@@ -167,7 +166,10 @@ class _GecenYildanEkleEkraniState extends State<GecenYildanEkleEkrani> {
     final q = trKucult(_aramaC.text.trim());
     final bolumler = <Widget>[];
     for (final s in _siniflar) {
-      final liste = q.isEmpty ? s.ogrenciler : s.ogrenciler.where((o) => trKucult(o.ad).contains(q)).toList();
+      // Görünen ada göre ara ve sırala: gerçek ada göre arama/sıralama demo
+      // modunda sahte adı gerçek kişiye bağlıyordu (denetim #3).
+      final liste = (q.isEmpty ? [...s.ogrenciler] : s.ogrenciler.where((o) => trKucult(o.gorunenAd).contains(q)).toList())
+        ..sort((a, b) => trKarsilastir(a.gorunenAd, b.gorunenAd));
       if (liste.isEmpty) continue;
       final secilebilir = liste.where((o) => !_sinifta(o)).toList();
       final hepsiSecili = secilebilir.isNotEmpty && secilebilir.every((o) => _secili.contains('${s.id}/${o.id}'));
@@ -175,7 +177,7 @@ class _GecenYildanEkleEkraniState extends State<GecenYildanEkleEkrani> {
         padding: const EdgeInsets.fromLTRB(4, 16, 0, 4),
         child: Row(children: [
           Expanded(
-            child: Text("${s.ad.toUpperCase()}  ·  ${s.yil}",
+            child: Text("${trBuyut(s.ad)}  ·  ${s.yil}",
                 style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 1.1, color: r.metinUcuncul)),
           ),
           if (secilebilir.isNotEmpty)

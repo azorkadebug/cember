@@ -2,6 +2,7 @@ import '../tema.dart';
 import '../tema_renkleri.dart';
 import '../widgets/kalem_simgeleri.dart';
 import '../utils/metin.dart';
+import '../utils/sinif_ozeti.dart';
 import 'dart:math';
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -13,6 +14,7 @@ import '../models/kontrol_kalemi.dart';
 import '../services/auth_service.dart';
 import '../services/analytics_service.dart';
 import '../services/firestore_service.dart';
+import '../services/demo_modu.dart';
 import '../services/mac_durumu.dart';
 import '../widgets/yardim_diyalogu.dart';
 import 'skor_ekrani.dart';
@@ -113,6 +115,15 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
   /// Yeniden abonelikte ilk olaya kadar veri yok sayılıp 0/0/0 yazılıyordu
   /// (denetim #4 Y2).
   QuerySnapshot? _sonBaslik, _sonListe;
+  /// Başlıktaki Mevcut/Yok yalnız BUGÜN yoklama alındıysa sayı gösterir;
+  /// yoksa "15 Mevcut" yoklama alınmış gibi görünüyordu (denetim #3).
+  late final Stream<QuerySnapshot> _sonYoklamaAkisi = _db.sonYoklamaStream(widget.sinifId);
+  QuerySnapshot? _sonYoklama;
+
+  static String _bugunAnahtari() {
+    final b = DateTime.now();
+    return '${b.year}-${b.month.toString().padLeft(2, '0')}-${b.day.toString().padLeft(2, '0')}';
+  }
 
   int secilenTakimSayisi = 2;
   List<String> formaRenkleri = ['Kırmızı', 'Mavi', 'Sarı', 'Yeşil', 'Siyah', 'Beyaz', 'Turuncu', 'Lacivert'];
@@ -374,9 +385,19 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                         builder: (context, snapshot) {
                           if (snapshot.hasData) _sonBaslik = snapshot.data;
                           final total = snapshot.hasData ? snapshot.data!.docs.length : 0;
-                          final present = snapshot.hasData
-                              ? snapshot.data!.docs.where((d) => (d.data() as Map<String, dynamic>)['buradaMi'] ?? true).length
-                              : 0;
+                          return StreamBuilder<QuerySnapshot>(
+                            stream: _sonYoklamaAkisi,
+                            initialData: _sonYoklama,
+                            builder: (context, ySnap) {
+                          if (ySnap.hasData) _sonYoklama = ySnap.data;
+                          // Sayım ana sayfadaki halkayla aynı kaynaktan: bugünkü
+                          // yoklama kaydı (kaydı olmayan öğrenci "geldi").
+                          final bugunku = ySnap.data?.docs.where((d) => d.id == _bugunAnahtari()).firstOrNull;
+                          final ozet = bugunku == null || !snapshot.hasData
+                              ? null
+                              : yoklamaOzeti(bugunku.data() as Map<String, dynamic>?, snapshot.data!.docs.map((d) => d.id));
+                          final bugunAlindi = ozet != null;
+                          final present = ozet?.gelen ?? 0;
                           return Container(
                             margin: const EdgeInsets.symmetric(horizontal: 40),
                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -389,12 +410,17 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                               children: [
                                 _miniStat(Icons.people_alt_rounded, "$total", "Toplam", r.barMetin),
                                 _miniDivider(),
-                                _miniStat(Icons.check_circle_rounded, "$present", "Mevcut", Colors.greenAccent.shade100),
-                                _miniDivider(),
-                                _miniStat(Icons.cancel_rounded, "${total - present}", "Yok",
-                                    (total - present) > 0 ? Colors.redAccent.shade100 : Colors.white.withAlpha(140)),
+                                if (bugunAlindi) ...[
+                                  _miniStat(Icons.check_circle_rounded, "$present", "Mevcut", Colors.greenAccent.shade100),
+                                  _miniDivider(),
+                                  _miniStat(Icons.cancel_rounded, "${total - present}", "Yok",
+                                      (total - present) > 0 ? Colors.redAccent.shade100 : Colors.white.withAlpha(140)),
+                                ] else
+                                  _miniStat(Icons.fact_check_outlined, "—", "Yoklama alınmadı", Colors.white.withAlpha(200)),
                               ],
                             ),
+                          );
+                            },
                           );
                         },
                       ),
@@ -678,9 +704,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
               unawaited(_db.buradaMiGuncelle(widget.sinifId, o.id, o.buradaMi));
               // Yoklama ekranı ile sınıf listesi iki ayrı "yok" tutuyordu
               // (denetim #4 Y1): kaydırma bugünün yoklamasına da işlensin.
-              final b = DateTime.now();
-              final tarih = '${b.year}-${b.month.toString().padLeft(2, '0')}-${b.day.toString().padLeft(2, '0')}';
-              unawaited(_db.yoklamaTekOgrenci(widget.sinifId, tarih, o.id, o.buradaMi).catchError((_) {}));
+              unawaited(_db.yoklamaTekOgrenci(widget.sinifId, _bugunAnahtari(), o.id, o.buradaMi).catchError((_) {}));
               return false; // Kartı silme, sadece toggle
             },
             background: Container(
@@ -857,8 +881,10 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
           constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+          // Eksik yokken yeşil ✓ yoklamadaki "Geldi" ile karışıyor, "Yok"
+          // yazılan öğrencide de görünüyordu (denetim #3): artık nötr ok.
           child: aktifler.isEmpty
-              ? Icon(Icons.check_circle_rounded, size: 18, color: Colors.green.shade300)
+              ? Icon(Icons.chevron_right_rounded, size: 20, color: context.renk.ikonPasif)
               : Row(mainAxisSize: MainAxisSize.min, children: aktifler),
         ),
       ),
@@ -1032,7 +1058,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                   decoration: BoxDecoration(color: Colors.teal.withAlpha(25), borderRadius: BorderRadius.circular(8)),
                   child: Text(kayit['tarih'] ?? '', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.teal)),
                 ),
-                title: Text(kayit['not'] ?? '-', style: const TextStyle(fontSize: 14)),
+                title: Text(DemoModu.aktif ? 'Demo modunda gizli' : (kayit['not'] ?? '-'), style: const TextStyle(fontSize: 14)),
                 // Sağlık notu hiçbir yerden silinemiyordu (denetim #4 O2).
                 trailing: IconButton(
                   icon: Icon(Icons.delete_outline_rounded, color: ctx.renk.tehlike, size: 20),
@@ -1173,6 +1199,11 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
   // Tam "Öğrenci Düzenle" penceresini açmadan hızlıca not eklemek/düzenlemek
   // için (2026-08-28) — sınıf listesindeki not satırından tetiklenir.
   void _notHizliDuzenle(Ogrenci o) {
+    if (DemoModu.aktif) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Demo modunda notlar gizli.')));
+      return;
+    }
     final nC = TextEditingController(text: o.not);
     showDialog(
       context: context,
@@ -1241,9 +1272,12 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
   /// nesneyi açılıştaki hâline döndürür. Rozetler istisna: verildiği anda
   /// yazılır (eski davranış korunuyor).
   void _ogrenciKartiAc(Ogrenci o, List<Ogrenci> tumOgrenciler) {
-    final adC = TextEditingController(text: o.ad);
+    // Demo modunda kart gerçek adı ve notu göstermemeli (denetim #3): alanlar
+    // sahte adla/boş açılır, salt okunur kalır ve kaydedilmez.
+    final demo = DemoModu.aktif;
+    final adC = TextEditingController(text: demo ? o.gorunenAd : o.ad);
     final pC = TextEditingController(text: o.puan.toString());
-    final nC = TextEditingController(text: o.not);
+    final nC = TextEditingController(text: demo ? '' : o.not);
     final dokunulanEslerinIdleri = <String>{};
 
     // Açılış anının kopyası — iptalde geri almak için.
@@ -1283,9 +1317,9 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
 
     void kaydet(BuildContext sheetCtx) {
       final yeniAd = adC.text.trim();
-      if (yeniAd.isNotEmpty) o.ad = yeniAd;
+      if (!demo && yeniAd.isNotEmpty) o.ad = yeniAd;
       o.puan = (int.tryParse(pC.text) ?? 100).clamp(0, 9999);
-      o.not = nC.text;
+      if (!demo) o.not = nC.text;
       // Yalnız DEĞİŞEN alanlar (denetim #3 Y1): açık kart bayat olabilir,
       // dokunulmayan alanı yazmak diğer cihazın değişikliğini siler.
       final alanlar = <String, dynamic>{
@@ -1461,12 +1495,13 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                           bolumBasligi('NOT', ikon: Icons.sticky_note_2_rounded),
                           TextField(
                             controller: nC,
+                            readOnly: demo,
                             maxLength: GirdiSiniri.ogrenciNotu,
                             buildCounter: gizliSayac,
                             minLines: 3,
                             maxLines: 3,
                             decoration: alanDeko('Özel Not').copyWith(
-                              hintText: 'Yalnız sen görürsün',
+                              hintText: demo ? 'Demo modunda notlar gizli' : 'Yalnız sen görürsün',
                               hintStyle: TextStyle(color: r.koyuMu ? r.metinUcuncul : Colors.grey.shade500),
                             ),
                           ),
@@ -1578,10 +1613,13 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                             ),
                           TextField(
                             controller: adC,
+                            readOnly: demo,
                             maxLength: GirdiSiniri.ogrenciAdi,
                             buildCounter: gizliSayac,
                             textCapitalization: TextCapitalization.words,
-                            decoration: alanDeko('İsim'),
+                            decoration: alanDeko('İsim').copyWith(
+                              helperText: demo ? 'Demo modunda ad düzenlenemez' : null,
+                            ),
                           ),
                           const SizedBox(height: 12),
                           Row(children: [
@@ -1667,7 +1705,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
         builder: (ctx, setPickerState) {
           final gorunen = arama.isEmpty
               ? adaylar
-              : adaylar.where((p) => p.gorunenAd.toLowerCase().contains(arama)).toList();
+              : adaylar.where((p) => trKucult(p.gorunenAd).contains(arama)).toList();
           return AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: const Text("Kiminle Eşleştir?"),
@@ -1679,7 +1717,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                 : Column(children: [
                     TextField(
                       autofocus: false,
-                      onChanged: (v) => setPickerState(() => arama = v.toLowerCase()),
+                      onChanged: (v) => setPickerState(() => arama = trKucult(v)),
                       decoration: InputDecoration(
                         hintText: 'Öğrenci ara...',
                         prefixIcon: const Icon(Icons.search_rounded, size: 20),

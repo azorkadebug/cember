@@ -9,6 +9,7 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 import '../widgets/girdi.dart';
 import '../models/ogrenci.dart';
 import '../services/mac_durumu.dart';
+import '../services/demo_modu.dart';
 import '../widgets/yardim_diyalogu.dart';
 
 class TakimBilgi {
@@ -772,6 +773,12 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
   }
 
   void _isimDuzenle(Ogrenci o) {
+    // Demo modunda pencere gerçek adı gösteriyordu (denetim #3).
+    if (DemoModu.aktif) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Demo modunda ad düzenlenemez.')));
+      return;
+    }
     final c = TextEditingController(text: o.ad);
     showDialog(
       context: context,

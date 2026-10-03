@@ -1,5 +1,6 @@
 import '../tema.dart';
 import '../tema_renkleri.dart';
+import '../utils/metin.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -480,7 +481,9 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
       barrierDismissible: false,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setLocalState) {
-          final canConfirm = ctrl.text.trim().toUpperCase() == 'SIL';
+          // Türkçe klavye "sil"i "SİL" yapar; Türkçe dışı klavyede "SIL" de kabul.
+          final yazilan = trBuyut(ctrl.text.trim());
+          final canConfirm = yazilan == 'SİL' || yazilan == 'SIL';
           return AlertDialog(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
             title: const Text("Son onay"),
@@ -489,7 +492,7 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  "Onaylamak için aşağıdaki kutuya büyük harflerle SIL yaz:",
+                  "Onaylamak için aşağıdaki kutuya SİL yaz:",
                   style: TextStyle(fontSize: 14),
                 ),
                 const SizedBox(height: 14),
@@ -501,7 +504,7 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
                   buildCounter: gizliSayac,
                   onChanged: (_) => setLocalState(() {}),
                   decoration: InputDecoration(
-                    hintText: 'SIL',
+                    hintText: 'SİL',
                     filled: true,
                     fillColor: ctx.renk.yuzeyGri,
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),

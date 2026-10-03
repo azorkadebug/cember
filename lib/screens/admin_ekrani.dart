@@ -1,4 +1,5 @@
 import '../tema_renkleri.dart';
+import '../utils/metin.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -220,7 +221,7 @@ class _AdminEkraniState extends State<AdminEkrani> {
                   backgroundColor: r.vurgu.withAlpha(30),
                   radius: 18,
                   child: Text(
-                    (k['ad'] ?? '?').toString().substring(0, 1).toUpperCase(),
+                    trBuyut('${(k['ad'] ?? '').toString().trim()}?'.substring(0, 1)),
                     style: TextStyle(color: r.metinGovde, fontWeight: FontWeight.w800),
                   ),
                 ),
