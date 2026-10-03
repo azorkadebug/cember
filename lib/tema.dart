@@ -35,9 +35,21 @@ class AppTema {
     Color(0xFFFFB4A8), // şeftali
     Color(0xFFC9B5FA), // lila
     Color(0xFFFFC27A), // portakal
+    Color(0xFF7FDBCA), // nane
+    Color(0xFFFF9EC4), // pembe
   ];
 
-  static Color ogrenciRengi(String id) =>
+  /// Sınıfın alfabetik listesindeki sıraya göre renk: yan yana iki öğrenci
+  /// hiç aynı rengi almaz (kimlikten hesaplayınca "AB, AB" aynı renk
+  /// düşebiliyordu). Liste, yoklama ve takım dağılımı aynı haritayı kullanır.
+  static Map<String, Color> ogrenciRenkHaritasi(Iterable<String> alfabetikIdler) {
+    var i = 0;
+    return {for (final id in alfabetikIdler) id: ogrenciRenkleri[i++ % ogrenciRenkleri.length]};
+  }
+
+  /// Haritada yoksa (yeni eklenmiş, henüz listelenmemiş) kimlikten sabit renk.
+  static Color ogrenciRengi(String id, [Map<String, Color>? harita]) =>
+      harita?[id] ??
       ogrenciRenkleri[id.codeUnits.fold<int>(0, (a, b) => a * 31 + b) % ogrenciRenkleri.length];
 
   /// Sınıflarım dışından (arama, etkinlik bandı) açılan sınıfa sabit renk.

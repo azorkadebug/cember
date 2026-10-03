@@ -37,6 +37,8 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
   bool _hata = false;
   DateTime _tarih = DateTime.now();
   List<Ogrenci> _ogrenciler = [];
+  /// Öğrenci listesiyle aynı renkler (alfabetik sıra).
+  Map<String, Color> _renkler = const {};
   final Map<String, _Kayit> _kayitlar = {};
   /// Yüklendiği andaki kopya: Kaydet yalnız buna göre DEĞİŞEN öğrencileri
   /// yazar. Tüm sınıf yazılınca iki cihazda son kaydeden kazanıyor, diğerinin
@@ -104,6 +106,7 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
       if (!mounted) return;
       setState(() {
         _ogrenciler = ogrenciler;
+        _renkler = AppTema.ogrenciRenkHaritasi(ogrenciler.map((o) => o.id));
         _ilkKayitlar = _kopyala(_kayitlar);
         _hata = false;
         _yukleniyor = false;
@@ -438,7 +441,7 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
                 width: 38, height: 38,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: geldi ? AppTema.ogrenciRengi(o.id) : const Color(0xFFE6E2DA),
+                  color: geldi ? AppTema.ogrenciRengi(o.id, _renkler) : const Color(0xFFE6E2DA),
                   shape: BoxShape.circle,
                   border: Border.all(color: AppTema.ana, width: 2),
                 ),

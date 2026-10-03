@@ -1,4 +1,5 @@
 import 'package:cember/services/demo_modu.dart';
+import 'package:cember/tema.dart';
 import 'package:cember/utils/metin.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -36,5 +37,16 @@ void main() {
       expect(trBuyut(yazilan.trim()), 'SİL', reason: yazilan);
     }
     expect(trBuyut('SIL'), 'SIL'); // Türkçe dışı klavye — ekranda ayrıca kabul edilir
+  });
+
+  test('yan yana öğrenciler aynı rengi almaz, renk sınıf içinde sabit', () {
+    final idler = [for (var i = 0; i < 30; i++) 'ogr$i'];
+    final harita = AppTema.ogrenciRenkHaritasi(idler);
+    for (var i = 1; i < idler.length; i++) {
+      expect(harita[idler[i]], isNot(harita[idler[i - 1]]), reason: '$i');
+    }
+    expect(AppTema.ogrenciRengi('ogr3', harita), harita['ogr3']);
+    // İlk 8 öğrencinin hepsi farklı renkte.
+    expect(idler.take(8).map((id) => harita[id]).toSet().length, 8);
   });
 }

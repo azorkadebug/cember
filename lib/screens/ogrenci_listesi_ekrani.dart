@@ -674,9 +674,12 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
   }
 
   List<Ogrenci> _tumOgrenciler = const [];
+  Map<String, Color> _renkler = const {};
 
   Widget _liste(List<Ogrenci> liste, List<Ogrenci> tumOgrenciler) {
     _tumOgrenciler = tumOgrenciler;
+    // tumOgrenciler görünen ada göre alfabetik; renkler bu sırayla.
+    _renkler = AppTema.ogrenciRenkHaritasi(tumOgrenciler.map((o) => o.id));
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
       itemCount: liste.length,
@@ -738,7 +741,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                           height: 42,
                           alignment: Alignment.center,
                           decoration: BoxDecoration(
-                            color: !o.buradaMi ? const Color(0xFFE6E2DA) : AppTema.ogrenciRengi(o.id),
+                            color: !o.buradaMi ? const Color(0xFFE6E2DA) : AppTema.ogrenciRengi(o.id, _renkler),
                             shape: BoxShape.circle,
                             border: Border.all(color: AppTema.ana, width: 2),
                           ),
@@ -2585,7 +2588,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                         width: 28, height: 28,
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
-                          color: AppTema.ogrenciRengi(o.id),
+                          color: AppTema.ogrenciRengi(o.id, _renkler),
                           shape: BoxShape.circle,
                           border: Border.all(color: AppTema.ana, width: 1.5),
                         ),
