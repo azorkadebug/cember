@@ -1,5 +1,6 @@
 import 'dart:io' show Platform;
 import '../tema.dart';
+import '../tema_renkleri.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -174,8 +175,9 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
 
   @override
   Widget build(BuildContext context) {
+    final r = context.renk;
     return Scaffold(
-      backgroundColor: Colors.grey.shade100,
+      backgroundColor: r.sayfa,
       body: Column(
         children: [
           // Üst kısım: Charcoal gradient + logo
@@ -187,7 +189,7 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [AppTema.anaKoyu, AppTema.ana, AppTema.anaAcik],
+                  colors: [r.barKoyu, r.bar, r.barAcik],
                 ),
                 borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(40),
@@ -231,7 +233,7 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
                             style: TextStyle(
                                 fontSize: klavyeAcik ? 22 : 30,
                                 fontWeight: FontWeight.w900,
-                                color: Colors.white,
+                                color: r.barMetin,
                                 letterSpacing: 6)),
                         if (!klavyeAcik) ...[
                           const SizedBox(height: 6),
@@ -239,7 +241,7 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
                               style: TextStyle(
                                   // withAlpha(180) gradyanın açık ucunda 3,6:1
                                   // veriyordu; 220 ile AA eşiğini geçiyor.
-                                  color: Colors.white.withAlpha(220),
+                                  color: r.barMetin.withAlpha(220),
                                   fontSize: 13,
                                   letterSpacing: 1.5)),
                         ],
@@ -269,7 +271,7 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
                       Container(
                         padding: const EdgeInsets.all(4),
                         decoration: BoxDecoration(
-                          color: Colors.grey.shade200,
+                          color: r.cizgiAcik,
                           borderRadius: BorderRadius.circular(14),
                         ),
                         child: Row(
@@ -314,12 +316,12 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
                           helperText: _kayitModu
                               ? "En az 10 karakter, harf ve rakam içermeli"
                               : null,
-                          helperStyle: const TextStyle(
-                              color: AppTema.metinUcuncul, fontSize: 12),
+                          helperStyle: TextStyle(
+                              color: r.metinUcuncul, fontSize: 12),
                           suffixIcon: IconButton(
                             tooltip: _obscurePass ? 'Şifreyi göster' : 'Şifreyi gizle',
                             icon: Icon(_obscurePass ? Icons.visibility_off_rounded : Icons.visibility_rounded,
-                                color: Colors.grey.shade500, size: 20),
+                                color: r.koyuMu ? r.metinUcuncul : Colors.grey.shade500, size: 20),
                             onPressed: () => setState(() => _obscurePass = !_obscurePass),
                           ),
                         ),
@@ -331,7 +333,7 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
                           child: TextButton(
                             onPressed: _loading ? null : _sifremiUnuttum,
                             style: TextButton.styleFrom(
-                              foregroundColor: AppTema.vurgu,
+                              foregroundColor: r.vurgu,
                               padding: const EdgeInsets.symmetric(vertical: 4),
                               // 32px dokunma hedefi, şifre kurtarma gibi
                               // kritik bir işlev için fazla küçüktü.
@@ -355,8 +357,8 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
                               const Text('Öğrenci verilerini okulum adına işlediğimi biliyorum; ', style: TextStyle(fontSize: 13)),
                               InkWell(
                                 onTap: () => launchUrl(Uri.parse(gizlilikPolitikasiUrl), mode: LaunchMode.externalApplication),
-                                child: const Text('Gizlilik Politikası ve Aydınlatma Metni',
-                                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppTema.vurgu, decoration: TextDecoration.underline)),
+                                child: Text('Gizlilik Politikası ve Aydınlatma Metni',
+                                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: r.vurgu, decoration: TextDecoration.underline)),
                               ),
                               const Text('\'ni okudum, kabul ediyorum.', style: TextStyle(fontSize: 13)),
                             ]),
@@ -370,14 +372,14 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
                           style: ElevatedButton.styleFrom(
                             // Sabit height büyütülmüş yazıda kırpıyordu (denetim D8).
                             minimumSize: const Size.fromHeight(52),
-                            backgroundColor: AppTema.vurgu,
-                            foregroundColor: Colors.white,
+                            backgroundColor: r.vurgu,
+                            foregroundColor: r.vurguMetin,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                             elevation: 2,
                           ),
                           onPressed: _loading ? null : _emailGirisKayit,
                           child: _loading
-                              ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
+                              ? SizedBox(height: 22, width: 22, child: CircularProgressIndicator(color: r.vurguMetin, strokeWidth: 2.5))
                               : Text(_kayitModu ? "Hesap Oluştur" : "Hesabıma Gir",
                                   style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
                         ),
@@ -386,12 +388,12 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
 
                       // Divider
                       Row(children: [
-                        Expanded(child: Divider(color: Colors.grey.shade300)),
+                        Expanded(child: Divider(color: r.cizgi)),
                         Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             // Zemin grey.shade100; metinUcuncul burada 4,36:1 kalıyordu.
-                            child: Text("veya devam et", style: TextStyle(color: AppTema.metinIkincil, fontSize: 12))),
-                        Expanded(child: Divider(color: Colors.grey.shade300)),
+                            child: Text("veya devam et", style: TextStyle(color: r.metinIkincil, fontSize: 12))),
+                        Expanded(child: Divider(color: r.cizgi)),
                       ]),
                       const SizedBox(height: 24),
 
@@ -403,7 +405,8 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
                           height: 50,
                           child: SignInWithAppleButton(
                             onPressed: _loading ? () {} : _appleGiris,
-                            style: SignInWithAppleButtonStyle.black,
+                            // Koyu zeminde siyah düğme kayboluyor; Apple HIG koyuda beyazı önerir.
+                            style: r.koyuMu ? SignInWithAppleButtonStyle.white : SignInWithAppleButtonStyle.black,
                             borderRadius: BorderRadius.circular(14),
                             text: 'Apple ile Giriş Yap',
                           ),
@@ -422,20 +425,20 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
                           WidgetSpan(
                             child: InkWell(
                               onTap: () => launchUrl(Uri.parse(gizlilikPolitikasiUrl), mode: LaunchMode.externalApplication),
-                              child: const Text('Gizlilik Politikası',
-                                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppTema.vurgu, decoration: TextDecoration.underline)),
+                              child: Text('Gizlilik Politikası',
+                                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: r.vurgu, decoration: TextDecoration.underline)),
                             ),
                           ),
                           const TextSpan(text: "'nı kabul etmiş olursun."),
                         ]),
                         textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 12, color: AppTema.metinIkincil),
+                        style: TextStyle(fontSize: 12, color: r.metinIkincil),
                       ),
                       const SizedBox(height: 12),
                       // Elle yazılan sürüm numarası güncellenmeyi unutuyordu
                       // (pubspec 1.1.0 iken ekranda hâlâ v1.0.0 yazıyordu).
                       // grey.shade300 beyaz üzerinde 1,3:1 — pratikte görünmüyordu.
-                      Text(_surum, style: TextStyle(color: AppTema.metinIkincil, fontSize: 12)),
+                      Text(_surum, style: TextStyle(color: r.metinIkincil, fontSize: 12)),
                     ],
                   ),
                     ),
@@ -450,6 +453,7 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
   }
 
   Widget _tabBtn(String label, bool active, VoidCallback onTap) {
+    final r = context.renk;
     return Expanded(
       child: GestureDetector(
         onTap: onTap,
@@ -457,14 +461,14 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
-            color: active ? AppTema.vurgu : Colors.transparent,
+            color: active ? r.vurgu : Colors.transparent,
             borderRadius: BorderRadius.circular(10),
           ),
           child: Text(label,
               textAlign: TextAlign.center,
               style: TextStyle(
                 // grey.shade500, grey.shade200 zeminde 2,3:1'di (denetim Y7).
-                color: active ? Colors.white : AppTema.metinIkincil,
+                color: active ? r.vurguMetin : r.metinIkincil,
                 fontWeight: active ? FontWeight.w700 : FontWeight.w600,
                 fontSize: 14,
               )),
@@ -481,26 +485,28 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
       null;
 
   InputDecoration _inputDeco(String hint, IconData icon) {
+    final r = context.renk;
     return InputDecoration(
       // hintText yazmaya başlayınca kayboluyor ve semantik ad vermiyordu;
       // labelText + never aynı görünümü korur, ekran okuyucuya adı verir
       // (denetim Y8).
       labelText: hint,
       floatingLabelBehavior: FloatingLabelBehavior.never,
-      labelStyle: TextStyle(color: Colors.grey.shade500),
-      prefixIcon: Icon(icon, color: AppTema.anaAcik, size: 20),
+      labelStyle: TextStyle(color: r.koyuMu ? r.metinUcuncul : Colors.grey.shade500),
+      prefixIcon: Icon(icon, color: r.koyuMu ? r.ikonAna : AppTema.anaAcik, size: 20),
       filled: true,
-      fillColor: Colors.grey.shade50,
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: Colors.grey.shade200)),
-      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: Colors.grey.shade200)),
-      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: AppTema.vurgu, width: 2)),
+      fillColor: r.koyuMu ? r.kart : Colors.grey.shade50,
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: r.cizgiAcik)),
+      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: r.cizgiAcik)),
+      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: r.vurgu, width: 2)),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
     );
   }
 
   Widget _socialBtn(IconData icon, String label, Color iconColor, VoidCallback onTap) {
+    final r = context.renk;
     return Material(
-      color: Colors.white,
+      color: r.kart,
       borderRadius: BorderRadius.circular(14),
       elevation: 1,
       shadowColor: Colors.black.withAlpha(10),
@@ -511,14 +517,14 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
           padding: const EdgeInsets.symmetric(vertical: 14),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: Colors.grey.shade200),
+            border: Border.all(color: r.cizgiAcik),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(icon, color: iconColor, size: 24),
               const SizedBox(width: 8),
-              Text(label, style: TextStyle(color: Colors.grey.shade700, fontWeight: FontWeight.w600, fontSize: 14)),
+              Text(label, style: TextStyle(color: r.koyuMu ? r.metinGovde : Colors.grey.shade700, fontWeight: FontWeight.w600, fontSize: 14)),
             ],
           ),
         ),

@@ -15,6 +15,7 @@ import 'services/firestore_service.dart';
 import 'services/mac_durumu.dart';
 import 'services/sifreleme_service.dart';
 import 'tema.dart';
+import 'tema_renkleri.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,6 +23,7 @@ void main() async {
   // intl yalnızca en_US tanır ve LocaleDataException atar.
   Intl.defaultLocale = 'tr';
   await initializeDateFormatting('tr');
+  await TemaTercihi.yukle();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   // Çevrimdışı önbellek: spor salonunda internet gidince liste ve yoklama
   // önbellekten gelsin, yazmalar kuyruğa girip bağlanınca gitsin. Kapalıyken
@@ -39,7 +41,9 @@ class CemberApp extends StatelessWidget {
   const CemberApp({super.key});
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: TemaTercihi.mod,
+      builder: (context, themeMode, _) => MaterialApp(
       title: 'Çember',
       debugShowCheckedModeBanner: false,
       // Bunlar olmadan Material'ın yerleşik metinleri İngilizce kalıyordu:
@@ -47,41 +51,11 @@ class CemberApp extends StatelessWidget {
       locale: const Locale('tr'),
       supportedLocales: const [Locale('tr')],
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-            seedColor: AppTema.vurgu, primary: AppTema.vurgu),
-        useMaterial3: true,
-        textTheme: AppTema.textTheme,
-        // Başlıklar tek ölçekten: AppBar 20/w800, diyalog 20/w800 (denetim
-        // O12 — diyalog başlıkları 4 farklı ağırlıkta, 18 farklı fontSize).
-        appBarTheme: const AppBarTheme(
-            titleTextStyle: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: Colors.white)),
-        dialogTheme: const DialogThemeData(
-            titleTextStyle: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: AppTema.anaKoyu),
-            contentTextStyle: TextStyle(fontSize: 15, color: Color(0xFF37474F), height: 1.45)),
-        // Web/masaüstünde varsayılan "compact" yoğunluk düğmeleri 4-8 px
-        // kısaltıyordu; diyalog düğmeleri 32 px'te kalıyordu (denetim O11).
-        visualDensity: VisualDensity.standard,
-        materialTapTargetSize: MaterialTapTargetSize.padded,
-        textButtonTheme: TextButtonThemeData(
-            style: TextButton.styleFrom(minimumSize: const Size(64, 44))),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-            style: ElevatedButton.styleFrom(minimumSize: const Size(64, 44))),
-        outlinedButtonTheme: OutlinedButtonThemeData(
-            style: OutlinedButton.styleFrom(minimumSize: const Size(64, 44))),
-        snackBarTheme: const SnackBarThemeData(
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.all(Radius.circular(10)))),
-        cardTheme: const CardThemeData(
-            elevation: 2,
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.all(Radius.circular(12)))),
-      ),
-      // Uygulama bilinçli olarak tek temada: skor tablosu kendi koyu
-      // paletini kuruyor, geri kalanı açık. Sistem karanlık moddayken
-      // yarısı dönüp yarısı kalmasın diye açıkça sabitlendi.
-      themeMode: ThemeMode.light,
+      theme: cemberTemasi(Brightness.light),
+      darkTheme: cemberTemasi(Brightness.dark),
+      // Varsayılan telefonun ayarı; Profil'den Açık/Koyu seçilebilir.
+      // Skor ekranı iki temada da kendi lacivert paletinde kalır.
+      themeMode: themeMode,
       // iOS "Daha Büyük Metin" 2x'e kadar çıkıyor; sabit yükseklikli kartlar
       // ve 44 px'lik düğmeler 1,5 üstünde kırpılıyor (denetim D8).
       builder: (context, child) {
@@ -93,6 +67,7 @@ class CemberApp extends StatelessWidget {
       },
       navigatorObservers: [AnalyticsService.observer],
       home: const AuthWrapper(),
+      ),
     );
   }
 }
@@ -150,7 +125,7 @@ class _TanitimVeyaGirisState extends State<_TanitimVeyaGiris> {
   @override
   Widget build(BuildContext context) {
     if (_goruldu == null) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator(color: AppTema.ana)));
+      return Scaffold(body: Center(child: CircularProgressIndicator(color: context.renk.ikonAna)));
     }
     if (!_goruldu!) {
       return TanitimEkrani(onTamamlandi: () => setState(() => _goruldu = true));
@@ -194,9 +169,10 @@ class _ProfilKontrolState extends State<_ProfilKontrol> {
   @override
   Widget build(BuildContext context) {
     if (_kontrol) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator(color: AppTema.ana)));
+      return Scaffold(body: Center(child: CircularProgressIndicator(color: context.renk.ikonAna)));
     }
     if (_hata) {
+      final r = context.renk;
       return Scaffold(
         body: Center(
           child: Padding(
@@ -204,17 +180,17 @@ class _ProfilKontrolState extends State<_ProfilKontrol> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.wifi_off_rounded, size: 48, color: Colors.grey.shade400),
+                Icon(Icons.wifi_off_rounded, size: 48, color: r.ikonPasif),
                 const SizedBox(height: 16),
                 const Text("Bağlantı kurulamadı",
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 8),
                 Text("İnternet bağlantını kontrol edip tekrar dene.",
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.grey.shade600)),
+                    style: TextStyle(color: r.koyuMu ? r.metinIkincil : Colors.grey.shade600)),
                 const SizedBox(height: 24),
                 FilledButton.icon(
-                  style: FilledButton.styleFrom(backgroundColor: AppTema.ana),
+                  style: FilledButton.styleFrom(backgroundColor: r.koyuMu ? r.vurgu : AppTema.ana),
                   onPressed: _kontrolEt,
                   icon: const Icon(Icons.refresh_rounded),
                   label: const Text("Tekrar dene"),

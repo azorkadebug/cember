@@ -4,6 +4,7 @@ import '../models/ogrenci.dart';
 import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
 import '../tema.dart';
+import '../tema_renkleri.dart';
 import '../utils/egitim_yili.dart';
 import '../utils/metin.dart';
 import '../widgets/simgeler.dart';
@@ -111,11 +112,12 @@ class _GecenYildanEkleEkraniState extends State<GecenYildanEkleEkrani> {
 
   @override
   Widget build(BuildContext context) {
+    final r = context.renk;
     return Scaffold(
-      backgroundColor: Colors.grey.shade100,
+      backgroundColor: r.sayfa,
       appBar: AppBar(
-        backgroundColor: AppTema.ana,
-        foregroundColor: Colors.white,
+        backgroundColor: r.bar,
+        foregroundColor: r.barMetin,
         elevation: 0,
         title: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           const Text("Geçen Yıldan Ekle", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
@@ -134,11 +136,12 @@ class _GecenYildanEkleEkraniState extends State<GecenYildanEkleEkrani> {
   }
 
   Widget _govde() {
-    if (_yukleniyor) return const Center(child: CircularProgressIndicator(color: AppTema.vurgu));
+    final r = context.renk;
+    if (_yukleniyor) return Center(child: CircularProgressIndicator(color: r.vurgu));
     if (_hata) {
       return Center(
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          const Text("Geçmiş sınıflar okunamadı.", style: TextStyle(color: AppTema.tehlike)),
+          Text("Geçmiş sınıflar okunamadı.", style: TextStyle(color: r.tehlike)),
           const SizedBox(height: 8),
           TextButton(onPressed: _yukle, child: const Text("Tekrar Dene")),
         ]),
@@ -149,13 +152,13 @@ class _GecenYildanEkleEkraniState extends State<GecenYildanEkleEkrani> {
         child: Padding(
           padding: const EdgeInsets.all(32),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Icon(Icons.history_rounded, size: 64, color: Colors.grey.shade300),
+            Icon(Icons.history_rounded, size: 64, color: r.bosDurumIkonu),
             const SizedBox(height: 12),
-            const Text("Geçmiş yıllarda öğrencili sınıf yok",
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppTema.metinIkincil)),
+            Text("Geçmiş yıllarda öğrencili sınıf yok",
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: r.metinIkincil)),
             const SizedBox(height: 6),
-            const Text("Geçen yılın sınıfları burada görünür. Bir sınıfı geçmiş yıla taşımak için Sınıflarım'da karta sola kaydır.",
-                textAlign: TextAlign.center, style: TextStyle(fontSize: 13, color: AppTema.metinUcuncul)),
+            Text("Geçen yılın sınıfları burada görünür. Bir sınıfı geçmiş yıla taşımak için Sınıflarım'da karta sola kaydır.",
+                textAlign: TextAlign.center, style: TextStyle(fontSize: 13, color: r.metinUcuncul)),
           ]),
         ),
       );
@@ -172,7 +175,7 @@ class _GecenYildanEkleEkraniState extends State<GecenYildanEkleEkrani> {
         child: Row(children: [
           Expanded(
             child: Text("${s.ad.toUpperCase()}  ·  ${s.yil}",
-                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 1.1, color: AppTema.metinUcuncul)),
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 1.1, color: r.metinUcuncul)),
           ),
           if (secilebilir.isNotEmpty)
             TextButton(
@@ -187,7 +190,7 @@ class _GecenYildanEkleEkraniState extends State<GecenYildanEkleEkrani> {
         ]),
       ));
       bolumler.add(Material(
-        color: Colors.white,
+        color: r.kart,
         borderRadius: BorderRadius.circular(12),
         clipBehavior: Clip.antiAlias,
         child: Column(children: [
@@ -205,17 +208,17 @@ class _GecenYildanEkleEkraniState extends State<GecenYildanEkleEkrani> {
             hintText: "Öğrenci ara...",
             prefixIcon: const Icon(Icons.search_rounded),
             filled: true,
-            fillColor: Colors.white,
+            fillColor: r.kart,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
           ),
         ),
         const SizedBox(height: 8),
-        const Text("Ad, cinsiyet, beceri puanı, element ve sağlık notları taşınır. Yoklama, sayaçlar, notlar ve rozetler yeni yılda sıfırdan başlar.",
-            style: TextStyle(fontSize: 12, color: AppTema.metinIkincil)),
+        Text("Ad, cinsiyet, beceri puanı, element ve sağlık notları taşınır. Yoklama, sayaçlar, notlar ve rozetler yeni yılda sıfırdan başlar.",
+            style: TextStyle(fontSize: 12, color: r.metinIkincil)),
         if (bolumler.isEmpty)
-          const Padding(
-            padding: EdgeInsets.only(top: 32),
-            child: Center(child: Text("Aramaya uyan öğrenci yok.", style: TextStyle(color: AppTema.metinUcuncul))),
+          Padding(
+            padding: const EdgeInsets.only(top: 32),
+            child: Center(child: Text("Aramaya uyan öğrenci yok.", style: TextStyle(color: r.metinUcuncul))),
           ),
         ...bolumler,
       ],
@@ -225,54 +228,56 @@ class _GecenYildanEkleEkraniState extends State<GecenYildanEkleEkrani> {
   Widget _satir(_EskiSinif s, Ogrenci o) {
     final k = '${s.id}/${o.id}';
     final sinifta = _sinifta(o);
+    final r = context.renk;
     return CheckboxListTile(
       value: sinifta || _secili.contains(k),
       onChanged: sinifta ? null : (v) => setState(() => v == true ? _secili.add(k) : _secili.remove(k)),
       controlAffinity: ListTileControlAffinity.leading,
-      activeColor: AppTema.vurgu,
+      activeColor: r.vurgu,
       dense: true,
       title: Row(children: [
         CinsiyetSimgesi(o.isMale, boyut: 16),
         const SizedBox(width: 6),
         Flexible(child: Text(o.gorunenAd, overflow: TextOverflow.ellipsis,
             style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600,
-                color: sinifta ? AppTema.metinUcuncul : Colors.black87))),
+                color: sinifta ? r.metinUcuncul : (r.koyuMu ? r.metin : Colors.black87)))),
         if (o.saglikNotlari.isNotEmpty) ...[
           const SizedBox(width: 6),
           const Icon(Icons.medical_services_rounded, size: 14, color: Colors.teal),
         ],
       ]),
       subtitle: sinifta
-          ? const Text("Zaten bu sınıfta", style: TextStyle(fontSize: 12, color: AppTema.metinUcuncul))
+          ? Text("Zaten bu sınıfta", style: TextStyle(fontSize: 12, color: r.metinUcuncul))
           : null,
     );
   }
 
   Widget _altCubuk() {
     final n = _secili.length;
+    final r = context.renk;
     return SafeArea(
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: r.kart,
           boxShadow: [BoxShadow(color: Colors.black.withAlpha(15), blurRadius: 10, offset: const Offset(0, -2))],
         ),
         child: Row(children: [
           Expanded(
             child: Text(n == 0 ? "Öğrenci seç" : "$n öğrenci seçildi",
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppTema.anaKoyu)),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: r.metin)),
           ),
           ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppTema.vurgu,
-              foregroundColor: Colors.white,
+              backgroundColor: r.vurgu,
+              foregroundColor: r.vurguMetin,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
               elevation: 2,
             ),
             onPressed: n == 0 || _kaydediyor ? null : _aktar,
             icon: _kaydediyor
-                ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                ? SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: r.vurguMetin))
                 : const Icon(Icons.group_add_rounded),
             label: Text(n == 0 ? "Ekle" : "$n Öğrenci Ekle", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
           ),

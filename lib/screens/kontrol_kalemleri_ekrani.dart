@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../widgets/girdi.dart';
 import '../tema.dart';
+import '../tema_renkleri.dart';
 import '../widgets/kalem_simgeleri.dart';
 import '../models/kontrol_kalemi.dart';
 import '../services/firestore_service.dart';
@@ -67,7 +68,9 @@ class _KontrolKalemleriEkraniState extends State<KontrolKalemleriEkrani> {
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
-        builder: (context, setLocal) => AlertDialog(
+        builder: (context, setLocal) {
+          final r = context.renk;
+          return AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Text(mevcut == null ? 'Kalem Ekle' : 'Kalemi Düzenle',
               style: const TextStyle(fontWeight: FontWeight.w700)),
@@ -85,7 +88,7 @@ class _KontrolKalemleriEkraniState extends State<KontrolKalemleriEkrani> {
                 ),
               ),
               const SizedBox(height: 16),
-              Text('Tür', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.grey.shade700, fontSize: 13)),
+              Text('Tür', style: TextStyle(fontWeight: FontWeight.w600, color: r.koyuMu ? r.metinGovde : Colors.grey.shade700, fontSize: 13)),
               const SizedBox(height: 6),
               Row(children: [
                 _tipChip('Günlük ✓/✗', tip == KalemTipi.gunluk, () => setLocal(() => tip = KalemTipi.gunluk)),
@@ -97,10 +100,10 @@ class _KontrolKalemleriEkraniState extends State<KontrolKalemleriEkrani> {
                 tip == KalemTipi.gunluk
                     ? 'Her ders "getirdi mi?" olarak işaretlenir (kitap, boya...).'
                     : 'Sezon boyu birikir (sarı kart, olumsuz davranış...).',
-                style: const TextStyle(color: AppTema.metinIkincil, fontSize: 12),
+                style: TextStyle(color: r.metinIkincil, fontSize: 12),
               ),
               const SizedBox(height: 16),
-              Text('İkon', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.grey.shade700, fontSize: 13)),
+              Text('İkon', style: TextStyle(fontWeight: FontWeight.w600, color: r.koyuMu ? r.metinGovde : Colors.grey.shade700, fontSize: 13)),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8, runSpacing: 8,
@@ -111,11 +114,11 @@ class _KontrolKalemleriEkraniState extends State<KontrolKalemleriEkrani> {
                     child: Container(
                       width: 44, height: 44,
                       decoration: BoxDecoration(
-                        color: secili ? AppTema.ana : AppTema.ana50,
+                        color: secili ? (r.koyuMu ? r.vurguZemin : AppTema.ana) : r.yuzeyAna,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: secili ? AppTema.vurgu : Colors.transparent, width: 2),
+                        border: Border.all(color: secili ? r.vurgu : Colors.transparent, width: 2),
                       ),
-                      child: KalemSimgesi(anahtar, color: secili ? Colors.white : AppTema.ana, size: 22),
+                      child: KalemSimgesi(anahtar, color: secili ? (r.koyuMu ? r.vurguKoyu : Colors.white) : r.ikonAna, size: 22),
                     ),
                   );
                 }).toList(),
@@ -125,11 +128,11 @@ class _KontrolKalemleriEkraniState extends State<KontrolKalemleriEkrani> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: Text('İptal', style: TextStyle(color: Colors.grey.shade600)),
+              child: Text('İptal', style: TextStyle(color: r.koyuMu ? r.metinIkincil : Colors.grey.shade600)),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppTema.vurgu, foregroundColor: Colors.white,
+                backgroundColor: r.vurgu, foregroundColor: r.vurguMetin,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
               onPressed: () {
@@ -151,22 +154,24 @@ class _KontrolKalemleriEkraniState extends State<KontrolKalemleriEkrani> {
               child: const Text('Tamam', style: TextStyle(fontWeight: FontWeight.w700)),
             ),
           ],
-        ),
+        );
+        },
       ),
     ).then((_) => adCtrl.dispose());
   }
 
   Widget _tipChip(String label, bool secili, VoidCallback onTap) {
+    final r = context.renk;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: secili ? AppTema.vurgu : Colors.grey.shade100,
+          color: secili ? r.vurgu : r.yuzeyGri,
           borderRadius: BorderRadius.circular(10),
         ),
         child: Text(label, style: TextStyle(
-          color: secili ? Colors.white : Colors.grey.shade700,
+          color: secili ? r.vurguMetin : (r.koyuMu ? r.metinGovde : Colors.grey.shade700),
           fontWeight: FontWeight.w600, fontSize: 13,
         )),
       ),
@@ -188,7 +193,7 @@ class _KontrolKalemleriEkraniState extends State<KontrolKalemleriEkrani> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Kaydetmeden çık', style: TextStyle(color: AppTema.tehlike, fontWeight: FontWeight.w700)),
+            child: Text('Kaydetmeden çık', style: TextStyle(color: ctx.renk.tehlike, fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -211,18 +216,19 @@ class _KontrolKalemleriEkraniState extends State<KontrolKalemleriEkrani> {
   }
 
   Widget _govde() {
+    final r = context.renk;
     return Scaffold(
-      backgroundColor: Colors.grey.shade100,
+      backgroundColor: r.sayfa,
       appBar: AppBar(
-        backgroundColor: AppTema.ana,
-        foregroundColor: Colors.white,
+        backgroundColor: r.bar,
+        foregroundColor: r.barMetin,
         title: const Text('Kontrol Kalemleri'),
         actions: [
           TextButton(
             onPressed: _kaydediyor ? null : _kaydet,
             child: _kaydediyor
-                ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                : const Text('Kaydet', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                ? SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: r.barMetin))
+                : Text('Kaydet', style: TextStyle(color: r.barMetin, fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -231,12 +237,12 @@ class _KontrolKalemleriEkraniState extends State<KontrolKalemleriEkrani> {
               child: Padding(
                 padding: const EdgeInsets.all(32),
                 child: Column(mainAxisSize: MainAxisSize.min, children: [
-                  Icon(Icons.checklist_rounded, size: 64, color: Colors.grey.shade300),
+                  Icon(Icons.checklist_rounded, size: 64, color: r.bosDurumIkonu),
                   const SizedBox(height: 16),
-                  const Text('Henüz kalem yok', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppTema.metinIkincil)),
+                  Text('Henüz kalem yok', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: r.metinIkincil)),
                   const SizedBox(height: 6),
-                  const Text('Aşağıdaki "Kalem Ekle" ile branşına uygun kalemler ekle\n(kitap, boya, forma, sarı kart...).',
-                      textAlign: TextAlign.center, style: TextStyle(color: AppTema.metinUcuncul)),
+                  Text('Aşağıdaki "Kalem Ekle" ile branşına uygun kalemler ekle\n(kitap, boya, forma, sarı kart...).',
+                      textAlign: TextAlign.center, style: TextStyle(color: r.metinUcuncul)),
                 ]),
               ),
             )
@@ -271,15 +277,15 @@ class _KontrolKalemleriEkraniState extends State<KontrolKalemleriEkrani> {
                     onTap: () => _kalemDuzenle(mevcut: k, index: i),
                     leading: Container(
                       width: 40, height: 40,
-                      decoration: BoxDecoration(color: AppTema.ana50, borderRadius: BorderRadius.circular(10)),
-                      child: KalemSimgesi(k.ikon, color: AppTema.ana, size: 22),
+                      decoration: BoxDecoration(color: r.yuzeyAna, borderRadius: BorderRadius.circular(10)),
+                      child: KalemSimgesi(k.ikon, color: r.ikonAna, size: 22),
                     ),
                     title: Text(k.ad, style: const TextStyle(fontWeight: FontWeight.w700)),
                     subtitle: Text(k.tip == KalemTipi.sayac ? 'Sayaç' : 'Günlük ✓/✗',
-                        style: const TextStyle(color: AppTema.metinIkincil, fontSize: 12)),
+                        style: TextStyle(color: r.metinIkincil, fontSize: 12)),
                     trailing: Row(mainAxisSize: MainAxisSize.min, children: [
                       IconButton(
-                        icon: Icon(Icons.delete_outline_rounded, color: Colors.red.shade400),
+                        icon: Icon(Icons.delete_outline_rounded, color: r.koyuMu ? r.tehlike : Colors.red.shade400),
                         tooltip: 'Kalemi sil',
                         onPressed: () => setState(() {
                           _kirli = true;
@@ -292,9 +298,9 @@ class _KontrolKalemleriEkraniState extends State<KontrolKalemleriEkrani> {
                         excludeSemantics: true,
                         child: ReorderableDragStartListener(
                           index: i,
-                          child: const Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-                            child: Icon(Icons.drag_handle_rounded, color: AppTema.metinIkincil),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+                            child: Icon(Icons.drag_handle_rounded, color: r.metinIkincil),
                           ),
                         ),
                       ),
@@ -306,8 +312,8 @@ class _KontrolKalemleriEkraniState extends State<KontrolKalemleriEkrani> {
               ),
             ),
       floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: AppTema.vurgu,
-        foregroundColor: Colors.white,
+        backgroundColor: r.vurgu,
+        foregroundColor: r.vurguMetin,
         onPressed: () => _kalemDuzenle(),
         icon: const Icon(Icons.add_rounded),
         label: const Text('Kalem Ekle'),

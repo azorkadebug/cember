@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../tema.dart';
+import '../tema_renkleri.dart';
 
 /// İlk açılışta gösterilen tanıtım carousel'i (v1.1).
 /// Bir kez gösterilir; [goruldueMu] / [goruldueIsaretle] ile takip edilir.
@@ -82,8 +83,9 @@ class _TanitimEkraniState extends State<TanitimEkrani> {
 
   @override
   Widget build(BuildContext context) {
+    final r = context.renk;
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: r.kart,
       body: SafeArea(
         child: Column(
           children: [
@@ -98,8 +100,8 @@ class _TanitimEkraniState extends State<TanitimEkrani> {
                     minimumSize: const Size(64, 44),
                   ),
                   // grey.shade500 beyaz üzerinde 2,8:1 veriyordu.
-                  child: const Text('Atla',
-                      style: TextStyle(color: AppTema.metinIkincil, fontWeight: FontWeight.w600)),
+                  child: Text('Atla',
+                      style: TextStyle(color: r.metinIkincil, fontWeight: FontWeight.w600)),
                 ),
               ),
             ),
@@ -126,11 +128,11 @@ class _TanitimEkraniState extends State<TanitimEkrani> {
                         const SizedBox(height: 36),
                         Text(s.baslik,
                             textAlign: TextAlign.center,
-                            style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: AppTema.panelKoyu1)),
+                            style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: r.koyuMu ? r.metin : AppTema.panelKoyu1)),
                         const SizedBox(height: 16),
                         Text(s.aciklama,
                             textAlign: TextAlign.center,
-                            style: const TextStyle(fontSize: 16, height: 1.6, color: AppTema.metinIkincil)),
+                            style: TextStyle(fontSize: 16, height: 1.6, color: r.metinIkincil)),
                         const Spacer(flex: 3),
                       ],
                     ),
@@ -152,7 +154,7 @@ class _TanitimEkraniState extends State<TanitimEkrani> {
                   width: aktif ? 24 : 8,
                   height: 8,
                   decoration: BoxDecoration(
-                    color: aktif ? AppTema.vurgu : Colors.grey.shade300,
+                    color: aktif ? r.vurgu : r.cizgi,
                     borderRadius: BorderRadius.circular(4),
                   ),
                 );
@@ -166,8 +168,8 @@ class _TanitimEkraniState extends State<TanitimEkrani> {
                 width: double.infinity,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTema.vurgu,
-                    foregroundColor: Colors.white,
+                    backgroundColor: r.vurgu,
+                    foregroundColor: r.vurguMetin,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   ),
