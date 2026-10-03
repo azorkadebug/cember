@@ -7,6 +7,7 @@ import '../tema.dart';
 import '../utils/egitim_yili.dart';
 import '../utils/metin.dart';
 import '../widgets/simgeler.dart';
+import '../widgets/kalem_simgeleri.dart';
 
 /// Geçmiş bir yılın sınıfı, salt okunur.
 ///
@@ -186,7 +187,7 @@ class _ArsivSinifEkraniState extends State<ArsivSinifEkrani> {
                           title: Text(o.gorunenAd, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
                           trailing: o.saglikNotlari.isEmpty
                               ? null
-                              : const Icon(Icons.medical_services_rounded, size: 18, color: Colors.teal),
+                              : const OzelSimgeWidget(OzelSimge.saglik, size: 18, color: Colors.teal),
                         ),
                       ),
                     ),

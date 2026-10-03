@@ -7,6 +7,7 @@ import '../tema.dart';
 import '../utils/egitim_yili.dart';
 import '../utils/metin.dart';
 import '../widgets/simgeler.dart';
+import '../widgets/kalem_simgeleri.dart';
 
 /// Geçmiş yılların sınıflarından öğrenci seçip bu sınıfa aktarır.
 ///
@@ -239,7 +240,7 @@ class _GecenYildanEkleEkraniState extends State<GecenYildanEkleEkrani> {
                 color: sinifta ? AppTema.metinUcuncul : Colors.black87))),
         if (o.saglikNotlari.isNotEmpty) ...[
           const SizedBox(width: 6),
-          const Icon(Icons.medical_services_rounded, size: 14, color: Colors.teal),
+          const OzelSimgeWidget(OzelSimge.saglik, size: 16, color: Colors.teal),
         ],
       ]),
       subtitle: sinifta
