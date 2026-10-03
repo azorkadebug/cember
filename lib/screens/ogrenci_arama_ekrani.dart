@@ -6,6 +6,7 @@ import '../services/firestore_service.dart';
 import '../tema.dart';
 import 'ogrenci_listesi_ekrani.dart';
 import '../utils/metin.dart';
+import '../utils/egitim_yili.dart';
 import '../widgets/simgeler.dart';
 
 /// Sınıflarım'daki büyüteçten açılan, tüm sınıflarda öğrenci arayan sayfa.
@@ -63,7 +64,12 @@ class _OgrenciAramaEkraniState extends State<OgrenciAramaEkrani> {
     try {
       final siniflar = await _db.siniflarGetir();
       // Sınıflar paralel çekiliyor (denetim #3 D11).
-      final sonuclar = await Future.wait(siniflar.docs.map((d) async {
+      // Yalnız bu yılın sınıfları: geçen yıldan aktarılan öğrenci arşivde
+      // de durduğu için aramada iki kez çıkıyordu.
+      final simdiki = EgitimYili.simdiki;
+      final buYil = siniflar.docs.where((d) =>
+          EgitimYili.sinifin(d.data() as Map<String, dynamic>?).compareTo(simdiki) >= 0);
+      final sonuclar = await Future.wait(buYil.map((d) async {
         final data = d.data() as Map<String, dynamic>?;
         final ad = (data?['ad'] ?? d.id).toString();
         final ogrenciler = await _db.ogrencileriGetir(d.id);

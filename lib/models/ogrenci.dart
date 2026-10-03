@@ -64,6 +64,10 @@ class Ogrenci {
   List<String> eslesenIdler;
   List<Map<String, dynamic>> saglikNotlari;
   List<Map<String, dynamic>> rozetler;
+  /// Geçen yıldan aktarılan öğrencinin eski kaydı: `sinifId`, `sinifAd`,
+  /// `egitimYili`, `ogrenciId`. Öğrenci kartında "Geçen yıl: 6A" diye
+  /// görünür; eski kayıt arşivden silinse de bu bilgi kalır.
+  Map<String, String>? oncekiKayit;
 
   static const Map<String, String> rozetTanimlari = {
     'cevre_dostu': '🌿 Çevre Dostu',
@@ -92,6 +96,7 @@ class Ogrenci {
     List<Map<String, dynamic>>? saglikNotlari,
     List<Map<String, dynamic>>? rozetler,
     Map<String, int>? kalemSayaclari,
+    this.oncekiKayit,
   }) : eslesenIdler = eslesenIdler ?? [],
        saglikNotlari = saglikNotlari ?? [],
        rozetler = rozetler ?? [],
@@ -157,7 +162,31 @@ class Ogrenci {
       'eslesenIdler': eslesenIdler,
       'saglikNotlari': _sonN(saglikNotlari, saglikNotuMaxAdet),
       'rozetler': _sonN(rozetler, rozetMaxAdet),
+      // Koşullu: aktarılmamış öğrencide alan hiç yazılmaz, aktarılmışta
+      // bir kez yazılır ve sonra değişmez.
+      if (oncekiKayit != null) 'oncekiKayit': oncekiKayit,
     };
+  }
+
+  /// Yeni eğitim yılı için temiz kopya. Kimlik bilgileri ve sağlık notları
+  /// taşınır; yoklama, sayaçlar, not, rozetler ve eşleşmeler taşınmaz —
+  /// "yeni yıl temiz sayfa" (Sabri, 2026-10-02). Eşleşmeler zaten eski
+  /// sınıfın öğrenci id'lerini gösteriyor, yeni sınıfta anlamsız.
+  Ogrenci yeniYilKopyasi({required String sinifId, required String sinifAd, required String egitimYili}) {
+    return Ogrenci(
+      id: '',
+      ad: ad,
+      puan: puan,
+      isMale: isMale,
+      element: element,
+      saglikNotlari: saglikNotlari.map((n) => Map<String, dynamic>.from(n)).toList(),
+      oncekiKayit: {
+        'sinifId': sinifId,
+        'sinifAd': sinifAd,
+        'egitimYili': egitimYili,
+        'ogrenciId': id,
+      },
+    );
   }
 
   /// Listenin son [n] kaydı — sınırsız birikmeyi engeller.
@@ -187,7 +216,17 @@ class Ogrenci {
       saglikNotlari: _haritaListesi(map['saglikNotlari']),
       rozetler: _haritaListesi(map['rozetler']),
       kalemSayaclari: _kalemSayaclariCoz(map),
+      oncekiKayit: _oncekiKayitCoz(map['oncekiKayit']),
     );
+  }
+
+  static Map<String, String>? _oncekiKayitCoz(dynamic v) {
+    if (v is! Map) return null;
+    final m = <String, String>{
+      for (final e in v.entries)
+        if (e.value is String) e.key.toString(): e.value as String,
+    };
+    return m['sinifAd'] == null ? null : m;
   }
 
   static int _tamSayi(dynamic v, int varsayilan) {

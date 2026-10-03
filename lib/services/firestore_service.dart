@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../tema.dart';
 import '../models/ogrenci.dart';
 import '../models/kontrol_kalemi.dart';
+import '../utils/egitim_yili.dart';
 
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -40,6 +41,7 @@ class FirestoreService {
       'created': FieldValue.serverTimestamp(),
       'ownerId': uid,
       'ad': sinifAdi,
+      'egitimYili': EgitimYili.simdiki,
       'brans': brans,
       'kontrolKalemleri': kalemler.map((k) => k.toMap()).toList(),
       'formaRenkleri': formaRenkleri ?? AppTema.formaRenkAdlari,
@@ -77,6 +79,11 @@ class FirestoreService {
     await _altKoleksiyonuSil(sinifRef.collection('ogrenciler'));
     await _altKoleksiyonuSil(sinifRef.collection('yoklamalar'));
     await sinifRef.delete();
+  }
+
+  /// Sınıfı başka bir eğitim yılına taşır (arşive alma / arşivden geri alma).
+  Future<void> sinifEgitimYiliniGuncelle(String sinifId, String yil) async {
+    await _db.collection('siniflar').doc(sinifId).update({'egitimYili': yil});
   }
 
   Future<Map<String, dynamic>?> sinifBilgisiGetir(String sinifId) async {

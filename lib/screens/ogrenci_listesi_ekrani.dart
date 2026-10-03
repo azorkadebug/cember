@@ -16,6 +16,7 @@ import '../widgets/yardim_diyalogu.dart';
 import 'skor_ekrani.dart';
 import 'yoklama_ekrani.dart';
 import 'kontrol_kalemleri_ekrani.dart';
+import 'gecen_yildan_ekle_ekrani.dart';
 
 const List<String> _takimIsimHavuzu = [
   // Oyun & internet kültürü
@@ -295,6 +296,8 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                       if (yeni != null && mounted) setState(() => _kontrolKalemleri = yeni);
                     case 'hizliEkle':
                       _hizliSinifEkleDialog();
+                    case 'gecenYil':
+                      unawaited(_gecenYildanEkle());
                     case 'renkler':
                       _renkYonetimi();
                   }
@@ -314,6 +317,14 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                       contentPadding: EdgeInsets.zero,
                       leading: Icon(Icons.group_add_rounded),
                       title: Text('Hızlı Öğrenci Ekle'),
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'gecenYil',
+                    child: ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: Icon(Icons.history_rounded),
+                      title: Text('Geçen Yıldan Ekle'),
                     ),
                   ),
                   PopupMenuItem(
@@ -482,6 +493,21 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
     );
   }
 
+  /// Geçmiş yılların sınıflarından öğrenci seçip bu sınıfa aktarır.
+  Future<void> _gecenYildanEkle() async {
+    final eklenen = await Navigator.push<int>(context, MaterialPageRoute(
+      builder: (_) => GecenYildanEkleEkrani(
+        hedefSinifId: widget.sinifId,
+        hedefSinifAd: _sinifAd ?? 'Bu sınıf',
+      ),
+    ));
+    if (eklenen == null || eklenen == 0 || !mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text("$eklenen öğrenci geçen yıldan eklendi."),
+      backgroundColor: AppTema.basari,
+    ));
+  }
+
   Widget _miniStat(IconData icon, String value, String label, Color renk) {
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -575,6 +601,12 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                 const SizedBox(height: 8),
                 const Text("Sağ üstteki ⋮ menüsünden \"Hızlı Öğrenci Ekle\" ile başla",
                     textAlign: TextAlign.center, style: TextStyle(color: AppTema.metinUcuncul)),
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  onPressed: _gecenYildanEkle,
+                  icon: const Icon(Icons.history_rounded),
+                  label: const Text("Geçen Yıldan Ekle"),
+                ),
               ],
             ),
           );
@@ -1524,6 +1556,17 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
 
                           // 5. Kimlik — en nadir değişen alanlar en altta.
                           bolumBasligi('BİLGİLER', ikon: Icons.badge_rounded),
+                          if (o.oncekiKayit != null)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: Row(children: [
+                                const Icon(Icons.history_rounded, size: 16, color: AppTema.metinUcuncul),
+                                const SizedBox(width: 6),
+                                Text("Geçen yıl: ${o.oncekiKayit!['sinifAd']}"
+                                    "${o.oncekiKayit!['egitimYili'] != null ? ' (${o.oncekiKayit!['egitimYili']})' : ''}",
+                                    style: const TextStyle(fontSize: 13, color: AppTema.metinIkincil)),
+                              ]),
+                            ),
                           TextField(
                             controller: adC,
                             maxLength: GirdiSiniri.ogrenciAdi,

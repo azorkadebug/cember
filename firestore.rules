@@ -86,7 +86,8 @@ service cloud.firestore {
         && metinSiniri(request.resource.data, 'ad', 60)
         && metinSiniri(request.resource.data, 'brans', 40)
         && listeSiniri(request.resource.data, 'kontrolKalemleri', 30)
-        && listeSiniri(request.resource.data, 'formaRenkleri', 20);
+        && listeSiniri(request.resource.data, 'formaRenkleri', 20)
+        && metinSiniri(request.resource.data, 'egitimYili', 9);
 
       // ownerId DEĞİŞMEZ. Eski kural `write` idi ve update yolunda yalnızca
       // mevcut dokümanın ownerId'sine bakıyordu; yeni değer kontrol
@@ -98,7 +99,8 @@ service cloud.firestore {
         && metinSiniri(request.resource.data, 'ad', 60)
         && metinSiniri(request.resource.data, 'brans', 40)
         && listeSiniri(request.resource.data, 'kontrolKalemleri', 30)
-        && listeSiniri(request.resource.data, 'formaRenkleri', 20);
+        && listeSiniri(request.resource.data, 'formaRenkleri', 20)
+        && metinSiniri(request.resource.data, 'egitimYili', 9);
 
       allow delete: if girisYapti()
         && resource.data.ownerId == request.auth.uid;
@@ -118,6 +120,7 @@ service cloud.firestore {
                   && request.resource.data.puan >= 0
                   && request.resource.data.puan <= 9999))
           && haritaSiniri(request.resource.data, 'kalemSayaclari', 30)
+          && haritaSiniri(request.resource.data, 'oncekiKayit', 4)
           && listeSiniri(request.resource.data, 'saglikNotlari', 50)
           && listeSiniri(request.resource.data, 'rozetler', 50);
 
