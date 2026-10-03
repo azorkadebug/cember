@@ -10,6 +10,9 @@ import '../services/analytics_service.dart';
 import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
 import '../widgets/yardim_diyalogu.dart';
+import '../widgets/cikartma.dart';
+import '../services/demo_modu.dart';
+import 'admin_ekrani.dart';
 
 class ProfilEkrani extends StatefulWidget {
   /// true ise ilk kayıt akışı (geri tuşu yok, zorunlu doldurma)
@@ -335,6 +338,56 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
                         Text("Sistem: telefonunun açık/koyu ayarına uyar. Bu cihazda saklanır.",
                             style: TextStyle(color: r.metinUcuncul, fontSize: 12)),
                         if (!widget.ilkKayit) ...[
+                          // Sınıflarım'ın üst çubuğundaki demo, yardım, admin ve
+                          // çıkış buraya taşındı (Sabri, 2026-10-04): ana ekranda
+                          // yalnız arama ve profil kalsın.
+                          const SizedBox(height: 28),
+                          Text("Uygulama", style: TextStyle(color: r.metinGovde, fontWeight: FontWeight.w600, fontSize: 13)),
+                          const SizedBox(height: 8),
+                          Cikartma(
+                            kayma: 3,
+                            yaricap: 20,
+                            child: Column(children: [
+                              ValueListenableBuilder<bool>(
+                                valueListenable: DemoModu.durum,
+                                builder: (context, aktif, _) => SwitchListTile(
+                                  secondary: Icon(aktif ? Icons.visibility_off_rounded : Icons.visibility_rounded, color: r.ikonAna),
+                                  title: const Text('Demo modu', style: TextStyle(fontWeight: FontWeight.w800)),
+                                  subtitle: Text('Öğrenci adları sahte isimlerle görünür (sunum, ekran görüntüsü)',
+                                      style: TextStyle(color: r.metinIkincil, fontSize: 13)),
+                                  value: aktif,
+                                  onChanged: (v) => DemoModu.aktif = v,
+                                ),
+                              ),
+                              Divider(height: 1, color: r.cizgi),
+                              ListTile(
+                                leading: Icon(Icons.help_outline_rounded, color: r.ikonAna),
+                                title: const Text('Nasıl kullanılır?', style: TextStyle(fontWeight: FontWeight.w800)),
+                                trailing: Icon(Icons.chevron_right_rounded, color: r.ikonPasif),
+                                onTap: () => YardimDiyalogu.siniflarim(context),
+                              ),
+                              if (AuthService().isAdmin) ...[
+                                Divider(height: 1, color: r.cizgi),
+                                ListTile(
+                                  leading: Icon(Icons.admin_panel_settings_rounded, color: r.ikonAna),
+                                  title: const Text('Admin paneli', style: TextStyle(fontWeight: FontWeight.w800)),
+                                  trailing: Icon(Icons.chevron_right_rounded, color: r.ikonPasif),
+                                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminEkrani())),
+                                ),
+                              ],
+                              Divider(height: 1, color: r.cizgi),
+                              ListTile(
+                                leading: Icon(Icons.logout_rounded, color: r.ikonAna),
+                                title: const Text('Çıkış Yap', style: TextStyle(fontWeight: FontWeight.w800)),
+                                // Profil üstte açıkken çıkış yapılınca yığında kalıp
+                                // giriş ekranının üstünde duruyordu; önce köke dön.
+                                onTap: () {
+                                  Navigator.of(context).popUntil((rota) => rota.isFirst);
+                                  unawaited(AuthService().signOut());
+                                },
+                              ),
+                            ]),
+                          ),
                           const SizedBox(height: 20),
                           Center(
                             child: Text(

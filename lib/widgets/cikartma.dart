@@ -16,6 +16,7 @@ class Cikartma extends StatelessWidget {
     this.kenarRengi,
     this.dolgu = EdgeInsets.zero,
     this.onTap,
+    this.onLongPress,
     this.semantik,
   });
 
@@ -31,6 +32,7 @@ class Cikartma extends StatelessWidget {
   final Color? kenarRengi;
   final EdgeInsetsGeometry dolgu;
   final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
   final String? semantik;
 
   @override
@@ -41,8 +43,8 @@ class Cikartma extends StatelessWidget {
       side: BorderSide(color: kenarRengi ?? r.kenar, width: kenarKalinligi),
     );
     Widget ic = Padding(padding: dolgu, child: child);
-    if (onTap != null) {
-      ic = InkWell(customBorder: sekil, onTap: onTap, child: ic);
+    if (onTap != null || onLongPress != null) {
+      ic = InkWell(customBorder: sekil, onTap: onTap, onLongPress: onLongPress, child: ic);
     }
     return Container(
       // Gölge kutunun dışına taşar; komşusuna binmesin diye yer ayır.

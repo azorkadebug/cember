@@ -20,6 +20,7 @@ class YoklamaHalkasi extends StatelessWidget {
     this.secili = false,
     this.semantik,
     this.renkler,
+    this.yaziBoyutu = 16,
   });
 
   final String kisaltma;
@@ -31,6 +32,9 @@ class YoklamaHalkasi extends StatelessWidget {
   /// Renkli sınıf kartında halka beyaz yuvarlağın üstünde durur; koyu temada
   /// da açık renklerle çizilsin diye.
   final CemberRenkleri? renkler;
+
+  /// Ortadaki yazı; kısaltma yerine "%92" gibi yüzde de olabilir.
+  final double yaziBoyutu;
 
   static const double boyut = 52;
 
@@ -66,7 +70,7 @@ class YoklamaHalkasi extends StatelessWidget {
               textScaler: TextScaler.noScaling,
               style: TextStyle(
                 fontFamily: AppTema.baslikFontu,
-                fontSize: 16,
+                fontSize: yaziBoyutu,
                 fontWeight: FontWeight.w600,
                 letterSpacing: -0.3,
                 color: bos ? r.metinUcuncul : r.metin,
