@@ -49,6 +49,7 @@ flutter:
     - assets/images/logo.png
     - assets/images/logo_256.png
     - assets/images/google_g.svg
+    - assets/images/logo_simge.svg
     - assets/sounds/sure_bitti.wav
 
   # "Teneffüs" görünümü (2026-10): başlık Fredoka, gövde Nunito. Değişken
