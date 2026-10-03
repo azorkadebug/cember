@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import '../widgets/cikartma.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import '../services/analytics_service.dart';
@@ -212,17 +213,17 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
+                              // Teneffüs logosu (2026-10-04, Sabri'nin Gemini çizimi);
+                              // kenarı logonun kendi mürekkep çemberi.
                               Container(
                                 width: logoBoyut,
                                 height: logoBoyut,
-                                padding: EdgeInsets.all(kucuk ? 8 : 14),
                                 decoration: const ShapeDecoration(
                                   color: Colors.white,
-                                  shape: CircleBorder(side: BorderSide(color: AppTema.ana, width: 3)),
+                                  shape: CircleBorder(),
                                   shadows: [BoxShadow(color: AppTema.ana, offset: Offset(5, 5))],
                                 ),
-                                // 1024 px / 546 KB'lık dosya 100 px'te gösteriliyordu (denetim #3 O11).
-                                child: Image.asset('assets/images/logo_256.png', fit: BoxFit.contain),
+                                child: SvgPicture.asset('assets/images/logo_simge.svg', fit: BoxFit.contain),
                               ),
                               SizedBox(height: kucuk ? 8 : 16),
                               Text("Çember",
@@ -265,9 +266,9 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
                       // Tab: Giriş / Kayıt
                       Container(
                         padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: r.cizgiAcik,
-                          borderRadius: BorderRadius.circular(14),
+                        decoration: ShapeDecoration(
+                          color: r.kart,
+                          shape: StadiumBorder(side: BorderSide(color: r.kenar, width: 2.5)),
                         ),
                         child: Row(
                           children: [
@@ -328,7 +329,7 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
                           child: TextButton(
                             onPressed: _loading ? null : _sifremiUnuttum,
                             style: TextButton.styleFrom(
-                              foregroundColor: r.vurgu,
+                              foregroundColor: r.vurguKoyu,
                               padding: const EdgeInsets.symmetric(vertical: 4),
                               // 32px dokunma hedefi, şifre kurtarma gibi
                               // kritik bir işlev için fazla küçüktü.
@@ -336,7 +337,7 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
                               tapTargetSize: MaterialTapTargetSize.padded,
                             ),
                             child: const Text("Şifremi unuttum",
-                                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                                style: TextStyle(fontFamily: AppTema.govdeFontu, fontSize: 14, fontWeight: FontWeight.w800)),
                           ),
                         ),
                       if (_kayitModu)
@@ -363,19 +364,17 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
                       // Submit
                       SizedBox(
                         width: double.infinity,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            // Sabit height büyütülmüş yazıda kırpıyordu (denetim D8).
-                            minimumSize: const Size.fromHeight(52),
-                            backgroundColor: r.vurgu,
-                            foregroundColor: r.vurguMetin,
-                            elevation: 2,
+                        child: SertGolgeli(
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              // Sabit height büyütülmüş yazıda kırpıyordu (denetim D8).
+                              minimumSize: const Size.fromHeight(54),
+                            ),
+                            onPressed: _loading ? null : _emailGirisKayit,
+                            child: _loading
+                                ? SizedBox(height: 22, width: 22, child: CircularProgressIndicator(color: r.vurguMetin, strokeWidth: 2.5))
+                                : Text(_kayitModu ? "Hesap Oluştur" : "Hesabıma Gir", style: const TextStyle(fontSize: 20)),
                           ),
-                          onPressed: _loading ? null : _emailGirisKayit,
-                          child: _loading
-                              ? SizedBox(height: 22, width: 22, child: CircularProgressIndicator(color: r.vurguMetin, strokeWidth: 2.5))
-                              : Text(_kayitModu ? "Hesap Oluştur" : "Hesabıma Gir",
-                                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
                         ),
                       ),
                       const SizedBox(height: 24),
@@ -386,7 +385,7 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
                         Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             // Zemin grey.shade100; metinUcuncul burada 4,36:1 kalıyordu.
-                            child: Text("veya devam et", style: TextStyle(color: r.metinIkincil, fontSize: 12))),
+                            child: Text("veya", style: TextStyle(color: r.metinIkincil, fontSize: 14, fontWeight: FontWeight.w700))),
                         Expanded(child: Divider(color: r.cizgi)),
                       ]),
                       const SizedBox(height: 24),
@@ -449,24 +448,30 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
 
   Widget _tabBtn(String label, bool active, VoidCallback onTap) {
     final r = context.renk;
+    // Seçili sekme limon sarısı çıkartma; 44 px, ekran okuyucuda seçili.
     return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          decoration: BoxDecoration(
-            color: active ? r.vurgu : Colors.transparent,
-            borderRadius: BorderRadius.circular(10),
+      child: Semantics(
+        button: true,
+        selected: active,
+        child: GestureDetector(
+          onTap: onTap,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            constraints: const BoxConstraints(minHeight: 44),
+            alignment: Alignment.center,
+            decoration: ShapeDecoration(
+              color: active ? const Color(0xFFFFD84D) : Colors.transparent,
+              shape: StadiumBorder(side: BorderSide(color: active ? AppTema.ana : Colors.transparent, width: 2)),
+            ),
+            child: Text(label,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: AppTema.baslikFontu,
+                  color: active ? AppTema.ana : r.metinIkincil,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 17,
+                )),
           ),
-          child: Text(label,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                // grey.shade500, grey.shade200 zeminde 2,3:1'di (denetim Y7).
-                color: active ? r.vurguMetin : r.metinIkincil,
-                fontWeight: active ? FontWeight.w700 : FontWeight.w600,
-                fontSize: 14,
-              )),
         ),
       ),
     );
