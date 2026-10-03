@@ -50,12 +50,23 @@
     #cember-splash{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
       gap:14px;background:#FFF6EA;color:#1F2430;font-family:-apple-system,"Segoe UI",Roboto,sans-serif;z-index:9999;
       transition:opacity .3s}
-    #cember-splash img{width:104px;height:104px}
+    /* Logo top gibi zıplar, altındaki gölge yere değdikçe büyür. */
+    #cember-splash .top{display:flex;flex-direction:column;align-items:center}
+    #cember-splash img{width:104px;height:104px;transform-origin:50% 100%;animation:zipla 1.1s cubic-bezier(.45,0,.55,1) infinite}
+    #cember-splash i{display:block;width:76px;height:12px;margin-top:6px;border-radius:50%;background:#1F2430;opacity:.16;
+      animation:golge 1.1s cubic-bezier(.45,0,.55,1) infinite}
+    @keyframes zipla{
+      0%,100%{transform:translateY(0) scale(1.08,.92)}
+      12%{transform:translateY(-6px) scale(.96,1.04)}
+      50%{transform:translateY(-38px) rotate(10deg) scale(1)}
+      88%{transform:translateY(-6px) scale(.97,1.03)}}
+    @keyframes golge{0%,100%{transform:scale(1);opacity:.2}50%{transform:scale(.55);opacity:.08}}
+    @media (prefers-reduced-motion:reduce){#cember-splash img,#cember-splash i{animation:none}}
     #cember-splash b{font-size:28px;font-weight:800}
     #cember-splash span{font-size:14px;font-weight:600;color:#4A5060}
   </style>
   <div id="cember-splash" role="status" aria-live="polite">
-    <img src="favicon.svg?v=3" alt="">
+    <div class="top"><img src="favicon.svg?v=3" alt=""><i></i></div>
     <b>Çember</b>
     <span>Yükleniyor…</span>
   </div>
