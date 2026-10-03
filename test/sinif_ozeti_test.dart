@@ -49,6 +49,13 @@ void main() {
       expect(o.oran, 0.75);
       expect(o.tarih, DateTime(2026, 10, 2));
     });
+    test('herkes geldi: boş kayıtlı doküman tam halka', () {
+      // Yoklama ekranı değişiklik yoksa yalnız boş `kayitlar` yazar.
+      final o = yoklamaOzeti({'tarih': '2026-10-03', 'kayitlar': {}}, ['a', 'b', 'c'])!;
+      expect(o.gelen, 3);
+      expect(o.toplam, 3);
+      expect(o.oran, 1.0);
+    });
     test('öğrencisiz sınıfta oran 0', () {
       final o = yoklamaOzeti({'tarih': '2026-10-02', 'kayitlar': {}}, const [])!;
       expect(o.oran, 0);

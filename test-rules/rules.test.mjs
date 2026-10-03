@@ -196,6 +196,17 @@ describe('Sahip kendi verisini yönetebilir', () => {
     );
   });
 
+  it('herkes geldiğinde boş kayıtlı yoklama oluşturur', async () => {
+    // "Hepsini Geldi Yap" + Kaydet: değişen öğrenci yok, doküman yine de
+    // oluşmalı ki sınıf kartı "yoklama alınmadı" demesin.
+    await assertSucceeds(
+      setDoc(doc(ayse, 'siniflar/sinif_ayse/yoklamalar/2026-08-25'), {
+        tarih: '2026-08-25',
+        kayitlar: {},
+      }, { merge: true }),
+    );
+  });
+
   it('öğrencisini siler', async () => {
     await assertSucceeds(
       deleteDoc(doc(ayse, 'siniflar/sinif_ayse/ogrenciler/o1')),
