@@ -256,6 +256,12 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                       renk: Color(0xFF1976D2),
                     ),
                     YardimBolumu(
+                      ikon: Icons.sticky_note_2_rounded,
+                      baslik: 'Hızlı not',
+                      aciklama: 'Öğrencinin satırına basılı tut → not penceresi açılır. Notu olan öğrencinin yanında sarı not kâğıdı görünür; notun içeriği listede gösterilmez, yalnız sen görürsün.',
+                      renk: Color(0xFFFFA63D),
+                    ),
+                    YardimBolumu(
                       ikon: Icons.bolt_rounded,
                       baslik: 'Yetenek puanı',
                       aciklama: 'Her öğrenciye bir yetenek puanı verebilirsin (varsayılan 100). Takım kurucu puanları yılan sıralamasıyla dağıtıp takım toplamlarını dengeler. Öğrenci kartındaki "Bilgiler" bölümünden değiştir; 70-130 arası yeterli.',
@@ -749,7 +755,15 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
               kayma: 3,
               kenarKalinligi: 2,
               onTap: () => _ogrenciKartiAc(o, tumOgrenciler),
-                child: Row(
+              // Hızlı not (Sabri'nin isteği, 2026-08-28) satırdaki simge
+              // yerine basılı tutunca; içerik listede hiç görünmez.
+              onLongPress: () => _notHizliDuzenle(o),
+                // Alt satırı/çıkartması olmayan öğrencide satır kısalıyor,
+                // yuvarlak kartın kenarına değiyordu (Sabri): hepsi aynı
+                // asgari yükseklikte, içerik ortada.
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(minHeight: 62),
+                  child: Row(
                   children: [
                     // Cinsiyet şeridi yerine baş harfli renkli yuvarlak (renk
                     // öğrenciye sabit); cinsiyet adın yanındaki simgede.
@@ -817,6 +831,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                 )),
                   ],
                 ),
+                ),
             ),
           ),
         );
@@ -824,18 +839,12 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
     );
   }
 
-  /// "Su · 2 sarı kart · not var" gibi kısa bilgi.
+  /// "Su · eşli · not var" gibi kısa bilgi.
   String _bilgiSatiri(Ogrenci o) {
     if (!o.buradaMi) return 'bugün gelmedi';
+    // Kalem eksikleri yazıyla değil sağdaki çıkartmalarla (Sabri).
     final parcalar = <String>[
       ?ElementSistemi.etiket(o.element),
-      for (final k in _kontrolKalemleri)
-        if (o.kalemDeger(k.id) > 0)
-          k.id == 'sari_kart'
-              ? '${o.kalemDeger(k.id)} sarı kart'
-              : k.tip == KalemTipi.gunluk
-                  ? '${trKucult(k.ad)} eksik'
-                  : '${trKucult(k.ad)} ${o.kalemDeger(k.id)}',
       if (o.eslesenIdler.isNotEmpty) 'eşli',
       if (o.not.isNotEmpty) 'not var',
     ];
@@ -875,20 +884,10 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                   style: const TextStyle(fontFamily: AppTema.baslikFontu, fontSize: 15, fontWeight: FontWeight.w700, color: AppTema.ana)),
             ),
           )
-        else if (o.kalemDeger(k.id) > 0 && k.tip == KalemTipi.sayac)
-          Container(
-            padding: const EdgeInsets.fromLTRB(6, 3, 8, 3),
-            decoration: const ShapeDecoration(
-              color: Colors.white,
-              shape: StadiumBorder(side: BorderSide(color: AppTema.ana, width: 2)),
-            ),
-            child: Row(mainAxisSize: MainAxisSize.min, children: [
-              KalemSimgesi(k.ikon, size: 16, color: AppTema.ana),
-              const SizedBox(width: 3),
-              Text('${o.kalemDeger(k.id)}',
-                  style: const TextStyle(fontFamily: AppTema.baslikFontu, fontSize: 14, fontWeight: FontWeight.w700, color: AppTema.ana)),
-            ]),
-          ),
+        else if (o.kalemDeger(k.id) > 0)
+          // Kıyafet/ayakkabı eksik ve diğer sayaçlar: çerçevesiz renkli
+          // çıkartma, 2+ ise köşede sayı.
+          KalemCikartmasi(k.ikon, sayi: o.kalemDeger(k.id)),
       if (o.saglikDurumu != 0)
         Container(
           width: 30, height: 30,
@@ -899,6 +898,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
           ),
           child: const OzelSimgeWidget(OzelSimge.saglik, color: Color(0xFFE5483A), size: 17),
         ),
+      if (o.not.isNotEmpty) const NotCikartmasi(),
       if (o.rozetler.isNotEmpty)
         Container(
           width: 30, height: 30,
@@ -918,6 +918,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
       for (final k in _kontrolKalemleri)
         if (o.kalemDeger(k.id) > 0) '${k.ad} ${o.kalemDeger(k.id)}',
       if (o.saglikDurumu != 0) 'sağlık notu',
+      if (o.not.isNotEmpty) 'not var',
       if (o.rozetler.isNotEmpty) '${o.rozetler.length} rozet',
     ].join(', ');
     return Row(mainAxisSize: MainAxisSize.min, children: [
@@ -937,17 +938,6 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
             ),
           ),
         ),
-      // Hızlı not (Sabri'nin isteği, 2026-08-28): içerik listede görünmez.
-      IconButton(
-        tooltip: o.not.isNotEmpty ? 'Notu düzenle' : 'Not ekle',
-        onPressed: () => _notHizliDuzenle(o),
-        constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
-        icon: Icon(
-          o.not.isNotEmpty ? Icons.sticky_note_2_rounded : Icons.note_add_outlined,
-          size: 22,
-          color: o.not.isNotEmpty ? r.uyari : r.ikonPasif,
-        ),
-      ),
     ]);
   }
 
