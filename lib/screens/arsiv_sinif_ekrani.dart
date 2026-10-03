@@ -55,7 +55,6 @@ class _ArsivSinifEkraniState extends State<ArsivSinifEkrani> {
       builder: (ctx) {
         final r = ctx.renk;
         return AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(children: [
           Container(
             padding: const EdgeInsets.all(8),
@@ -75,7 +74,6 @@ class _ArsivSinifEkraniState extends State<ArsivSinifEkrani> {
             style: ElevatedButton.styleFrom(
               backgroundColor: r.silDolgu,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             onPressed: () => Navigator.pop(ctx, true),
             child: const Text("Evet, Sil"),

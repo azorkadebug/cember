@@ -215,7 +215,6 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppTema.panelKoyu2,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(children: [
           OzelSimgeWidget(OzelSimge.mola, color: Colors.red.shade400, size: 22),
           const SizedBox(width: 8),
@@ -283,7 +282,6 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppTema.panelKoyu2,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(children: [
           Container(
             padding: const EdgeInsets.all(8),
@@ -310,7 +308,6 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green, foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 padding: const EdgeInsets.symmetric(vertical: 14),
               ),
               onPressed: () => Navigator.pop(ctx),
@@ -783,7 +780,6 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text("İsim Düzenle"),
         content: TextField(
           controller: c,
@@ -804,7 +800,6 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTema.vurgu, foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             onPressed: () {
               final yeniAd = c.text.trim();

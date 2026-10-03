@@ -55,6 +55,8 @@ class CemberRenkleri extends ThemeExtension<CemberRenkleri> {
     required this.yokSerit,
     required this.silDolgu,
     required this.golge,
+    required this.kenar,
+    required this.sertGolge,
   });
 
   /// Liste ekranlarının zemini (eski `Colors.grey.shade100`).
@@ -126,24 +128,32 @@ class CemberRenkleri extends ThemeExtension<CemberRenkleri> {
   final Color silDolgu;
   final Color golge;
 
+  /// "Teneffüs" çıkartma kenarı: kart, düğme, çip, diyalog çerçevesi.
+  /// Koyuda zemine karşı en az 3:1.
+  final Color kenar;
+
+  /// Bulanıklıksız, kaydırılmış "çıkartma" gölgesi (`Offset(4, 4)`).
+  final Color sertGolge;
+
   bool get koyuMu => sayfa.computeLuminance() < 0.2;
 
   /// Bugünkü görünüm — değerler ekranlardaki eski elle yazılmış renklerin aynısı.
+  /// "Teneffüs" açık: krem sayfa, beyaz kart, mürekkep yazı ve kenar.
   static const acik = CemberRenkleri(
-    sayfa: Color(0xFFF5F5F5),
+    sayfa: Color(0xFFFFF6EA),
     kart: Colors.white,
     kartUstu: Colors.white,
-    yuzeyGri: Color(0xFFF5F5F5),
-    yuzeyAna: Color(0xFFECEFF1),
-    cizgi: Color(0xFFE0E0E0),
-    cizgiAcik: Color(0xFFEEEEEE),
-    metin: AppTema.anaKoyu,
-    metinGovde: AppTema.ana,
+    yuzeyGri: Color(0xFFF7EEDF),
+    yuzeyAna: AppTema.ana50,
+    cizgi: Color(0xFFE6DACA),
+    cizgiAcik: Color(0xFFF0E7D9),
+    metin: AppTema.ana,
+    metinGovde: AppTema.anaAcik,
     metinIkincil: AppTema.metinIkincil,
     metinUcuncul: AppTema.metinUcuncul,
     ikonAna: AppTema.ana,
-    ikonPasif: Color(0xFFBDBDBD),
-    bosDurumIkonu: Color(0xFFE0E0E0),
+    ikonPasif: Color(0xFF7E828E),
+    bosDurumIkonu: Color(0xFFE6DACA),
     bar: AppTema.ana,
     barKoyu: AppTema.anaKoyu,
     barAcik: AppTema.anaAcik,
@@ -158,37 +168,40 @@ class CemberRenkleri extends ThemeExtension<CemberRenkleri> {
     uyariZemin: AppTema.uyariZemin,
     tehlike: AppTema.tehlike,
     tehlikeZemin: AppTema.tehlikeZemin,
-    geldiZemin: Color(0xFFE8F5E9),
-    geldiCizgi: Color(0xFFA5D6A7),
-    geldiSerit: Color(0xFF4CAF50),
-    yokZemin: Color(0xFFFFEBEE),
-    yokCizgi: Color(0xFFEF9A9A),
-    yokMetin: Color(0xFFD32F2F),
-    yokSerit: Color(0xFFE57373),
-    silDolgu: Color(0xFFE53935),
-    golge: Color(0x14000000),
+    geldiZemin: Color(0xFFE3F6E7),
+    geldiCizgi: Color(0xFF63C77A),
+    geldiSerit: Color(0xFF2E9E4F),
+    yokZemin: Color(0xFFFFE9E5),
+    yokCizgi: Color(0xFFFF8A7A),
+    yokMetin: Color(0xFFC62828),
+    yokSerit: Color(0xFFE5483A),
+    silDolgu: Color(0xFFC62828),
+    golge: Color(0x1A1F2430),
+    kenar: AppTema.ana,
+    sertGolge: AppTema.ana,
   );
 
-  /// Koyu B — Charcoal. Metin renkleri kendi zeminlerinde en az 4,5:1.
+  /// "Teneffüs" koyu: mürekkep gecesi. Metin renkleri kendi zeminlerinde en
+  /// az 4,5:1; kenar karta karşı 3:1.
   static const koyu = CemberRenkleri(
-    sayfa: Color(0xFF111517),
-    kart: Color(0xFF1C2327),
-    kartUstu: Color(0xFF232C31),
-    yuzeyGri: Color(0xFF263238),
-    yuzeyAna: Color(0xFF2A3439),
-    cizgi: Color(0xFF3A474E),
-    cizgiAcik: Color(0xFF2A3439),
-    metin: Color(0xFFECEFF1),
-    metinGovde: Color(0xFFCFD8DC),
-    metinIkincil: Color(0xFFA7B4BB),
-    metinUcuncul: Color(0xFF8D9AA1),
-    ikonAna: Color(0xFFA7B4BB),
-    ikonPasif: Color(0xFF718088),
-    bosDurumIkonu: Color(0xFF3A474E),
-    bar: Color(0xFF1C2327),
-    barKoyu: Color(0xFF161C1F),
-    barAcik: Color(0xFF263238),
-    barMetin: Color(0xFFECEFF1),
+    sayfa: Color(0xFF171A21),
+    kart: Color(0xFF222632),
+    kartUstu: Color(0xFF2A2F3D),
+    yuzeyGri: Color(0xFF2E3443),
+    yuzeyAna: Color(0xFF323849),
+    cizgi: Color(0xFF444B5E),
+    cizgiAcik: Color(0xFF303646),
+    metin: Color(0xFFF4F1EA),
+    metinGovde: Color(0xFFDAD6CE),
+    metinIkincil: Color(0xFFB4B8C4),
+    metinUcuncul: Color(0xFF9DA2AF),
+    ikonAna: Color(0xFFB4B8C4),
+    ikonPasif: Color(0xFF7D8392),
+    bosDurumIkonu: Color(0xFF444B5E),
+    bar: Color(0xFF222632),
+    barKoyu: Color(0xFF1A1D26),
+    barAcik: Color(0xFF2E3443),
+    barMetin: Color(0xFFF4F1EA),
     vurgu: Color(0xFF4DB6AC),
     vurguMetin: Color(0xFF062925),
     vurguKoyu: Color(0xFF80CBC4),
@@ -208,6 +221,8 @@ class CemberRenkleri extends ThemeExtension<CemberRenkleri> {
     yokSerit: Color(0xFFE57373),
     silDolgu: Color(0xFFD32F2F),
     golge: Color(0x66000000),
+    kenar: Color(0xFF6B7389),
+    sertGolge: Color(0xFF0B0C10),
   );
 
   @override
@@ -255,6 +270,8 @@ class CemberRenkleri extends ThemeExtension<CemberRenkleri> {
       yokSerit: l(yokSerit, other.yokSerit),
       silDolgu: l(silDolgu, other.silDolgu),
       golge: l(golge, other.golge),
+      kenar: l(kenar, other.kenar),
+      sertGolge: l(sertGolge, other.sertGolge),
     );
   }
 }
@@ -265,100 +282,194 @@ extension CemberRenkErisimi on BuildContext {
       Theme.of(this).extension<CemberRenkleri>() ?? CemberRenkleri.acik;
 }
 
-/// Uygulamanın [ThemeData]'sı. Açık tema bugünküyle birebir aynı.
+/// Uygulamanın [ThemeData]'sı: "Teneffüs" görünümü (2026-10-04). Düğme,
+/// kart, çip, diyalog ve girdiler mürekkep kenarlı "çıkartma"; başlıklar
+/// Fredoka, gövde Nunito.
 ThemeData cemberTemasi(Brightness parlaklik) {
-  final r = parlaklik == Brightness.dark
-      ? CemberRenkleri.koyu
-      : CemberRenkleri.acik;
-  final temel = ColorScheme.fromSeed(
-    seedColor: AppTema.vurgu,
-    brightness: parlaklik,
+  final koyu = parlaklik == Brightness.dark;
+  final r = koyu ? CemberRenkleri.koyu : CemberRenkleri.acik;
+  final temel = ColorScheme.fromSeed(seedColor: AppTema.vurgu, brightness: parlaklik);
+  // Seed'den gelen yeşilimsi yüzeyler diyalog ve kartlara sızıyordu
+  // (denetim #3); yüzeyler iki temada da bizim tablomuzdan.
+  final renkSemasi = temel.copyWith(
+    primary: r.vurgu,
+    onPrimary: r.vurguMetin,
+    secondary: r.vurgu,
+    onSecondary: r.vurguMetin,
+    secondaryContainer: r.vurguZemin,
+    onSecondaryContainer: r.metin,
+    surface: r.kart,
+    onSurface: r.metin,
+    onSurfaceVariant: r.metinIkincil,
+    outline: r.kenar,
+    outlineVariant: r.cizgi,
+    surfaceContainerLowest: r.kart,
+    surfaceContainerLow: r.kart,
+    surfaceContainer: r.kart,
+    surfaceContainerHigh: r.kartUstu,
+    surfaceContainerHighest: r.yuzeyGri,
+    surfaceTint: Colors.transparent,
+    error: r.tehlike,
   );
-  final renkSemasi = parlaklik == Brightness.dark
-      ? temel.copyWith(
-          primary: r.vurgu,
-          onPrimary: r.vurguMetin,
-          surface: r.kart,
-          onSurface: r.metin,
-          onSurfaceVariant: r.metinIkincil,
-          outline: r.cizgi,
-          surfaceContainerHigh: r.kartUstu,
-          surfaceContainerHighest: r.yuzeyGri,
-          error: r.tehlike,
-        )
-      : temel.copyWith(primary: AppTema.vurgu);
+  final kenar = BorderSide(color: r.kenar, width: 2);
+  const hap = StadiumBorder();
+  final dugmeYazisi = const TextStyle(
+      fontFamily: AppTema.baslikFontu, fontSize: 17, fontWeight: FontWeight.w600);
+  final metinTemasi = AppTema.textTheme.apply(bodyColor: r.metin, displayColor: r.metin).copyWith(
+    bodySmall: AppTema.textTheme.bodySmall!.copyWith(color: r.metinIkincil),
+    labelSmall: AppTema.textTheme.labelSmall!.copyWith(color: r.metinUcuncul),
+  );
   return ThemeData(
     brightness: parlaklik,
     colorScheme: renkSemasi,
     useMaterial3: true,
-    scaffoldBackgroundColor: parlaklik == Brightness.dark ? r.sayfa : null,
-    textTheme: parlaklik == Brightness.dark
-        ? AppTema.textTheme
-              .apply(bodyColor: r.metin, displayColor: r.metin)
-              .copyWith(
-                bodySmall: AppTema.textTheme.bodySmall!.copyWith(
-                  color: r.metinIkincil,
-                ),
-                labelSmall: AppTema.textTheme.labelSmall!.copyWith(
-                  color: r.metinUcuncul,
-                ),
-              )
-        : AppTema.textTheme,
+    fontFamily: AppTema.govdeFontu,
+    scaffoldBackgroundColor: r.sayfa,
+    canvasColor: r.sayfa,
+    textTheme: metinTemasi,
     extensions: [r],
-    // Başlıklar tek ölçekten: AppBar 20/w800, diyalog 20/w800 (denetim
-    // O12 — diyalog başlıkları 4 farklı ağırlıkta, 18 farklı fontSize).
     appBarTheme: AppBarTheme(
+      backgroundColor: r.bar,
+      foregroundColor: r.barMetin,
+      surfaceTintColor: Colors.transparent,
       titleTextStyle: TextStyle(
-        fontSize: 20,
-        fontWeight: FontWeight.w800,
+        fontFamily: AppTema.baslikFontu,
+        fontSize: 22,
+        fontWeight: FontWeight.w600,
         color: r.barMetin,
       ),
     ),
     dialogTheme: DialogThemeData(
-      backgroundColor: parlaklik == Brightness.dark ? r.kartUstu : null,
+      backgroundColor: r.kartUstu,
+      surfaceTintColor: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: const BorderRadius.all(Radius.circular(24)),
+        side: kenar,
+      ),
       titleTextStyle: TextStyle(
-        fontSize: 20,
-        fontWeight: FontWeight.w800,
+        fontFamily: AppTema.baslikFontu,
+        fontSize: 22,
+        fontWeight: FontWeight.w600,
         color: r.metin,
       ),
       contentTextStyle: TextStyle(
+        fontFamily: AppTema.govdeFontu,
         fontSize: 15,
         color: r.metinGovde,
         height: 1.45,
       ),
     ),
-    bottomSheetTheme: parlaklik == Brightness.dark
-        ? BottomSheetThemeData(
-            backgroundColor: r.kartUstu,
-            modalBackgroundColor: r.kartUstu,
-          )
-        : null,
+    bottomSheetTheme: BottomSheetThemeData(
+      backgroundColor: r.kartUstu,
+      modalBackgroundColor: r.kartUstu,
+      surfaceTintColor: Colors.transparent,
+      dragHandleColor: r.cizgi,
+      shape: RoundedRectangleBorder(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        side: kenar,
+      ),
+    ),
     // Web/masaüstünde varsayılan "compact" yoğunluk düğmeleri 4-8 px
     // kısaltıyordu; diyalog düğmeleri 32 px'te kalıyordu (denetim O11).
     visualDensity: VisualDensity.standard,
     materialTapTargetSize: MaterialTapTargetSize.padded,
     textButtonTheme: TextButtonThemeData(
-      style: TextButton.styleFrom(minimumSize: const Size(64, 44)),
+      style: TextButton.styleFrom(
+        minimumSize: const Size(64, 44),
+        shape: hap,
+        foregroundColor: r.vurguKoyu,
+        textStyle: dugmeYazisi.copyWith(fontSize: 16),
+      ),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
-      style: ElevatedButton.styleFrom(minimumSize: const Size(64, 44)),
+      style: ElevatedButton.styleFrom(
+        minimumSize: const Size(64, 48),
+        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+        backgroundColor: r.vurgu,
+        foregroundColor: r.vurguMetin,
+        elevation: 0,
+        shadowColor: Colors.transparent,
+        shape: hap.copyWith(side: kenar),
+        textStyle: dugmeYazisi,
+      ),
+    ),
+    filledButtonTheme: FilledButtonThemeData(
+      style: FilledButton.styleFrom(
+        minimumSize: const Size(64, 48),
+        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+        backgroundColor: r.vurgu,
+        foregroundColor: r.vurguMetin,
+        shape: hap.copyWith(side: kenar),
+        textStyle: dugmeYazisi,
+      ),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
-      style: OutlinedButton.styleFrom(minimumSize: const Size(64, 44)),
-    ),
-    snackBarTheme: const SnackBarThemeData(
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.all(Radius.circular(10)),
+      style: OutlinedButton.styleFrom(
+        minimumSize: const Size(64, 48),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        foregroundColor: r.metin,
+        backgroundColor: r.kart,
+        side: kenar,
+        shape: hap,
+        textStyle: dugmeYazisi,
       ),
+    ),
+    floatingActionButtonTheme: FloatingActionButtonThemeData(
+      backgroundColor: r.vurgu,
+      foregroundColor: r.vurguMetin,
+      elevation: 0,
+      focusElevation: 0,
+      hoverElevation: 0,
+      highlightElevation: 0,
+      shape: hap.copyWith(side: kenar),
+      extendedTextStyle: dugmeYazisi.copyWith(fontSize: 18),
+    ),
+    chipTheme: ChipThemeData(
+      shape: hap.copyWith(side: kenar),
+      side: kenar,
+      backgroundColor: r.kart,
+      labelStyle: TextStyle(fontFamily: AppTema.govdeFontu, fontWeight: FontWeight.w700, color: r.metin),
+    ),
+    segmentedButtonTheme: SegmentedButtonThemeData(
+      style: SegmentedButton.styleFrom(
+        side: kenar,
+        selectedBackgroundColor: r.vurguZemin,
+        selectedForegroundColor: r.metin,
+        foregroundColor: r.metin,
+        textStyle: const TextStyle(fontFamily: AppTema.govdeFontu, fontWeight: FontWeight.w700),
+      ),
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: r.kart,
+      hintStyle: TextStyle(color: r.metinUcuncul),
+      border: OutlineInputBorder(borderRadius: const BorderRadius.all(Radius.circular(16)), borderSide: kenar),
+      enabledBorder: OutlineInputBorder(borderRadius: const BorderRadius.all(Radius.circular(16)), borderSide: kenar),
+      focusedBorder: OutlineInputBorder(
+          borderRadius: const BorderRadius.all(Radius.circular(16)),
+          borderSide: BorderSide(color: r.vurgu, width: 2.5)),
+    ),
+    // Yazı rengi açıkça beyaz: koyu temada M3 varsayılanı yeşil/kırmızı zemin
+    // üstünde koyu yazıydı, 2–3:1 (denetim #3).
+    snackBarTheme: SnackBarThemeData(
+      behavior: SnackBarBehavior.floating,
+      backgroundColor: koyu ? const Color(0xFF3A4152) : AppTema.ana,
+      contentTextStyle: const TextStyle(
+          fontFamily: AppTema.govdeFontu, fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white),
+      actionTextColor: const Color(0xFFFFD84D),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(18))),
     ),
     cardTheme: CardThemeData(
-      elevation: 2,
-      color: parlaklik == Brightness.dark ? r.kart : null,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.all(Radius.circular(12)),
+      elevation: 0,
+      color: r.kart,
+      surfaceTintColor: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: const BorderRadius.all(Radius.circular(20)),
+        side: kenar,
       ),
     ),
+    dividerTheme: DividerThemeData(color: r.cizgi, thickness: 1),
+    progressIndicatorTheme: ProgressIndicatorThemeData(color: r.vurgu),
   );
 }
 

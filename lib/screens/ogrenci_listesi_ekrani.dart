@@ -506,7 +506,6 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                           backgroundColor: r.vurgu,
                           foregroundColor: r.vurguMetin,
                           padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                           elevation: 2,
                         ),
                         onPressed: _takimlariKur,
@@ -985,7 +984,6 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(children: [
           const OzelSimgeWidget(OzelSimge.saglik, color: Colors.teal, size: 22),
           const SizedBox(width: 8),
@@ -1016,7 +1014,6 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.teal,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
             onPressed: () {
               final now = DateTime.now();
@@ -1036,7 +1033,6 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(builder: (ctx, setD) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(children: [
           const Icon(Icons.history_rounded, color: Colors.teal, size: 22),
           const SizedBox(width: 8),
@@ -1088,7 +1084,6 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(children: [
           const Icon(Icons.emoji_events_rounded, color: Colors.amber, size: 22),
           const SizedBox(width: 8),
@@ -1173,7 +1168,6 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text("Rozet Sil"),
         content: Text("$tanim rozetini silmek istediğine emin misin?"),
         actions: [
@@ -1208,7 +1202,6 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(children: [
           const Icon(Icons.sticky_note_2_rounded, color: Colors.amber, size: 22),
           const SizedBox(width: 8),
@@ -1239,7 +1232,6 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: ctx.renk.vurgu, foregroundColor: ctx.renk.vurguMetin,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             ),
             onPressed: () {
@@ -1662,7 +1654,6 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                         ElevatedButton(
                           style: ElevatedButton.styleFrom(
                             backgroundColor: r.vurgu, foregroundColor: r.vurguMetin,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
                           ),
                           onPressed: () => kaydet(sheetCtx),
@@ -1707,7 +1698,6 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
               ? adaylar
               : adaylar.where((p) => trKucult(p.gorunenAd).contains(arama)).toList();
           return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: const Text("Kiminle Eşleştir?"),
           content: SizedBox(
             width: 320,
@@ -1795,7 +1785,6 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
     showDialog(
       context: dialogContext,
       builder: (c2) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text("Öğrenciyi Sil"),
         content: Text("${o.gorunenAd} isimli öğrenciyi kalıcı olarak silmek istediğine emin misin?"),
         actions: [
@@ -2057,7 +2046,6 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                     ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: r.vurgu, foregroundColor: r.vurguMetin,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14), elevation: 2,
                       ),
                       icon: durum.kaydediyor
@@ -2184,7 +2172,6 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
         builder: (c) {
           final r = c.renk;
           return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Row(children: [
             Icon(Icons.warning_amber_rounded, color: r.ikonAna),
             const SizedBox(width: 8),
@@ -2236,7 +2223,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
       final ozet = atlanan > 0 ? "$eklenen eklendi, $atlanan atlandı" : "$eklenen öğrenci eklendi!";
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(kuyrukta ? "$ozet Bağlantı yavaş, internet gelince gönderilecek." : ozet),
-        backgroundColor: kuyrukta ? AppTema.uyari : Colors.green.shade700,
+        backgroundColor: kuyrukta ? AppTema.uyari : AppTema.basari,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ));
@@ -2249,7 +2236,6 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: const Text("Forma Renkleri"),
           content: SizedBox(
             width: double.maxFinite,
@@ -2309,7 +2295,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text("$secilenTakimSayisi takım için en az $secilenTakimSayisi gelen öğrenci gerekir (şu an ${gelenler.length})."),
-          backgroundColor: Colors.red.shade700, behavior: SnackBarBehavior.floating,
+          backgroundColor: AppTema.tehlike, behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ));
       }
@@ -2589,7 +2575,6 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTema.panelKoyu1,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   elevation: 4,
                 ),
                 icon: const Icon(Icons.sports_rounded, size: 26),
@@ -2601,7 +2586,6 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                     final onay = await showDialog<bool>(
                       context: sheetCtx,
                       builder: (c) => AlertDialog(
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                         title: const Text('Süren etkinlik silinsin mi?'),
                         content: const Text('Devam eden etkinliğin skoru ve süresi silinip yeni oyun başlatılacak.'),
                         actions: [

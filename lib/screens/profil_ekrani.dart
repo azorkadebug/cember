@@ -125,7 +125,7 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
       } else {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: const Text("Profil kaydedildi."),
-          backgroundColor: Colors.green.shade700,
+          backgroundColor: AppTema.basari,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ));
@@ -148,7 +148,6 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
     final cikilsin = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text('Kaydedilmemiş değişiklikler'),
         content: const Text('Profilinde yaptığın değişiklikler kaydedilmedi. Çıkarsan kaybolacak.'),
         actions: [
@@ -303,7 +302,6 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
                               minimumSize: const Size.fromHeight(52),
                               backgroundColor: r.vurgu,
                               foregroundColor: r.vurguMetin,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                               elevation: 2,
                             ),
                             onPressed: _kaydediliyor ? null : _kaydet,
@@ -390,7 +388,6 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
                                 minimumSize: const Size.fromHeight(48),
                                 foregroundColor: r.yokMetin,
                                 side: BorderSide(color: r.yokSerit),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                               ),
                               icon: const Icon(Icons.delete_forever_rounded, size: 20),
                               label: const Text("Hesabımı Sil", style: TextStyle(fontWeight: FontWeight.w700)),
@@ -427,7 +424,6 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(children: [
           Icon(Icons.warning_amber_rounded, color: ctx.renk.yokMetin, size: 28),
           const SizedBox(width: 10),
@@ -485,7 +481,6 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
           final yazilan = trBuyut(ctrl.text.trim());
           final canConfirm = yazilan == 'SİL' || yazilan == 'SIL';
           return AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
             title: const Text("Son onay"),
             content: Column(
               mainAxisSize: MainAxisSize.min,
@@ -523,7 +518,6 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
                       ? (ctx.renk.koyuMu ? ctx.renk.silDolgu : Colors.red.shade700)
                       : ctx.renk.cizgi,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 onPressed: canConfirm ? () => Navigator.pop(ctx, true) : null,
                 child: const Text("Hesabımı Sil"),
@@ -577,7 +571,6 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text("Şifreni doğrula"),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -612,7 +605,7 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: ctx.renk.koyuMu ? ctx.renk.silDolgu : Colors.red.shade700,
+              backgroundColor: ctx.renk.silDolgu,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12)),
@@ -699,7 +692,6 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text("Yeniden giriş yap"),
         content: const Text(
           "Güvenlik nedeniyle hesabını silmek için yakın zamanda giriş yapmış olman gerekiyor. Çıkış yapıp tekrar giriş yaptıktan sonra silme işlemini yeniden dene.",
@@ -729,7 +721,7 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
   void _hataGoster(String mesaj) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(mesaj),
-      backgroundColor: Colors.red.shade700,
+      backgroundColor: AppTema.tehlike,
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
     ));

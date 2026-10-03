@@ -155,7 +155,7 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
   void _hataGoster(String mesaj) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(mesaj),
-      backgroundColor: Colors.red.shade700,
+      backgroundColor: AppTema.tehlike,
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       margin: const EdgeInsets.all(16),
@@ -374,7 +374,6 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
                             minimumSize: const Size.fromHeight(52),
                             backgroundColor: r.vurgu,
                             foregroundColor: r.vurguMetin,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                             elevation: 2,
                           ),
                           onPressed: _loading ? null : _emailGirisKayit,

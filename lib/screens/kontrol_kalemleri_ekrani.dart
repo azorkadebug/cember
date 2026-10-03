@@ -52,7 +52,7 @@ class _KontrolKalemleriEkraniState extends State<KontrolKalemleriEkrani> {
         setState(() => _kaydediyor = false);
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: const Text('Kaydedilemedi, tekrar dene.'),
-          backgroundColor: Colors.red.shade700,
+          backgroundColor: AppTema.tehlike,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ));
@@ -71,7 +71,6 @@ class _KontrolKalemleriEkraniState extends State<KontrolKalemleriEkrani> {
         builder: (context, setLocal) {
           final r = context.renk;
           return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Text(mevcut == null ? 'Kalem Ekle' : 'Kalemi Düzenle',
               style: const TextStyle(fontWeight: FontWeight.w700)),
           content: SingleChildScrollView(
@@ -133,7 +132,6 @@ class _KontrolKalemleriEkraniState extends State<KontrolKalemleriEkrani> {
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: r.vurgu, foregroundColor: r.vurguMetin,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
               onPressed: () {
                 final ad = adCtrl.text.trim();
@@ -183,7 +181,6 @@ class _KontrolKalemleriEkraniState extends State<KontrolKalemleriEkrani> {
     final cikilsin = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text('Kaydedilmemiş değişiklikler'),
         content: const Text('Kalemlerde yaptığın değişiklikler kaydedilmedi. Çıkarsan kaybolacak.'),
         actions: [

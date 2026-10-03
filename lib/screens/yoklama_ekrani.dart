@@ -153,7 +153,7 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
         setState(() { _kaydediyor = false; _kayitVar = true; _ilkKayitlar = _kopyala(_kayitlar); });
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('$_tarihEtiketi yoklaması kaydedildi'),
-          backgroundColor: Colors.green.shade700,
+          backgroundColor: AppTema.basari,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ));
@@ -172,7 +172,7 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
         setState(() => _kaydediyor = false);
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: const Text('Kaydedilemedi, tekrar dene.'),
-          backgroundColor: Colors.red.shade700,
+          backgroundColor: AppTema.tehlike,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ));
@@ -194,7 +194,6 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
       final onay = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: const Text('Yoklama sıfırlansın mı?'),
           content: const Text(
               'Bu dersteki tüm "Yok" işaretleri ve eksik kalemler silinip herkes "Geldi" olarak işaretlenecek.'),
@@ -256,7 +255,6 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
         final secim = await showDialog<String>(
           context: context,
           builder: (c) => AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             title: const Text('Kaydedilmemiş değişiklikler'),
             content: const Text('Yoklamada kaydetmediğin işaretler var.'),
             actions: [
@@ -394,7 +392,6 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
                           backgroundColor: r.vurgu,
                           foregroundColor: r.vurguMetin,
                           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                           elevation: 2,
                         ),
                         onPressed: _kaydediyor ? null : _kaydet,

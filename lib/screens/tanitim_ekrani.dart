@@ -171,7 +171,6 @@ class _TanitimEkraniState extends State<TanitimEkrani> {
                     backgroundColor: r.vurgu,
                     foregroundColor: r.vurguMetin,
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   ),
                   onPressed: () {
                     if (_sonSayfa) {

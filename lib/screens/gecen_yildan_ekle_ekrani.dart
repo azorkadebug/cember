@@ -274,7 +274,6 @@ class _GecenYildanEkleEkraniState extends State<GecenYildanEkleEkrani> {
             style: ElevatedButton.styleFrom(
               backgroundColor: r.vurgu,
               foregroundColor: r.vurguMetin,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
               elevation: 2,
             ),
