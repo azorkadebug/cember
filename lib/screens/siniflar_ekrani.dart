@@ -15,16 +15,13 @@ import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
 import '../services/mac_durumu.dart';
 import '../models/kontrol_kalemi.dart';
-import '../widgets/yardim_diyalogu.dart';
 import '../widgets/yoklama_halkasi.dart';
 import '../utils/sinif_ozeti.dart';
 import 'ogrenci_listesi_ekrani.dart';
 import 'ogrenci_arama_ekrani.dart';
 import 'arsiv_sinif_ekrani.dart';
-import 'admin_ekrani.dart';
 import 'profil_ekrani.dart';
 import 'skor_ekrani.dart';
-import '../services/demo_modu.dart';
 
 class SiniflarEkrani extends StatefulWidget {
   const SiniflarEkrani({super.key});
@@ -100,123 +97,54 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
   @override
   Widget build(BuildContext context) {
     final r = context.renk;
-    return Scaffold(
-      backgroundColor: r.sayfa,
+    // Maketteki süs daireleri (sağ üstte limon + domates, sol altta lila);
+    // dokunmayı engellemez, koyu temada soluk.
+    final susOpaklik = r.koyuMu ? 0.35 : 1.0;
+    return ColoredBox(
+      color: r.sayfa,
+      child: Stack(children: [
+        Positioned(
+          right: -110, top: -120,
+          child: IgnorePointer(child: Opacity(opacity: susOpaklik, child: _susDaire(260, const Color(0xFFFFD84D)))),
+        ),
+        Positioned(
+          right: -24, top: 118,
+          child: IgnorePointer(child: Opacity(opacity: susOpaklik, child: _susDaire(64, const Color(0xFFFF6B57)))),
+        ),
+        Positioned(
+          left: -120, bottom: -70,
+          child: IgnorePointer(child: Opacity(opacity: susOpaklik * 0.45, child: _susDaire(240, const Color(0xFFB794F6)))),
+        ),
+        Scaffold(
+      backgroundColor: Colors.transparent,
       // "Teneffüs": koyu çubuk yerine krem zemin; büyük başlık aşağıda
       // (_solPanel). Küre logonun kendisi küçükte karalamaya dönüyordu
       // (Sabri, 2026-10-04); yerine küçük boy için çizilmiş kalın çizgili
       // simge (assets/images/logo_simge.svg) + yazı.
+      // Maketteki gibi: solda logo, sağda yalnız arama ve profil (Sabri,
+      // 2026-10-04). Demo, yardım, admin ve çıkış Profil ekranında; dar
+      // telefonda simgeler logonun üstüne biniyordu.
       appBar: AppBar(
+        toolbarHeight: 68,
         title: Semantics(
           label: 'Çember',
           excludeSemantics: true,
-          // Dar telefonda 5-6 simge yazıya yer bırakmıyor, arama simgesi
-          // "Çember"in üstüne biniyordu (Sabri'nin telefonu): yazı yalnız
-          // yer varsa görünür, yoksa yalnız logo kalır.
-          child: LayoutBuilder(builder: (context, c) {
-            final yaziSigar = c.maxWidth >= 140;
-            return Row(mainAxisSize: MainAxisSize.min, children: [
-              SvgPicture.asset('assets/images/logo_simge.svg', width: 38, height: 38),
-              if (yaziSigar) ...[
-                const SizedBox(width: 6),
-                Flexible(
-                  child: Text('Çember',
-                      maxLines: 1,
-                      overflow: TextOverflow.clip,
-                      softWrap: false,
-                      style: TextStyle(fontFamily: AppTema.baslikFontu, fontSize: 24, fontWeight: FontWeight.w700, color: r.metin)),
-                ),
-              ],
-            ]);
-          }),
+          child: SvgPicture.asset('assets/images/logo_simge.svg', width: 46, height: 46),
         ),
         centerTitle: false,
-        backgroundColor: r.sayfa,
+        backgroundColor: Colors.transparent,
         foregroundColor: r.metin,
         surfaceTintColor: Colors.transparent,
         scrolledUnderElevation: 0,
         elevation: 0,
         actions: [
-          // Demo modu yalnız admin'e çiziliyordu; tanıtım, yardım, mağaza
-          // metni ve gizlilik politikası herkese vaat ediyordu (denetim #4 K4).
-          ...[
-            IconButton(
-              icon: Icon(DemoModu.aktif ? Icons.visibility_off_rounded : Icons.visibility_rounded),
-              tooltip: DemoModu.aktif ? 'Demo Kapat' : 'Demo Aç',
-              onPressed: () {
-                setState(() {
-                  DemoModu.aktif = !DemoModu.aktif;
-                  if (!DemoModu.aktif) DemoModu.sifirla();
-                });
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content: Text(DemoModu.aktif ? "Demo modu açık — isimler gizli" : "Demo modu kapalı"),
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  backgroundColor: DemoModu.aktif ? AppTema.uyari : AppTema.basari,
-                ));
-              },
-            ),
-            if (AuthService().isAdmin) IconButton(
-              icon: const Icon(Icons.admin_panel_settings_rounded),
-              tooltip: 'Admin',
-              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminEkrani())),
-            ),
-          ],
-          IconButton(
-            icon: const Icon(Icons.person_search_rounded),
-            tooltip: 'Öğrenci ara',
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const OgrenciAramaEkrani())),
-          ),
-          IconButton(
-            icon: const Icon(Icons.help_outline_rounded),
-            tooltip: 'Yardım',
-            onPressed: () => YardimDiyalogu.goster(
-              context,
-              baslik: 'Sınıflarım — Yardım',
-              bolumler: const [
-                YardimBolumu(
-                  ikon: Icons.add_circle_outline_rounded,
-                  baslik: 'Yeni sınıf oluştur',
-                  aciklama: 'Sağ alttaki "Sınıf Ekle" düğmesi → sınıf adı yaz (örn. 7-A) ve branşını seç. Kontrol kalemleri (forma, kitap, boya…) branşa göre hazır gelir; takım renkleri de otomatik atanır.',
-                  renk: Color(0xFF43A047),
-                ),
-                YardimBolumu(
-                  ikon: Icons.touch_app_rounded,
-                  baslik: 'Sınıfa giriş',
-                  aciklama: 'Sınıf kartına dokun → o sınıfın öğrenci listesi açılır. Yoklama alabilir, öğrenci ekleyebilir, takım kurup oyun başlatabilirsin. Sınıflarım ekranındaki göz simgesi demo modunu açar: öğrenci adları sahte isimlerle gösterilir (sunum ve ekran görüntüsü için).',
-                  renk: Color(0xFF1976D2),
-                ),
-                YardimBolumu(
-                  ikon: Icons.sports_kabaddi_rounded,
-                  baslik: 'Sınıflar Arası Yarışma',
-                  aciklama: 'Sağ alttaki kupa düğmesi: iki sınıfı karşı karşıya getir (örn. 7-A ile 7-B) — maç, bilgi yarışması, münazara… Her sınıf bir takım olur, skor tablosu açılır.',
-                  renk: Color(0xFFC77B46),
-                ),
-                YardimBolumu(
-                  ikon: Icons.edit_rounded,
-                  baslik: 'Sınıf adı değiştir / sil',
-                  aciklama: 'Sınıf kartını sola kaydır → "İsmi Düzenle" ya da "Sınıfı Sil". Silme geri alınamaz; Firestore yedeği yoksa geri getirilemez.',
-                  renk: Color(0xFFE53935),
-                ),
-                YardimBolumu(
-                  ikon: Icons.palette_rounded,
-                  baslik: 'Takım renkleri',
-                  aciklama: 'Takım kurarken formalar sırayla renk alır: kırmızı, mavi, sarı, yeşil, siyah, turuncu, mor, lacivert. Sınıfın forma listesini öğrenci ekranındaki ⋮ menüsünden "Takım Renkleri" ile değiştirebilirsin.',
-                  renk: Color(0xFF8E24AA),
-                ),
-              ],
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.person_rounded),
-            tooltip: 'Profilim',
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfilEkrani())),
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout_rounded),
-            tooltip: 'Çıkış Yap',
-            onPressed: () => AuthService().signOut(),
-          ),
+          _yuvarlakEylem(Icons.search_rounded, 'Öğrenci ara',
+              () => Navigator.push(context, MaterialPageRoute(builder: (_) => const OgrenciAramaEkrani()))),
+          const SizedBox(width: 8),
+          _yuvarlakEylem(Icons.person_outline_rounded, 'Profilim',
+              () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfilEkrani()))
+                  .then((_) { if (mounted) setState(() {}); })),
+          const SizedBox(width: 12),
         ],
       ),
       body: LayoutBuilder(builder: (context, c) {
@@ -230,7 +158,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
             width: 380,
             child: Stack(children: [
               sol,
-              Positioned(right: 16, bottom: 16, child: _fabSutunu(context)),
+              Positioned(left: 16, right: 16, bottom: 16, child: _fabSutunu(context)),
             ]),
           ),
           const VerticalDivider(width: 1, thickness: 1),
@@ -247,10 +175,48 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
           ),
         ]);
       }),
-      floatingActionButton: MediaQuery.sizeOf(context).width >= _ikiSutunEsigi ? null : _fabSutunu(context),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      floatingActionButton: MediaQuery.sizeOf(context).width >= _ikiSutunEsigi
+          ? null
+          : Padding(padding: const EdgeInsets.symmetric(horizontal: 16), child: _fabSutunu(context)),
+    ),
+      ]),
     );
   }
 
+
+  /// Yeni eklenen sınıfın kaydı sunucuya ulaşmadan kart dinlemeye başlayınca
+  /// kural izni reddediyor, akış hata verip kapanıyordu: sayı sayfa
+  /// yenilenene kadar "…" kalıyordu. Hatada akışı bırakıp biraz sonra yeniden
+  /// abone ol.
+  final Set<String> _yenilenecek = {};
+  void _akisiYenile(Map<String, Stream<QuerySnapshot>> akislar, String docId) {
+    final anahtar = '${identityHashCode(akislar)}/$docId';
+    if (!_yenilenecek.add(anahtar)) return;
+    Future.delayed(const Duration(seconds: 2), () {
+      _yenilenecek.remove(anahtar);
+      akislar.remove(docId);
+      if (mounted) setState(() {});
+    });
+  }
+
+  Widget _susDaire(double cap, Color renk) =>
+      Container(width: cap, height: cap, decoration: BoxDecoration(color: renk, shape: BoxShape.circle));
+
+  Widget _yuvarlakEylem(IconData ikon, String ipucu, VoidCallback onTap) {
+    final r = context.renk;
+    return IconButton(
+      tooltip: ipucu,
+      onPressed: onTap,
+      icon: Icon(ikon, size: 26),
+      style: IconButton.styleFrom(
+        minimumSize: const Size(50, 50),
+        backgroundColor: r.kart,
+        foregroundColor: r.metin,
+        side: BorderSide(color: r.kenar, width: 2.5),
+      ),
+    );
+  }
 
   Widget _solPanel(BuildContext context, bool ikiSutun) {
     final r = context.renk;
@@ -377,13 +343,15 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
                       final aktif = docs.where(_buYilin).toList();
                       final gecmis = docs.where((d) => !_buYilin(d)).toList();
                       return ListView(
-                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 180),
+                        // Alttaki kupa + Sınıf Ekle satırı (~84 px) kartları örtmesin.
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
                         children: [
                           if (aktif.isEmpty) _yeniYilKarti(),
-                          for (var i = 0; i < aktif.length; i++)
-                            _sinifKarti(context, aktif[i], ikiSutun,
-                                AppTema.sinifRenkleri[i % AppTema.sinifRenkleri.length]),
-                          if (gecmis.isNotEmpty) _gecmisYillar(context, gecmis),
+                          if (aktif.isNotEmpty) _sinifIzgarasi(context, aktif, ikiSutun),
+                          if (gecmis.isNotEmpty) ...[
+                            const SizedBox(height: 16),
+                            _gecmisYillar(context, gecmis),
+                          ],
                         ],
                       );
                     }),
@@ -400,10 +368,11 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
   // İki genişletilmiş FAB alt alta durunca etiket uzunlukları farklı
   // olduğu için sol kenarları kademeli görünüyordu ve ikisi de aynı
   // görsel ağırlıktaydı. İkincil eylem artık küçük ikon-FAB.
+  /// Maketteki gibi kupa sol altta, Sınıf Ekle sağ altta.
   Widget _fabSutunu(BuildContext context) {
-    return Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.end,
+    return Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           SertGolgeli(
             daire: true,
@@ -420,7 +389,6 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
               child: const Icon(Icons.emoji_events_rounded, size: 28),
             ),
           ),
-          const SizedBox(height: 12),
           SertGolgeli(
             child: FloatingActionButton.extended(
               heroTag: 'ekle',
@@ -474,111 +442,141 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
     ]);
   }
 
-  Widget _sinifKarti(BuildContext context, QueryDocumentSnapshot doc, bool ikiSutun, Color renk) {
+  /// Bu yılın sınıfları: maketteki gibi 2 sütunlu kare kartlar (Sabri,
+  /// 2026-10-04). Liste kartlarında sola kaydırma vardı; karede işlemler
+  /// ⋯ düğmesinde ve basılı tutunca.
+  Widget _sinifIzgarasi(BuildContext context, List<QueryDocumentSnapshot> aktif, bool ikiSutun) {
+    return LayoutBuilder(builder: (context, c) {
+      const aralik = 12.0;
+      final w = (c.maxWidth - aralik) / 2;
+      return Wrap(
+        spacing: aralik,
+        runSpacing: aralik,
+        children: [
+          for (var i = 0; i < aktif.length; i++)
+            SizedBox(
+              width: w,
+              child: _sinifKarti(context, aktif[i], ikiSutun,
+                  AppTema.sinifRenkleri[i % AppTema.sinifRenkleri.length], i),
+            ),
+        ],
+      );
+    });
+  }
+
+  Widget _sinifKarti(BuildContext context, QueryDocumentSnapshot doc, bool ikiSutun, Color renk, int sira) {
     final data = doc.data() as Map<String, dynamic>?;
-    final ad = data?['ad'] ?? doc.id;
+    final String ad = (data?['ad'] ?? doc.id).toString();
     final docId = doc.id;
     final secili = ikiSutun && _seciliSinifId == docId;
-    final r = context.renk;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Dismissible(
-          key: Key(docId),
-          direction: DismissDirection.endToStart,
-          confirmDismiss: (direction) async {
-            final result = await showModalBottomSheet<String>(
-              context: context,
-              shape: const RoundedRectangleBorder(
-                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-              ),
-              builder: (ctx) => SafeArea(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const SizedBox(height: 8),
-                    Container(width: 40, height: 4, decoration: BoxDecoration(color: ctx.renk.cizgi, borderRadius: BorderRadius.circular(2))),
-                    ListTile(
-                      leading: Icon(Icons.edit_rounded, color: ctx.renk.ikonAna),
-                      title: const Text("İsmi Düzenle"),
-                      onTap: () => Navigator.pop(ctx, 'duzenle'),
-                    ),
-                    ListTile(
-                      leading: Icon(Icons.inventory_2_rounded, color: ctx.renk.ikonAna),
-                      title: Text("Geçmiş Yıla Taşı (${EgitimYili.onceki(EgitimYili.simdiki)})"),
-                      subtitle: const Text("Ana listeden kalkar, öğrencileri silinmez"),
-                      onTap: () => Navigator.pop(ctx, 'arsiv'),
-                    ),
-                    ListTile(
-                      leading: Icon(Icons.delete_rounded, color: ctx.renk.tehlike),
-                      title: Text("Sınıfı Sil", style: TextStyle(fontWeight: FontWeight.w600, color: ctx.renk.tehlike)),
-                      onTap: () => Navigator.pop(ctx, 'sil'),
-                    ),
-                    const SizedBox(height: 8),
-                  ],
-                ),
-              ),
+    // Çıkartmalar hafif eğik; sırayla değişen küçük açılar.
+    const acilar = [-0.022, 0.016, 0.016, -0.016];
+    return Transform.rotate(
+      angle: acilar[sira % acilar.length],
+      child: Cikartma(
+        renk: renk,
+        kenarRengi: AppTema.ana,
+        kenarKalinligi: secili ? 4 : 2.5,
+        kayma: secili ? 6 : 4,
+        yaricap: 24,
+        onTap: () {
+          if (ikiSutun) {
+            setState(() { _seciliSinifId = docId; _seciliSinifAd = ad; _seciliSinifRenk = renk; });
+          } else {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => OgrenciListesiEkrani(sinifId: docId, sinifAd: ad, renk: renk)),
             );
-            if (result == 'duzenle') {
-              if (context.mounted) _sinifAdiniDuzenle(context, docId, ad);
-            } else if (result == 'arsiv') {
-              if (context.mounted) unawaited(_arsiveTasi(context, docId, ad));
-            } else if (result == 'sil') {
-              if (context.mounted) _sinifSilOnay(context, docId, ad);
-            }
-            return false;
-          },
-          background: Container(
-            alignment: Alignment.centerRight,
-            padding: const EdgeInsets.only(right: 24),
-            margin: const EdgeInsets.only(right: 4, bottom: 4),
-            decoration: BoxDecoration(
-              color: r.cizgi,
-              borderRadius: BorderRadius.circular(22),
-            ),
-            child: Icon(Icons.more_horiz_rounded, color: r.metinGovde, size: 28),
+          }
+        },
+        onLongPress: () => _sinifIslemleri(context, docId, ad),
+        child: SizedBox(
+          height: 172,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(14, 12, 4, 6),
+            child: _sinifOzeti(docId, ad, secili),
           ),
-          // Sınıfın rengi; seçili kart (iki sütun) kalın kenarla belli olur.
-          child: Cikartma(
-            renk: renk,
-            kenarRengi: AppTema.ana,
-            kenarKalinligi: secili ? 4 : 2.5,
-            kayma: secili ? 6 : 4,
-            dolgu: const EdgeInsets.fromLTRB(14, 14, 10, 14),
-            onTap: () {
-              if (ikiSutun) {
-                setState(() { _seciliSinifId = docId; _seciliSinifAd = ad; _seciliSinifRenk = renk; });
-              } else {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => OgrenciListesiEkrani(sinifId: docId, sinifAd: ad, renk: renk)),
-                );
-              }
-            },
-            child: Row(
-              children: [
-                Expanded(child: _sinifOzeti(docId, ad, secili)),
-                const Icon(Icons.chevron_right_rounded, color: AppTema.ana, size: 28),
-              ],
-            ),
-          ),
+        ),
       ),
     );
   }
 
-  /// Kartın solu ve ortası: yoklama halkası, sınıf adı, son yoklama özeti.
+  Future<void> _sinifIslemleri(BuildContext context, String docId, String ad) async {
+    final result = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+              child: Text(ad,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontFamily: AppTema.baslikFontu, fontSize: 22, fontWeight: FontWeight.w600, color: ctx.renk.metin)),
+            ),
+            ListTile(
+              leading: Icon(Icons.edit_rounded, color: ctx.renk.ikonAna),
+              title: const Text("İsmi Düzenle"),
+              onTap: () => Navigator.pop(ctx, 'duzenle'),
+            ),
+            ListTile(
+              leading: Icon(Icons.inventory_2_rounded, color: ctx.renk.ikonAna),
+              title: Text("Geçmiş Yıla Taşı (${EgitimYili.onceki(EgitimYili.simdiki)})"),
+              subtitle: const Text("Ana listeden kalkar, öğrencileri silinmez"),
+              onTap: () => Navigator.pop(ctx, 'arsiv'),
+            ),
+            ListTile(
+              leading: Icon(Icons.delete_rounded, color: ctx.renk.tehlike),
+              title: Text("Sınıfı Sil", style: TextStyle(fontWeight: FontWeight.w600, color: ctx.renk.tehlike)),
+              onTap: () => Navigator.pop(ctx, 'sil'),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+    if (!context.mounted) return;
+    if (result == 'duzenle') {
+      _sinifAdiniDuzenle(context, docId, ad);
+    } else if (result == 'arsiv') {
+      unawaited(_arsiveTasi(context, docId, ad));
+    } else if (result == 'sil') {
+      _sinifSilOnay(context, docId, ad);
+    }
+  }
+
+  /// Kare kartın içi: büyük sınıf kodu, yoklama yüzdesi, ad ve durum.
   /// Öğrenci listesi (mevcut) ile son yoklama dokümanı birlikte okunur.
   Widget _sinifOzeti(String docId, String ad, bool secili) {
-    final kisaltma = sinifKisaltmasi(ad);
+    // Büyük kod: ad "7-A Yıldızlar" gibi şube koduyla başlıyorsa o kod
+    // ("7-A"), geri kalanı başlık; değilse kısaltma ("4. SINIF FUTBOL" → 4SF).
+    // "5A" gibi adlarda başlık tekrar yazılmaz.
+    final temizAd = ad.trim();
+    final kodEslesme = RegExp(r'^(\d{1,2})\s*([-/.]?)\s*([A-ZÇĞİÖŞÜ])(?=\s|$)').firstMatch(trBuyut(temizAd));
+    final String kod;
+    final String? baslik;
+    if (kodEslesme != null) {
+      kod = '${kodEslesme[1]}${kodEslesme[2]}${kodEslesme[3]}';
+      final kalan = temizAd.substring(kodEslesme.end).trim();
+      baslik = kalan.isEmpty ? null : kalan;
+    } else {
+      kod = sinifKisaltmasi(temizAd);
+      baslik = trBuyut(temizAd).replaceAll(RegExp(r'[\s\-/._]+'), '') == kod ? null : temizAd;
+    }
     return StreamBuilder<QuerySnapshot>(
       stream: _ogrenciSayisiAkisi(docId),
       initialData: _sonSayaclar[docId],
       builder: (context, ogrSnap) {
         if (ogrSnap.hasData) _sonSayaclar[docId] = ogrSnap.data!;
+        if (ogrSnap.hasError) _akisiYenile(_ogrenciSayaclari, docId);
         return StreamBuilder<QuerySnapshot>(
           stream: _sonYoklamaAkisi(docId),
           initialData: _sonYoklamalar[docId],
           builder: (context, yokSnap) {
             if (yokSnap.hasData) _sonYoklamalar[docId] = yokSnap.data!;
+            if (yokSnap.hasError) _akisiYenile(_sonYoklamaAkislari, docId);
             final ogrenciIdleri =
                 ogrSnap.hasData ? ogrSnap.data!.docs.map((d) => d.id).toList() : const <String>[];
             final count = ogrenciIdleri.length;
@@ -586,7 +584,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
             final yoklamaDoc = (yokSnap.hasData && yokSnap.data!.docs.isNotEmpty)
                 ? yokSnap.data!.docs.first
                 : null;
-            final ozet = yoklamaDoc == null
+            final ozet = yoklamaDoc == null || count == 0
                 ? null
                 : yoklamaOzeti({
                     'tarih': yoklamaDoc.id,
@@ -594,70 +592,84 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
                   }, ogrenciIdleri);
             final gunEtiketi =
                 ozet == null ? null : yoklamaGunEtiketi(ozet.tarih, DateTime.now());
-
-            final Widget alt;
-            final String semantik;
-            if (bos) {
-              // Boş sınıf listede diğerleriyle aynı görünüyordu;
-              // öğretmeni bir sonraki adıma yönlendir.
-              alt = Row(mainAxisSize: MainAxisSize.min, children: [
-                const Icon(Icons.person_add_alt_rounded, size: 15, color: AppTema.ana),
-                const SizedBox(width: 5),
-                Text("Öğrenci ekle",
-                    style: const TextStyle(color: AppTema.ana, fontSize: 14, fontWeight: FontWeight.w800)),
-              ]);
-              semantik = "$ad, öğrenci yok";
-            } else if (ozet == null || count == 0) {
-              // Akış gelmeden "0 öğrenci" yazıyordu (denetim #3 doğrulaması).
-              final metin = !ogrSnap.hasData
-                  ? "…"
-                  : yokSnap.hasData
-                      ? "$count öğrenci · yoklama alınmadı"
-                      : "$count öğrenci";
-              alt = Text(metin, style: const TextStyle(color: AppTema.ana, fontSize: 14, fontWeight: FontWeight.w700));
-              semantik = "$ad, $metin";
-            } else {
-              final metin = "${ozet.gelen} / ${ozet.toplam} geldi · $gunEtiketi";
-              alt = Text(metin, style: const TextStyle(color: AppTema.ana, fontSize: 14, fontWeight: FontWeight.w700));
-              semantik = "$ad, $gunEtiketi ${ozet.gelen} / ${ozet.toplam} geldi";
-            }
-
-            return Row(
-              children: [
-                // Renkli kartta halka beyaz yuvarlağın içinde.
-                Container(
-                  width: 62, height: 62,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: AppTema.ana, width: 2.5),
-                  ),
-                  child: YoklamaHalkasi(
-                    kisaltma: kisaltma,
-                    oran: ozet?.oran,
-                    bos: bos,
-                    secili: secili,
-                    semantik: semantik,
-                    renkler: CemberRenkleri.acik,
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(ad,
+            // Akış gelmeden "0 öğrenci" yazıyordu (denetim #3 doğrulaması).
+            final String alt = !ogrSnap.hasData
+                ? "…"
+                : bos
+                    ? "öğrenci ekle"
+                    : ozet == null
+                        ? "$count öğrenci · yoklama bekliyor"
+                        : "$gunEtiketi ${ozet.gelen}/${ozet.toplam} geldi";
+            final semantik = "$ad, $alt";
+            const yazi = AppTema.ana;
+            // Kart tek etiketle okunur; ⋯ düğmesi ayrıca ulaşılabilir kalır.
+            return Semantics(
+              container: true,
+              label: semantik,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ExcludeSemantics(child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Expanded(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(kod,
+                            style: const TextStyle(
+                                fontFamily: AppTema.baslikFontu, fontSize: 44, fontWeight: FontWeight.w700, color: yazi, height: 1.05)),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Padding(
+                      padding: const EdgeInsets.only(right: 6),
+                      // Ortada yüzde, çevresinde son yoklamanın halkası;
+                      // bugün yoklama yoksa "?" ve boş halka.
+                      child: Container(
+                        width: 60,
+                        height: 60,
+                        alignment: Alignment.center,
+                        decoration: const ShapeDecoration(
+                          color: Colors.white,
+                          shape: CircleBorder(side: BorderSide(color: AppTema.ana, width: 2.5)),
+                        ),
+                        child: bos
+                            ? const Icon(Icons.person_add_alt_rounded, size: 24, color: yazi)
+                            : YoklamaHalkasi(
+                                kisaltma: ozet == null ? "?" : "%${(ozet.oran * 100).round()}",
+                                oran: ozet?.oran,
+                                secili: secili,
+                                renkler: CemberRenkleri.acik,
+                                yaziBoyutu: ozet == null ? 18 : 13,
+                              ),
+                      ),
+                    ),
+                  ])),
+                  const Spacer(),
+                  if (baslik != null)
+                    ExcludeSemantics(child: Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: Text(baslik,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
-                              fontFamily: AppTema.baslikFontu, fontSize: 22, fontWeight: FontWeight.w600, color: AppTema.ana, height: 1.15)),
-                      const SizedBox(height: 4),
-                      alt,
-                    ],
-                  ),
-                ),
-              ],
+                              fontFamily: AppTema.baslikFontu, fontSize: 18, fontWeight: FontWeight.w600, color: yazi, height: 1.1)),
+                    )),
+                  Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+                    Expanded(
+                      child: ExcludeSemantics(child: Text(alt,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(color: yazi, fontSize: 13, fontWeight: FontWeight.w800, height: 1.2))),
+                    ),
+                    IconButton(
+                      tooltip: 'Sınıf işlemleri',
+                      onPressed: () => _sinifIslemleri(context, docId, ad),
+                      icon: const Icon(Icons.more_horiz_rounded, color: yazi, size: 24),
+                      constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                    ),
+                  ]),
+                ],
+              ),
             );
           },
         );
@@ -700,14 +712,32 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
                 },
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(minHeight: 44),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      mac.duraklatildi ? "Etkinlik duraklatıldı" : "Etkinlik sürüyor",
-                      style: const TextStyle(
-                          color: AppTema.ana, fontFamily: AppTema.baslikFontu, fontWeight: FontWeight.w600, fontSize: 18),
-                    ),
-                  ),
+                  child: Builder(builder: (_) {
+                    // Maketteki gibi skor da görünsün: 2 takımda "A 5 – 3 B".
+                    final t = mac.takimlar ?? const [];
+                    String ad(int i) => t[i].isim.isNotEmpty ? t[i].isim : t[i].renkAdi;
+                    final skor = t.length == 2
+                        ? "${ad(0)} ${t[0].skor} – ${t[1].skor} ${ad(1)}"
+                        : t.isEmpty ? null : "${t.length} takım";
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          mac.duraklatildi ? "Etkinlik duraklatıldı" : "Etkinlik sürüyor",
+                          style: const TextStyle(color: AppTema.ana, fontWeight: FontWeight.w800, fontSize: 14),
+                        ),
+                        if (skor != null)
+                          Text(
+                            skor,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                                color: AppTema.ana, fontFamily: AppTema.baslikFontu, fontWeight: FontWeight.w600, fontSize: 18, height: 1.15),
+                          ),
+                      ],
+                    );
+                  }),
                 ),
               ),
             ),

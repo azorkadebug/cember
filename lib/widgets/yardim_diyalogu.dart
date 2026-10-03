@@ -34,6 +34,50 @@ class YardimDiyalogu extends StatelessWidget {
     required this.bolumler,
   });
 
+  /// Sınıflarım yardımı; ana ekrandaki yardım simgesi Profil'e taşındı.
+  static Future<void> siniflarim(BuildContext context) => goster(
+        context,
+        baslik: 'Sınıflarım — Yardım',
+        bolumler: const [
+          YardimBolumu(
+            ikon: Icons.add_circle_outline_rounded,
+            baslik: 'Yeni sınıf oluştur',
+            aciklama: 'Sağ alttaki "Sınıf Ekle" düğmesi → sınıf adı yaz (örn. 7-A) ve branşını seç. Kontrol kalemleri (forma, kitap, boya…) branşa göre hazır gelir; takım renkleri de otomatik atanır.',
+            renk: Color(0xFF63C77A),
+          ),
+          YardimBolumu(
+            ikon: Icons.touch_app_rounded,
+            baslik: 'Sınıfa giriş',
+            aciklama: 'Sınıf kartına dokun → o sınıfın öğrenci listesi açılır. Yoklama alabilir, öğrenci ekleyebilir, takım kurup oyun başlatabilirsin. Karttaki yüzde, son yoklamada gelenlerin oranı; "?" bugün yoklama alınmadığını gösterir.',
+            renk: Color(0xFF4FA3F7),
+          ),
+          YardimBolumu(
+            ikon: Icons.sports_kabaddi_rounded,
+            baslik: 'Sınıflar Arası Yarışma',
+            aciklama: 'Sol alttaki kupa düğmesi: iki sınıfı karşı karşıya getir (örn. 7-A ile 7-B) — maç, bilgi yarışması, münazara… Her sınıf bir takım olur, skor tablosu açılır.',
+            renk: Color(0xFFFFA63D),
+          ),
+          YardimBolumu(
+            ikon: Icons.edit_rounded,
+            baslik: 'Sınıf adı değiştir / taşı / sil',
+            aciklama: 'Kartın sağ altındaki ⋯ düğmesine dokun ya da karta basılı tut → "İsmi Düzenle", "Geçmiş Yıla Taşı" ya da "Sınıfı Sil". Silme geri alınamaz.',
+            renk: Color(0xFFFF6B57),
+          ),
+          YardimBolumu(
+            ikon: Icons.visibility_off_rounded,
+            baslik: 'Demo modu',
+            aciklama: 'Profil → "Demo modu": öğrenci adları sahte isimlerle gösterilir (sunum ve ekran görüntüsü için). Açıkken her ekranın üstünde turuncu şerit görünür.',
+            renk: Color(0xFFB794F6),
+          ),
+          YardimBolumu(
+            ikon: Icons.palette_rounded,
+            baslik: 'Takım renkleri',
+            aciklama: 'Takım kurarken formalar sırayla renk alır: kırmızı, mavi, sarı, yeşil, siyah, turuncu, mor, lacivert. Sınıfın forma listesini öğrenci ekranındaki ⋮ menüsünden "Takım Renkleri" ile değiştirebilirsin.',
+            renk: Color(0xFF8E24AA),
+          ),
+        ],
+      );
+
   static Future<void> goster(
     BuildContext context, {
     required String baslik,
