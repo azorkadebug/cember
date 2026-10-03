@@ -368,27 +368,12 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
   // İki genişletilmiş FAB alt alta durunca etiket uzunlukları farklı
   // olduğu için sol kenarları kademeli görünüyordu ve ikisi de aynı
   // görsel ağırlıktaydı. İkincil eylem artık küçük ikon-FAB.
-  /// Maketteki gibi kupa sol altta, Sınıf Ekle sağ altta.
+  /// Sağ altta yalnız Sınıf Ekle; yarışma ızgaranın sonunda bir kart.
   Widget _fabSutunu(BuildContext context) {
     return Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisAlignment: MainAxisAlignment.end,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          SertGolgeli(
-            daire: true,
-            kayma: 3,
-            child: FloatingActionButton(
-              heroTag: 'mac',
-              onPressed: () => _siniflarArasiMacDialog(context),
-              // Limon sarısıydı; sarı sınıf kartının üstüne gelince
-              // kayboluyordu (Sabri'nin ekranı, 5C). Beyaz her kartta seçilir.
-              backgroundColor: Colors.white,
-              foregroundColor: AppTema.ana,
-              shape: const CircleBorder(side: BorderSide(color: AppTema.ana, width: 2.5)),
-              tooltip: 'Sınıflar Arası Yarışma',
-              child: const Icon(Icons.emoji_events_rounded, size: 28),
-            ),
-          ),
           SertGolgeli(
             child: FloatingActionButton.extended(
               heroTag: 'ekle',
@@ -459,6 +444,9 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
               child: _sinifKarti(context, aktif[i], ikiSutun,
                   AppTema.sinifRenkleri[i % AppTema.sinifRenkleri.length], i),
             ),
+          // Yarışma, kartların üstünde yüzen kupa yerine ızgaranın sonunda
+          // kesik kenarlı boş bir kart (Sabri, 2026-10-04).
+          SizedBox(width: w, child: _yarismaKarti(context)),
         ],
       );
     });
@@ -495,6 +483,49 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
           child: Padding(
             padding: const EdgeInsets.fromLTRB(14, 12, 4, 6),
             child: _sinifOzeti(docId, ad, secili),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _yarismaKarti(BuildContext context) {
+    final r = context.renk;
+    return Semantics(
+      button: true,
+      label: 'Sınıflar Arası Yarışma',
+      excludeSemantics: true,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(24),
+          onTap: () => _siniflarArasiMacDialog(context),
+          child: CustomPaint(
+            painter: _KesikKenar(renk: r.kenar, yaricap: 24),
+            child: SizedBox(
+              height: 172,
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  Container(
+                    width: 56, height: 56,
+                    alignment: Alignment.center,
+                    decoration: ShapeDecoration(
+                      color: Colors.white,
+                      shape: const CircleBorder(side: BorderSide(color: AppTema.ana, width: 2.5)),
+                      shadows: [BoxShadow(color: r.sertGolge, offset: const Offset(3, 3))],
+                    ),
+                    child: const Icon(Icons.emoji_events_rounded, size: 30, color: AppTema.ana),
+                  ),
+                  const SizedBox(height: 12),
+                  Text('Sınıflar Arası\nYarışma',
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontFamily: AppTema.baslikFontu, fontSize: 17, fontWeight: FontWeight.w600, color: r.metin, height: 1.15)),
+                ]),
+              ),
+            ),
           ),
         ),
       ),
@@ -1463,4 +1494,31 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
       ),
     );
   }
+}
+
+/// Yarışma kartının kesik çizgili yuvarlak köşeli kenarı.
+class _KesikKenar extends CustomPainter {
+  _KesikKenar({required this.renk, required this.yaricap});
+  final Color renk;
+  final double yaricap;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final boya = Paint()
+      ..color = renk
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.5
+      ..strokeCap = StrokeCap.round;
+    final yol = Path()
+      ..addRRect(RRect.fromRectAndRadius(
+          (Offset.zero & size).deflate(1.25), Radius.circular(yaricap)));
+    for (final m in yol.computeMetrics()) {
+      for (double d = 0; d < m.length; d += 14) {
+        canvas.drawPath(m.extractPath(d, d + 8), boya);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(_KesikKenar eski) => eski.renk != renk || eski.yaricap != yaricap;
 }

@@ -54,7 +54,7 @@ class YardimDiyalogu extends StatelessWidget {
           YardimBolumu(
             ikon: Icons.sports_kabaddi_rounded,
             baslik: 'Sınıflar Arası Yarışma',
-            aciklama: 'Sol alttaki kupa düğmesi: iki sınıfı karşı karşıya getir (örn. 7-A ile 7-B) — maç, bilgi yarışması, münazara… Her sınıf bir takım olur, skor tablosu açılır.',
+            aciklama: 'Sınıf kartlarının sonundaki "Sınıflar Arası Yarışma" kartı: iki sınıfı karşı karşıya getir (örn. 7-A ile 7-B) — maç, bilgi yarışması, münazara… Her sınıf bir takım olur, skor tablosu açılır.',
             renk: Color(0xFFFFA63D),
           ),
           YardimBolumu(
