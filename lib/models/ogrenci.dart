@@ -279,3 +279,55 @@ class TopluOgrenciSatiri {
     puanCtrl.dispose();
   }
 }
+
+/// "Hızlı Öğrenci Ekle"de kaydedilmeden kapanan satırlar.
+///
+/// YALNIZ BELLEKTE tutulur, bilerek diske (SharedPreferences/localStorage)
+/// yazılmaz: öğrenci adları cihazda kalmasın (bkz. mac_durumu.dart güvenlik
+/// notu). Anahtar kullanıcı + sınıf; çıkışta `temizle()` çağrılır, web'de
+/// çıkış zaten sayfayı yeniliyor.
+///
+/// Neden var: iPad Safari'de pencere takılıp kapanınca ya da kayıt hata
+/// verince öğretmen 10 ismi baştan yazmak zorunda kalıyordu (2 Eki 2026).
+class TopluEklemeTaslagi {
+  TopluEklemeTaslagi._();
+  static final Map<String, List<Map<String, Object>>> _taslaklar = {};
+
+  static String _anahtar(String uid, String sinifId) => '$uid/$sinifId';
+
+  static void sakla(String uid, String sinifId, List<TopluOgrenciSatiri> satirlar) {
+    final dolu = satirlar
+        .where((s) => s.adCtrl.text.trim().isNotEmpty)
+        .map((s) => <String, Object>{
+              'ad': s.adCtrl.text,
+              'puan': s.puanCtrl.text,
+              'isMale': s.isMale,
+              'cinsiyetSecildi': s.cinsiyetSecildi,
+            })
+        .toList();
+    if (dolu.isEmpty) {
+      _taslaklar.remove(_anahtar(uid, sinifId));
+    } else {
+      _taslaklar[_anahtar(uid, sinifId)] = dolu;
+    }
+  }
+
+  /// Taslak varsa satırlara çevirip döndürür (taslak silinmez; kayıt
+  /// başarılı olunca `sil` çağrılır).
+  static List<TopluOgrenciSatiri>? geriYukle(String uid, String sinifId) {
+    final t = _taslaklar[_anahtar(uid, sinifId)];
+    if (t == null) return null;
+    return t.map((m) {
+      final s = TopluOgrenciSatiri();
+      s.adCtrl.text = m['ad'] as String;
+      s.puanCtrl.text = m['puan'] as String;
+      s.isMale = m['isMale'] as bool;
+      s.cinsiyetSecildi = m['cinsiyetSecildi'] as bool;
+      return s;
+    }).toList();
+  }
+
+  static void sil(String uid, String sinifId) => _taslaklar.remove(_anahtar(uid, sinifId));
+
+  static void temizle() => _taslaklar.clear();
+}

@@ -15,6 +15,7 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'demo_modu.dart';
 import 'mac_durumu.dart';
 import 'sifreleme_service.dart';
+import '../models/ogrenci.dart';
 
 class AuthService {
   /// Admin yetkisi. Kalıcı çözüm Firebase custom claim (`token.admin`);
@@ -224,6 +225,7 @@ class AuthService {
     DemoModu.aktif = false;
     DemoModu.sifirla();
     SifrelemeService.temizle();
+    TopluEklemeTaslagi.temizle();
 
     // Çıkıştan sonraki olaylar önceki kullanıcıya yazılmasın (denetim #4 O11);
     // "son bakılan öğrenciler" listesi de cihazda kalmasın (D8).
