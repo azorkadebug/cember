@@ -1,4 +1,5 @@
 import '../tema.dart';
+import '../widgets/kalem_simgeleri.dart';
 import '../utils/metin.dart';
 import 'dart:math';
 import 'dart:async';
@@ -830,11 +831,11 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
       for (final k in _kontrolKalemleri)
         if (o.kalemDeger(k.id) != 0)
           _rozet(
-            kalemIkonu(k.ikon),
+            k.ikon,
             k.id == 'sari_kart' && o.kalemDeger(k.id) >= 2 ? Colors.red : _kalemRengi(k),
             o.kalemDeger(k.id),
           ),
-      if (o.saglikDurumu != 0) _rozet(Icons.medical_services_rounded, Colors.teal, o.saglikDurumu),
+      if (o.saglikDurumu != 0) _rozet('saglik', Colors.teal, o.saglikDurumu),
     ];
 
     // Kontrol kalemi girişinin asıl kapısı; GestureDetector olduğu için
@@ -857,7 +858,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
     );
   }
 
-  Widget _rozet(IconData icon, Color renk, int val) {
+  Widget _rozet(String ikonAnahtari, Color renk, int val) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 2),
       child: Badge(
@@ -866,7 +867,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
         child: Container(
           width: 32, height: 32,
           decoration: BoxDecoration(color: renk.withAlpha(40), borderRadius: BorderRadius.circular(8)),
-          child: Icon(icon, size: 18, color: renk),
+          child: Center(child: KalemSimgesi(ikonAnahtari, size: 18, color: renk)),
         ),
       ),
     );
@@ -879,7 +880,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
     return palet[k.id.hashCode.abs() % palet.length];
   }
 
-  Widget _artieksi(IconData icon, Color renk, String label, int val, Function(int) onEdit) {
+  Widget _artieksi(String ikonAnahtari, Color renk, String label, int val, Function(int) onEdit) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
@@ -887,7 +888,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
           Container(
             width: 30, height: 30,
             decoration: BoxDecoration(color: renk.withAlpha(25), borderRadius: BorderRadius.circular(8)),
-            child: Icon(icon, size: 18, color: renk),
+            child: Center(child: KalemSimgesi(ikonAnahtari, size: 18, color: renk)),
           ),
           const SizedBox(width: 8),
           Text(label, style: const TextStyle(fontSize: 14)),
@@ -914,7 +915,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
             Container(
               width: 30, height: 30,
               decoration: BoxDecoration(color: Colors.teal.withAlpha(25), borderRadius: BorderRadius.circular(8)),
-              child: const Icon(Icons.medical_services_rounded, size: 18, color: Colors.teal),
+              child: const Center(child: OzelSimgeWidget(OzelSimge.saglik, size: 18, color: Colors.teal)),
             ),
             const SizedBox(width: 8),
             Text("Sağlık", style: const TextStyle(fontSize: 14)),
@@ -953,7 +954,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(children: [
-          const Icon(Icons.medical_services_rounded, color: Colors.teal, size: 22),
+          const OzelSimgeWidget(OzelSimge.saglik, color: Colors.teal, size: 22),
           const SizedBox(width: 8),
           const Text("Sağlık Notu", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
         ]),
@@ -1438,7 +1439,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                             ),
                           for (final k in _kontrolKalemleri) ...[
                             _artieksi(
-                              kalemIkonu(k.ikon),
+                              k.ikon,
                               _kalemRengi(k),
                               k.tip == KalemTipi.sayac ? k.ad : '${k.ad} (eksik)',
                               o.kalemDeger(k.id),

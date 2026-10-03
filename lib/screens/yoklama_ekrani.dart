@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../tema.dart';
+import '../widgets/kalem_simgeleri.dart';
 import '../models/ogrenci.dart';
 import '../models/kontrol_kalemi.dart';
 import '../services/firestore_service.dart';
@@ -524,7 +525,7 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
                       border: Border.all(color: getirdi ? Colors.green.shade200 : Colors.red.shade200),
                     ),
                     child: Row(mainAxisSize: MainAxisSize.min, children: [
-                      Icon(kalemIkonu(k.ikon), size: 15,
+                      KalemSimgesi(k.ikon, size: 16,
                           color: getirdi ? AppTema.basari : AppTema.tehlike),
                       const SizedBox(width: 6),
                       Text(k.ad, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600,

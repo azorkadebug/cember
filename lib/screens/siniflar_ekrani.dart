@@ -1,4 +1,5 @@
 import '../tema.dart';
+import '../widgets/kalem_simgeleri.dart';
 import '../utils/metin.dart';
 import '../utils/egitim_yili.dart';
 import 'dart:async';
@@ -881,7 +882,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
                             visualDensity: VisualDensity.compact,
                             backgroundColor: AppTema.ana50,
                             side: BorderSide.none,
-                            avatar: Icon(kalemIkonu(k.ikon), size: 16, color: AppTema.ana),
+                            avatar: KalemSimgesi(k.ikon, size: 16, color: AppTema.ana),
                             label: Text(
                               k.tip == KalemTipi.sayac ? '${k.ad} (sayaç)' : k.ad,
                               style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
