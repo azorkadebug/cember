@@ -119,6 +119,18 @@ class FirestoreService {
     return doc.data();
   }
 
+  /// Sınıfın en son tarihli yoklama dokümanı (sınıf kartındaki halka için).
+  /// `tarih` tek alanlı sıralama; ek indeks gerekmez.
+  Stream<QuerySnapshot> sonYoklamaStream(String sinifId) {
+    return _db
+        .collection('siniflar')
+        .doc(sinifId)
+        .collection('yoklamalar')
+        .orderBy('tarih', descending: true)
+        .limit(1)
+        .snapshots();
+  }
+
   /// Listedeki "Yok yaz" kaydırması: bugünün yoklama dokümanına da işler,
   /// yoksa Yoklama ekranı ile sınıf listesi iki ayrı "yok" tutuyordu
   /// (denetim #4 Y1).

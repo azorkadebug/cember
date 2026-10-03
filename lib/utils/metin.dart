@@ -6,6 +6,9 @@ library;
 
 String trKucult(String s) => s.replaceAll('İ', 'i').replaceAll('I', 'ı').toLowerCase();
 
+/// `trKucult`'un tersi: "i" → "İ", "ı" → "I".
+String trBuyut(String s) => s.replaceAll('i', 'İ').replaceAll('ı', 'I').toUpperCase();
+
 const _sira = 'aâbcçdefgğhıiîjklmnoöprsştuüûvyz';
 
 /// Türk alfabesine göre karşılaştırma (a < b → negatif). Harf dışı
