@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../tema.dart';
+import '../tema_renkleri.dart';
 import '../widgets/kalem_simgeleri.dart';
 import '../models/ogrenci.dart';
 import '../models/kontrol_kalemi.dart';
@@ -194,8 +195,8 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
             TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Vazgeç')),
             TextButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Sıfırla',
-                  style: TextStyle(color: AppTema.tehlike, fontWeight: FontWeight.w700)),
+              child: Text('Sıfırla',
+                  style: TextStyle(color: ctx.renk.tehlike, fontWeight: FontWeight.w700)),
             ),
           ],
         ),
@@ -234,6 +235,7 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
 
   @override
   Widget build(BuildContext context) {
+    final r = context.renk;
     final gelenSayisi = _ogrenciler.where((o) => _kayitlar[o.id]?.geldi ?? true).length;
     final bugun = DateTime.now();
     final buGun = _tarih.year == bugun.year && _tarih.month == bugun.month && _tarih.day == bugun.day;
@@ -260,10 +262,10 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
         if (secim != null && context.mounted) Navigator.pop(context);
       },
       child: Scaffold(
-      backgroundColor: Colors.grey.shade100,
+      backgroundColor: r.sayfa,
       appBar: AppBar(
-        backgroundColor: AppTema.ana,
-        foregroundColor: Colors.white,
+        backgroundColor: r.bar,
+        foregroundColor: r.barMetin,
         title: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -301,17 +303,17 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
           : _hata
               ? Center(
                   child: Column(mainAxisSize: MainAxisSize.min, children: [
-                    Icon(Icons.cloud_off_rounded, size: 56, color: Colors.grey.shade300),
+                    Icon(Icons.cloud_off_rounded, size: 56, color: r.bosDurumIkonu),
                     const SizedBox(height: 12),
-                    const Text('Yoklama yüklenemedi', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppTema.metinIkincil)),
+                    Text('Yoklama yüklenemedi', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: r.metinIkincil)),
                     const SizedBox(height: 4),
-                    const Text('Bağlantını kontrol edip tekrar dene.', style: TextStyle(color: AppTema.metinUcuncul)),
+                    Text('Bağlantını kontrol edip tekrar dene.', style: TextStyle(color: r.metinUcuncul)),
                     const SizedBox(height: 16),
                     FilledButton.icon(onPressed: _yukle, icon: const Icon(Icons.refresh_rounded), label: const Text('Tekrar dene')),
                   ]),
                 )
               : _ogrenciler.isEmpty
-              ? const Center(child: Text('Bu sınıfta öğrenci yok.', style: TextStyle(color: AppTema.metinIkincil)))
+              ? Center(child: Text('Bu sınıfta öğrenci yok.', style: TextStyle(color: r.metinIkincil)))
               // 1440 px'te isim solda, "Geldi" 1270 px sağdaydı (denetim O5).
               : Align(
                   alignment: Alignment.topCenter,
@@ -320,14 +322,14 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
                   child: Column(children: [
                   // Üst özet + "Tümü Geldi"
                   Container(
-                    color: Colors.white,
+                    color: r.kart,
                     padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
                     child: Row(children: [
-                      const Icon(Icons.info_outline_rounded, color: AppTema.metinUcuncul, size: 18),
+                      Icon(Icons.info_outline_rounded, color: r.metinUcuncul, size: 18),
                       const SizedBox(width: 8),
-                      const Expanded(
+                      Expanded(
                         child: Text('Karta dokununca kalemler açılır',
-                            style: TextStyle(color: AppTema.metinIkincil, fontSize: 13)),
+                            style: TextStyle(color: r.metinIkincil, fontSize: 13)),
                       ),
                       TextButton.icon(
                         onPressed: _tumuGeldi,
@@ -335,7 +337,7 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
                         label: const Text('Hepsini Geldi Yap'),
                         // Yıkıcı bir toplu işlem — sıradan bir metin düğmesi
                         // gibi görünmesin.
-                        style: TextButton.styleFrom(foregroundColor: AppTema.uyari),
+                        style: TextButton.styleFrom(foregroundColor: r.uyari),
                       ),
                     ]),
                   ),
@@ -360,7 +362,7 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
           : Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: r.kart,
                 boxShadow: [BoxShadow(color: Colors.black.withAlpha(15), blurRadius: 10, offset: const Offset(0, -2))],
               ),
               child: SafeArea(
@@ -371,7 +373,7 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: AppTema.icerikMaxGenislik),
                     child: Row(children: [
-                      const Icon(Icons.groups_rounded, color: AppTema.ana, size: 22),
+                      Icon(Icons.groups_rounded, color: r.ikonAna, size: 22),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Semantics(
@@ -382,15 +384,15 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
                       ),
                       ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTema.vurgu,
-                          foregroundColor: Colors.white,
+                          backgroundColor: r.vurgu,
+                          foregroundColor: r.vurguMetin,
                           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                           elevation: 2,
                         ),
                         onPressed: _kaydediyor ? null : _kaydet,
                         icon: _kaydediyor
-                            ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                            ? SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: r.vurguMetin))
                             : const Icon(Icons.save_rounded),
                         label: const Text('Kaydet', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
                       ),
@@ -404,6 +406,7 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
   }
 
   Widget _ogrenciKarti(Ogrenci o) {
+    final r = context.renk;
     final kayit = _kayitlar[o.id] ??= _Kayit(kalemler: {for (final k in _gunlukKalemler) k.id: true});
     final geldi = kayit.geldi;
     // Kalemler yalnızca gelen öğrenci için anlamlı.
@@ -415,9 +418,9 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: r.kart,
         borderRadius: BorderRadius.circular(14),
-        border: Border(left: BorderSide(color: geldi ? Colors.green : Colors.red.shade300, width: 4)),
+        border: Border(left: BorderSide(color: geldi ? r.geldiSerit : r.yokSerit, width: 4)),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         InkWell(
@@ -439,12 +442,12 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: AppTema.tehlikeZemin,
+                    color: r.tehlikeZemin,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text('$eksikSayisi eksik',
-                      style: const TextStyle(
-                          fontSize: 12, fontWeight: FontWeight.w700, color: AppTema.tehlike)),
+                      style: TextStyle(
+                          fontSize: 12, fontWeight: FontWeight.w700, color: r.tehlike)),
                 ),
                 const SizedBox(width: 8),
               ],
@@ -465,18 +468,18 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
                   decoration: BoxDecoration(
-                    color: geldi ? Colors.green.shade50 : Colors.red.shade50,
+                    color: geldi ? r.geldiZemin : r.yokZemin,
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: geldi ? Colors.green.shade200 : Colors.red.shade200),
+                    border: Border.all(color: geldi ? r.geldiCizgi : r.yokCizgi),
                   ),
                   child: Row(mainAxisSize: MainAxisSize.min, children: [
                     Icon(geldi ? Icons.check_circle_rounded : Icons.cancel_rounded,
-                        size: 16, color: geldi ? AppTema.basari : Colors.red),
+                        size: 16, color: geldi ? r.basari : (r.koyuMu ? r.yokMetin : Colors.red)),
                     const SizedBox(width: 6),
                     Text(geldi ? 'Geldi' : 'Yok',
                         style: TextStyle(
                             fontWeight: FontWeight.w700,
-                            color: geldi ? AppTema.basari : Colors.red.shade700)),
+                            color: geldi ? r.basari : r.yokMetin)),
                   ]),
                 ),
                 ),
@@ -488,8 +491,8 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
                     ? AnimatedRotation(
                         turns: acik ? 0.5 : 0,
                         duration: const Duration(milliseconds: 180),
-                        child: const Icon(Icons.expand_more_rounded,
-                            size: 22, color: AppTema.metinUcuncul),
+                        child: Icon(Icons.expand_more_rounded,
+                            size: 22, color: r.metinUcuncul),
                       )
                     : null,
               ),
@@ -520,19 +523,19 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
                     decoration: BoxDecoration(
-                      color: getirdi ? Colors.green.shade50 : Colors.red.shade50,
+                      color: getirdi ? r.geldiZemin : r.yokZemin,
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: getirdi ? Colors.green.shade200 : Colors.red.shade200),
+                      border: Border.all(color: getirdi ? r.geldiCizgi : r.yokCizgi),
                     ),
                     child: Row(mainAxisSize: MainAxisSize.min, children: [
                       KalemSimgesi(k.ikon, size: 16,
-                          color: getirdi ? AppTema.basari : AppTema.tehlike),
+                          color: getirdi ? r.basari : r.tehlike),
                       const SizedBox(width: 6),
                       Text(k.ad, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600,
-                          color: getirdi ? AppTema.basari : Colors.red.shade700)),
+                          color: getirdi ? r.basari : r.yokMetin)),
                       const SizedBox(width: 4),
                       Icon(getirdi ? Icons.check_rounded : Icons.close_rounded,
-                          size: 14, color: getirdi ? AppTema.basari : AppTema.tehlike),
+                          size: 14, color: getirdi ? r.basari : r.tehlike),
                     ]),
                   ),
                   ),

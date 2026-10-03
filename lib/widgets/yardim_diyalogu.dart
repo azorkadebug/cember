@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../tema.dart';
+import '../tema_renkleri.dart';
 
 /// Her ekranın app bar'ına eklenebilen yardım dialogu.
 ///
@@ -49,15 +49,16 @@ class YardimDiyalogu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final r = context.renk;
     return DraggableScrollableSheet(
       initialChildSize: 0.7,
       minChildSize: 0.4,
       maxChildSize: 0.95,
       expand: false,
       builder: (_, scrollController) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        decoration: BoxDecoration(
+          color: r.kartUstu,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
         ),
         child: Column(
           children: [
@@ -67,7 +68,7 @@ class YardimDiyalogu extends StatelessWidget {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey.shade300,
+                color: r.cizgi,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -76,7 +77,7 @@ class YardimDiyalogu extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(24, 16, 16, 16),
               child: Row(
                 children: [
-                  Icon(Icons.help_outline_rounded, color: AppTema.ana, size: 26),
+                  Icon(Icons.help_outline_rounded, color: r.ikonAna, size: 26),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
@@ -91,13 +92,13 @@ class YardimDiyalogu extends StatelessWidget {
                   IconButton(
                     icon: const Icon(Icons.close_rounded),
                     tooltip: 'Kapat',
-                    color: AppTema.metinIkincil,
+                    color: r.metinIkincil,
                     onPressed: () => Navigator.pop(context),
                   ),
                 ],
               ),
             ),
-            Divider(height: 1, color: Colors.grey.shade200),
+            Divider(height: 1, color: r.cizgiAcik),
             // İçerik
             Expanded(
               child: ListView.separated(
@@ -135,7 +136,8 @@ class _BolumKart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final renk = bolum.renk ?? AppTema.ana;
+    final r = context.renk;
+    final renk = bolum.renk ?? r.ikonAna;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -165,7 +167,7 @@ class _BolumKart extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 14,
                   height: 1.5,
-                  color: Colors.grey.shade700,
+                  color: r.koyuMu ? r.metinGovde : Colors.grey.shade700,
                 ),
               ),
             ],

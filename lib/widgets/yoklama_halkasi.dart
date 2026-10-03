@@ -2,7 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import '../tema.dart';
+import '../tema_renkleri.dart';
 
 /// Sınıf kartının solundaki yoklama halkası (tasarım sistemi: SinifKarti).
 ///
@@ -32,6 +32,7 @@ class YoklamaHalkasi extends StatelessWidget {
   Widget build(BuildContext context) {
     final hareketYok = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
     final hedef = bos ? 0.0 : (oran ?? 0.0);
+    final r = context.renk;
     return Semantics(
       label: semantik,
       excludeSemantics: true,
@@ -43,7 +44,13 @@ class YoklamaHalkasi extends StatelessWidget {
           duration: hareketYok ? Duration.zero : const Duration(milliseconds: 500),
           curve: Curves.easeOutCubic,
           builder: (context, deger, child) => CustomPaint(
-            painter: _HalkaBoyaci(oran: deger, bos: bos, secili: secili),
+            painter: _HalkaBoyaci(
+              oran: deger,
+              bos: bos,
+              izRengi: secili ? r.kart : r.yuzeyAna,
+              kesikRengi: r.cizgi,
+              yayRengi: r.vurgu,
+            ),
             child: child,
           ),
           child: Center(
@@ -55,7 +62,7 @@ class YoklamaHalkasi extends StatelessWidget {
                 fontSize: 15,
                 fontWeight: FontWeight.w800,
                 letterSpacing: -0.3,
-                color: bos ? AppTema.metinUcuncul : AppTema.anaKoyu,
+                color: bos ? r.metinUcuncul : r.metin,
               ),
             ),
           ),
@@ -66,11 +73,19 @@ class YoklamaHalkasi extends StatelessWidget {
 }
 
 class _HalkaBoyaci extends CustomPainter {
-  _HalkaBoyaci({required this.oran, required this.bos, required this.secili});
+  _HalkaBoyaci({
+    required this.oran,
+    required this.bos,
+    required this.izRengi,
+    required this.kesikRengi,
+    required this.yayRengi,
+  });
 
   final double oran;
   final bool bos;
-  final bool secili;
+  final Color izRengi;
+  final Color kesikRengi;
+  final Color yayRengi;
 
   static const double _kalinlik = 5;
   static const double _yaricap = 22;
@@ -85,7 +100,7 @@ class _HalkaBoyaci extends CustomPainter {
       final kesik = Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = 2
-        ..color = Colors.grey.shade300;
+        ..color = kesikRengi;
       const parca = 4.0;
       final cevre = 2 * math.pi * _yaricap;
       final adet = (cevre / (parca * 2)).floor();
@@ -99,7 +114,7 @@ class _HalkaBoyaci extends CustomPainter {
     final iz = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = _kalinlik
-      ..color = secili ? Colors.white : AppTema.ana50;
+      ..color = izRengi;
     canvas.drawCircle(merkez, _yaricap, iz);
 
     if (oran <= 0) return;
@@ -107,7 +122,7 @@ class _HalkaBoyaci extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = _kalinlik
       ..strokeCap = StrokeCap.round
-      ..color = AppTema.vurgu;
+      ..color = yayRengi;
     if (oran >= 1) {
       canvas.drawCircle(merkez, _yaricap, yay);
     } else {
@@ -117,5 +132,9 @@ class _HalkaBoyaci extends CustomPainter {
 
   @override
   bool shouldRepaint(_HalkaBoyaci eski) =>
-      eski.oran != oran || eski.bos != bos || eski.secili != secili;
+      eski.oran != oran ||
+      eski.bos != bos ||
+      eski.izRengi != izRengi ||
+      eski.kesikRengi != kesikRengi ||
+      eski.yayRengi != yayRengi;
 }

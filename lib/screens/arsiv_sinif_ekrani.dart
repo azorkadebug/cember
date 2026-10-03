@@ -4,6 +4,7 @@ import '../models/ogrenci.dart';
 import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
 import '../tema.dart';
+import '../tema_renkleri.dart';
 import '../utils/egitim_yili.dart';
 import '../utils/metin.dart';
 import '../widgets/simgeler.dart';
@@ -50,13 +51,15 @@ class _ArsivSinifEkraniState extends State<ArsivSinifEkrani> {
   Future<void> _sil() async {
     final onay = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
+      builder: (ctx) {
+        final r = ctx.renk;
+        return AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(children: [
           Container(
             padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: Colors.red.shade50, borderRadius: BorderRadius.circular(10)),
-            child: Icon(Icons.delete_forever_rounded, color: Colors.red.shade700),
+            decoration: BoxDecoration(color: r.yokZemin, borderRadius: BorderRadius.circular(10)),
+            child: Icon(Icons.delete_forever_rounded, color: r.yokMetin),
           ),
           const SizedBox(width: 12),
           const Expanded(child: Text("Sınıf silinsin mi?", style: TextStyle(fontWeight: FontWeight.w700))),
@@ -64,12 +67,12 @@ class _ArsivSinifEkraniState extends State<ArsivSinifEkrani> {
         content: Text(
             "${widget.sinifAd} (${widget.egitimYili}) sınıfı, öğrencileri ve yoklama geçmişiyle birlikte kalıcı olarak silinecek. "
             "Bu yıla aktardığın öğrenciler etkilenmez.",
-            style: TextStyle(color: Colors.grey.shade700, height: 1.5)),
+            style: TextStyle(color: r.koyuMu ? r.metinGovde : Colors.grey.shade700, height: 1.5)),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text("İptal")),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red.shade600,
+              backgroundColor: r.silDolgu,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
@@ -77,7 +80,8 @@ class _ArsivSinifEkraniState extends State<ArsivSinifEkrani> {
             child: const Text("Evet, Sil"),
           ),
         ],
-      ),
+      );
+      },
     );
     if (onay != true) return;
     try {
@@ -94,11 +98,12 @@ class _ArsivSinifEkraniState extends State<ArsivSinifEkrani> {
 
   @override
   Widget build(BuildContext context) {
+    final r = context.renk;
     return Scaffold(
-      backgroundColor: Colors.grey.shade100,
+      backgroundColor: r.sayfa,
       appBar: AppBar(
-        backgroundColor: AppTema.ana,
-        foregroundColor: Colors.white,
+        backgroundColor: r.bar,
+        foregroundColor: r.barMetin,
         elevation: 0,
         title: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(widget.sinifAd, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
@@ -121,8 +126,8 @@ class _ArsivSinifEkraniState extends State<ArsivSinifEkrani> {
                 value: 'sil',
                 child: ListTile(
                   contentPadding: EdgeInsets.zero,
-                  leading: Icon(Icons.delete_rounded, color: Colors.red.shade600),
-                  title: Text('Sınıfı Sil', style: TextStyle(color: Colors.red.shade600, fontWeight: FontWeight.w600)),
+                  leading: Icon(Icons.delete_rounded, color: r.koyuMu ? r.tehlike : Colors.red.shade600),
+                  title: Text('Sınıfı Sil', style: TextStyle(color: r.koyuMu ? r.tehlike : Colors.red.shade600, fontWeight: FontWeight.w600)),
                 ),
               ),
             ],
@@ -139,7 +144,7 @@ class _ArsivSinifEkraniState extends State<ArsivSinifEkrani> {
               if (snap.hasError) {
                 return Center(
                   child: Column(mainAxisSize: MainAxisSize.min, children: [
-                    const Text("Öğrenciler okunamadı.", style: TextStyle(color: AppTema.tehlike)),
+                    Text("Öğrenciler okunamadı.", style: TextStyle(color: r.tehlike)),
                     TextButton(
                       onPressed: () => setState(() => _ogrenciler = _getir()),
                       child: const Text("Tekrar Dene"),
@@ -147,38 +152,38 @@ class _ArsivSinifEkraniState extends State<ArsivSinifEkrani> {
                   ]),
                 );
               }
-              if (!snap.hasData) return const Center(child: CircularProgressIndicator(color: AppTema.vurgu));
+              if (!snap.hasData) return Center(child: CircularProgressIndicator(color: r.vurgu));
               final liste = snap.data!;
               return ListView(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
                 children: [
                   Container(
                     padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(color: AppTema.uyariZemin, borderRadius: BorderRadius.circular(12)),
+                    decoration: BoxDecoration(color: r.uyariZemin, borderRadius: BorderRadius.circular(12)),
                     child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      const Icon(Icons.inventory_2_rounded, size: 18, color: AppTema.uyari),
+                      Icon(Icons.inventory_2_rounded, size: 18, color: r.uyari),
                       const SizedBox(width: 8),
-                      const Expanded(
+                      Expanded(
                         child: Text(
                             "Bu sınıf arşivde ve salt okunur. Öğrencilerini yeni sınıflarına aktarmak için o sınıfta ⋮ menüsünden \"Geçen Yıldan Ekle\"yi kullan.",
-                            style: TextStyle(fontSize: 13, color: AppTema.uyari, height: 1.4)),
+                            style: TextStyle(fontSize: 13, color: r.uyari, height: 1.4)),
                       ),
                     ]),
                   ),
                   const SizedBox(height: 12),
                   Text("${liste.length} öğrenci",
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 1.1, color: AppTema.metinUcuncul)),
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 1.1, color: r.metinUcuncul)),
                   const SizedBox(height: 8),
                   if (liste.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.only(top: 24),
-                      child: Center(child: Text("Bu sınıfta öğrenci yok.", style: TextStyle(color: AppTema.metinUcuncul))),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 24),
+                      child: Center(child: Text("Bu sınıfta öğrenci yok.", style: TextStyle(color: r.metinUcuncul))),
                     ),
                   for (final o in liste)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 6),
                       child: Material(
-                        color: Colors.white,
+                        color: r.kart,
                         borderRadius: BorderRadius.circular(12),
                         child: ListTile(
                           dense: true,

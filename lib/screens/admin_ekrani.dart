@@ -1,4 +1,4 @@
-import '../tema.dart';
+import '../tema_renkleri.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -56,8 +56,9 @@ class _AdminEkraniState extends State<AdminEkrani> {
 
   @override
   Widget build(BuildContext context) {
+    final r = context.renk;
     return Scaffold(
-      backgroundColor: Colors.grey.shade100,
+      backgroundColor: r.sayfa,
       appBar: AppBar(
         backgroundColor: const Color(0xFF1A1A2E),
         foregroundColor: Colors.white,
@@ -65,11 +66,11 @@ class _AdminEkraniState extends State<AdminEkrani> {
         centerTitle: true,
       ),
       body: _yukleniyor
-          ? const Center(child: CircularProgressIndicator(color: AppTema.vurgu))
+          ? Center(child: CircularProgressIndicator(color: r.vurgu))
           : _hata != null
           ? Center(child: Padding(
               padding: const EdgeInsets.all(32),
-              child: Text(_hata!, style: TextStyle(color: Colors.red.shade700), textAlign: TextAlign.center),
+              child: Text(_hata!, style: TextStyle(color: r.yokMetin), textAlign: TextAlign.center),
             ))
           : RefreshIndicator(
               onRefresh: () async {
@@ -142,10 +143,11 @@ class _AdminEkraniState extends State<AdminEkrani> {
     if (gruplar.isEmpty) {
       return const SizedBox.shrink();
     }
+    final r = context.renk;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: r.kart,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [BoxShadow(color: Colors.black.withAlpha(10), blurRadius: 10)],
       ),
@@ -154,11 +156,11 @@ class _AdminEkraniState extends State<AdminEkrani> {
         children: [
           Row(
             children: [
-              Icon(icon, color: AppTema.ana, size: 20),
+              Icon(icon, color: r.ikonAna, size: 20),
               const SizedBox(width: 8),
               Text(baslik, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
               const Spacer(),
-              Text('${gruplar.length} farklı', style: const TextStyle(color: AppTema.metinIkincil, fontSize: 12)),
+              Text('${gruplar.length} farklı', style: TextStyle(color: r.metinIkincil, fontSize: 12)),
             ],
           ),
           const SizedBox(height: 12),
@@ -172,10 +174,10 @@ class _AdminEkraniState extends State<AdminEkrani> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
                   decoration: BoxDecoration(
-                    color: AppTema.vurgu.withAlpha(25),
+                    color: r.vurgu.withAlpha(25),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Text('${e.value}', style: TextStyle(color: AppTema.ana, fontWeight: FontWeight.w700, fontSize: 13)),
+                  child: Text('${e.value}', style: TextStyle(color: r.metinGovde, fontWeight: FontWeight.w700, fontSize: 13)),
                 ),
               ],
             ),
@@ -186,10 +188,11 @@ class _AdminEkraniState extends State<AdminEkrani> {
   }
 
   Widget _kullaniciListesi() {
+    final r = context.renk;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: r.kart,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [BoxShadow(color: Colors.black.withAlpha(10), blurRadius: 10)],
       ),
@@ -198,7 +201,7 @@ class _AdminEkraniState extends State<AdminEkrani> {
         children: [
           Row(
             children: [
-              Icon(Icons.list_rounded, color: AppTema.ana, size: 20),
+              Icon(Icons.list_rounded, color: r.ikonAna, size: 20),
               const SizedBox(width: 8),
               const Text('Tüm Öğretmenler', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
             ],
@@ -208,17 +211,17 @@ class _AdminEkraniState extends State<AdminEkrani> {
             margin: const EdgeInsets.only(bottom: 8),
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.grey.shade50,
+              color: r.koyuMu ? r.yuzeyGri : Colors.grey.shade50,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
               children: [
                 CircleAvatar(
-                  backgroundColor: AppTema.vurgu.withAlpha(30),
+                  backgroundColor: r.vurgu.withAlpha(30),
                   radius: 18,
                   child: Text(
                     (k['ad'] ?? '?').toString().substring(0, 1).toUpperCase(),
-                    style: TextStyle(color: AppTema.ana, fontWeight: FontWeight.w800),
+                    style: TextStyle(color: r.metinGovde, fontWeight: FontWeight.w800),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -229,12 +232,12 @@ class _AdminEkraniState extends State<AdminEkrani> {
                       Text(k['ad'] ?? 'İsimsiz', style: const TextStyle(fontWeight: FontWeight.w700)),
                       Text(
                         [k['okul'], k['sehir']].where((e) => e != null && e.toString().isNotEmpty).join(' • '),
-                        style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                        style: TextStyle(color: r.koyuMu ? r.metinIkincil : Colors.grey.shade600, fontSize: 12),
                       ),
                     ],
                   ),
                 ),
-                Text(k['brans'] ?? '', style: const TextStyle(color: AppTema.metinIkincil, fontSize: 12)),
+                Text(k['brans'] ?? '', style: TextStyle(color: r.metinIkincil, fontSize: 12)),
               ],
             ),
           )),

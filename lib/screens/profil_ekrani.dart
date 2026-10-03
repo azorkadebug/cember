@@ -1,4 +1,5 @@
 import '../tema.dart';
+import '../tema_renkleri.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -153,8 +154,8 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Vazgeç')),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Kaydetmeden çık',
-                style: TextStyle(color: AppTema.tehlike, fontWeight: FontWeight.w700)),
+            child: Text('Kaydetmeden çık',
+                style: TextStyle(color: ctx.renk.tehlike, fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -172,6 +173,7 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
 
   @override
   Widget build(BuildContext context) {
+    final r = context.renk;
     return PopScope(
       // İlk kayıt akışında geri tuşu zaten kapalı; normal düzenlemede ise
       // yalnızca kaydedilmemiş değişiklik varsa araya giriyoruz.
@@ -183,10 +185,10 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
         }
       },
       child: Scaffold(
-        backgroundColor: Colors.grey.shade100,
+        backgroundColor: r.sayfa,
         appBar: AppBar(
-          backgroundColor: AppTema.ana,
-          foregroundColor: Colors.white,
+          backgroundColor: r.bar,
+          foregroundColor: r.barMetin,
           title: Text(widget.ilkKayit ? "Profilini Tamamla" : "Profilim",
               style: const TextStyle(fontWeight: FontWeight.w800)),
           centerTitle: true,
@@ -229,7 +231,7 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
           ],
         ),
         body: _yukleniyor
-            ? const Center(child: CircularProgressIndicator(color: AppTema.vurgu))
+            ? Center(child: CircularProgressIndicator(color: r.vurgu))
             : SafeArea(
                 bottom: true,
                 child: SingleChildScrollView(
@@ -250,7 +252,7 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
                               style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800)),
                           const SizedBox(height: 4),
                           Text("Seni daha iyi tanıyalım.",
-                              style: TextStyle(color: Colors.grey.shade600, fontSize: 14)),
+                              style: TextStyle(color: r.koyuMu ? r.metinIkincil : Colors.grey.shade600, fontSize: 14)),
                           const SizedBox(height: 28),
                         ],
                         _buildField("Ad Soyad", _adCtrl, Icons.person_rounded),
@@ -259,7 +261,7 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
                         const SizedBox(height: 16),
                         _buildField("Şehir", _sehirCtrl, Icons.location_city_rounded),
                         const SizedBox(height: 16),
-                        Text("Branş", style: TextStyle(color: Colors.grey.shade700, fontWeight: FontWeight.w600, fontSize: 13)),
+                        Text("Branş", style: TextStyle(color: r.koyuMu ? r.metinGovde : Colors.grey.shade700, fontWeight: FontWeight.w600, fontSize: 13)),
                         const SizedBox(height: 8),
                         // Çıplak DropdownButton, diğer alanların prefixIcon +
                         // OutlineInputBorder desenine uymuyordu; odak durumu
@@ -269,21 +271,21 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
                           isExpanded: true,
                           borderRadius: BorderRadius.circular(14),
                           decoration: InputDecoration(
-                            prefixIcon: Icon(Icons.school_rounded, color: AppTema.ana, size: 20),
+                            prefixIcon: Icon(Icons.school_rounded, color: r.ikonAna, size: 20),
                             filled: true,
-                            fillColor: Colors.white,
+                            fillColor: r.kart,
                             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(14),
-                              borderSide: BorderSide(color: Colors.grey.shade200),
+                              borderSide: BorderSide(color: r.cizgiAcik),
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(14),
-                              borderSide: BorderSide(color: Colors.grey.shade200),
+                              borderSide: BorderSide(color: r.cizgiAcik),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(14),
-                              borderSide: const BorderSide(color: AppTema.ana, width: 2),
+                              borderSide: BorderSide(color: r.koyuMu ? r.vurgu : r.ikonAna, width: 2),
                             ),
                           ),
                           items: _branslar.map((b) => DropdownMenuItem(value: b, child: Text(b))).toList(),
@@ -298,24 +300,60 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
                           child: ElevatedButton(
                             style: ElevatedButton.styleFrom(
                               minimumSize: const Size.fromHeight(52),
-                              backgroundColor: AppTema.vurgu,
-                              foregroundColor: Colors.white,
+                              backgroundColor: r.vurgu,
+                              foregroundColor: r.vurguMetin,
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                               elevation: 2,
                             ),
                             onPressed: _kaydediliyor ? null : _kaydet,
                             child: _kaydediliyor
-                                ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
+                                ? SizedBox(height: 22, width: 22, child: CircularProgressIndicator(color: r.vurguMetin, strokeWidth: 2.5))
                                 : const Text("Kaydet", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
                           ),
                         ),
+                        // Görünüm cihaz ayarı: hemen uygulanır, form verisi
+                        // değil — "kaydedilmemiş değişiklik" sayılmaz.
+                        const SizedBox(height: 28),
+                        Text("Görünüm", style: TextStyle(color: r.koyuMu ? r.metinGovde : Colors.grey.shade700, fontWeight: FontWeight.w600, fontSize: 13)),
+                        const SizedBox(height: 8),
+                        ValueListenableBuilder<ThemeMode>(
+                          valueListenable: TemaTercihi.mod,
+                          builder: (context, mod, _) => SizedBox(
+                            width: double.infinity,
+                            child: SegmentedButton<ThemeMode>(
+                              segments: const [
+                                ButtonSegment(
+                                  value: ThemeMode.system,
+                                  icon: Icon(Icons.brightness_auto_rounded),
+                                  label: Text("Sistem"),
+                                ),
+                                ButtonSegment(
+                                  value: ThemeMode.light,
+                                  icon: Icon(Icons.light_mode_rounded),
+                                  label: Text("Açık"),
+                                ),
+                                ButtonSegment(
+                                  value: ThemeMode.dark,
+                                  icon: Icon(Icons.dark_mode_rounded),
+                                  label: Text("Koyu"),
+                                ),
+                              ],
+                              selected: {mod},
+                              showSelectedIcon: false,
+                              onSelectionChanged: (secim) => TemaTercihi.ayarla(secim.first),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text("Sistem: telefonunun açık/koyu ayarına uyar. Bu cihazda saklanır.",
+                            style: TextStyle(color: r.metinUcuncul, fontSize: 12)),
                         if (!widget.ilkKayit) ...[
                           const SizedBox(height: 20),
                           Center(
                             child: Text(
                               AuthService().currentUser?.email ?? '',
                               // grey.shade400 üzerinde 1,7:1'di (denetim Y7).
-                              style: const TextStyle(color: AppTema.metinIkincil, fontSize: 13),
+                              style: TextStyle(color: r.metinIkincil, fontSize: 13),
                             ),
                           ),
                           // Uygulama içinde politikaya tıklanabilir bağlantı yoktu (denetim #4 Y7).
@@ -327,12 +365,12 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
                             ),
                           ),
                           const SizedBox(height: 48),
-                          Divider(color: Colors.grey.shade300, height: 1),
+                          Divider(color: r.cizgi, height: 1),
                           const SizedBox(height: 20),
                           Text(
                             "Tehlikeli Bölge",
                             style: TextStyle(
-                              color: Colors.red.shade700,
+                              color: r.yokMetin,
                               fontWeight: FontWeight.w800,
                               fontSize: 13,
                               letterSpacing: 0.5,
@@ -341,7 +379,7 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
                           const SizedBox(height: 8),
                           Text(
                             "Hesabını silmek tüm sınıflarını, öğrenci kayıtlarını, profil bilgilerini ve giriş hesabını kalıcı olarak siler. Bu işlem geri alınamaz.",
-                            style: TextStyle(color: Colors.grey.shade600, fontSize: 13, height: 1.5),
+                            style: TextStyle(color: r.koyuMu ? r.metinIkincil : Colors.grey.shade600, fontSize: 13, height: 1.5),
                           ),
                           const SizedBox(height: 14),
                           SizedBox(
@@ -349,8 +387,8 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
                             child: OutlinedButton.icon(
                               style: OutlinedButton.styleFrom(
                                 minimumSize: const Size.fromHeight(48),
-                                foregroundColor: Colors.red.shade700,
-                                side: BorderSide(color: Colors.red.shade300),
+                                foregroundColor: r.yokMetin,
+                                side: BorderSide(color: r.yokSerit),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                               ),
                               icon: const Icon(Icons.delete_forever_rounded, size: 20),
@@ -390,7 +428,7 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(children: [
-          Icon(Icons.warning_amber_rounded, color: Colors.red.shade700, size: 28),
+          Icon(Icons.warning_amber_rounded, color: ctx.renk.yokMetin, size: 28),
           const SizedBox(width: 10),
           const Expanded(child: Text("Hesabını silmek üzeresin")),
         ]),
@@ -407,7 +445,7 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
             const SizedBox(height: 14),
             Text(
               "Bu işlem geri alınamaz.",
-              style: TextStyle(fontWeight: FontWeight.w800, color: Colors.red.shade700),
+              style: TextStyle(fontWeight: FontWeight.w800, color: ctx.renk.yokMetin),
             ),
           ],
         ),
@@ -418,7 +456,7 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red.shade700),
+            style: TextButton.styleFrom(foregroundColor: ctx.renk.yokMetin),
             child: const Text("Devam"),
           ),
         ],
@@ -429,7 +467,7 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
   Widget _silinecekItem(String text) => Padding(
         padding: const EdgeInsets.symmetric(vertical: 3),
         child: Row(children: [
-          Icon(Icons.close_rounded, size: 18, color: Colors.red.shade700),
+          Icon(Icons.close_rounded, size: 18, color: context.renk.yokMetin),
           const SizedBox(width: 8),
           Expanded(child: Text(text, style: const TextStyle(fontSize: 14))),
         ]),
@@ -465,7 +503,7 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
                   decoration: InputDecoration(
                     hintText: 'SIL',
                     filled: true,
-                    fillColor: Colors.grey.shade100,
+                    fillColor: ctx.renk.yuzeyGri,
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                   ),
                 ),
@@ -478,7 +516,9 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
               ),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: canConfirm ? Colors.red.shade700 : Colors.grey.shade300,
+                  backgroundColor: canConfirm
+                      ? (ctx.renk.koyuMu ? ctx.renk.silDolgu : Colors.red.shade700)
+                      : ctx.renk.cizgi,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
@@ -554,7 +594,7 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
               decoration: InputDecoration(
                 hintText: 'Şifren',
                 filled: true,
-                fillColor: Colors.grey.shade100,
+                fillColor: ctx.renk.yuzeyGri,
                 border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide.none),
@@ -569,7 +609,7 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red.shade700,
+              backgroundColor: ctx.renk.koyuMu ? ctx.renk.silDolgu : Colors.red.shade700,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12)),
@@ -595,19 +635,19 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) => const Dialog(
+      builder: (ctx) => Dialog(
         backgroundColor: Colors.transparent,
         elevation: 0,
         child: Center(
           child: Card(
             child: Padding(
-              padding: EdgeInsets.all(28),
+              padding: const EdgeInsets.all(28),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  CircularProgressIndicator(color: AppTema.vurgu),
-                  SizedBox(height: 16),
-                  Text("Verilerin siliniyor...",
+                  CircularProgressIndicator(color: ctx.renk.vurgu),
+                  const SizedBox(height: 16),
+                  const Text("Verilerin siliniyor...",
                       style: TextStyle(fontWeight: FontWeight.w600)),
                 ],
               ),
@@ -673,8 +713,8 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
               await AuthService().signOut();
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppTema.vurgu,
-              foregroundColor: Colors.white,
+              backgroundColor: ctx.renk.vurgu,
+              foregroundColor: ctx.renk.vurguMetin,
             ),
             child: const Text("Çıkış Yap"),
           ),
@@ -693,10 +733,11 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
   }
 
   Widget _buildField(String label, TextEditingController ctrl, IconData icon) {
+    final r = context.renk;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: TextStyle(color: Colors.grey.shade700, fontWeight: FontWeight.w600, fontSize: 13)),
+        Text(label, style: TextStyle(color: r.koyuMu ? r.metinGovde : Colors.grey.shade700, fontWeight: FontWeight.w600, fontSize: 13)),
         const SizedBox(height: 8),
         // Görsel etiket ayrı bir Text; ekran okuyucu alanı boş "input" diye
         // okuyordu (denetim Y8). Satır içi label/hint alan doluyken
@@ -710,12 +751,12 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
           buildCounter: gizliSayac,
           textInputAction: TextInputAction.next,
           decoration: InputDecoration(
-            prefixIcon: Icon(icon, color: AppTema.anaAcik, size: 20),
+            prefixIcon: Icon(icon, color: r.koyuMu ? r.ikonAna : AppTema.anaAcik, size: 20),
             filled: true,
-            fillColor: Colors.white,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: Colors.grey.shade200)),
-            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: Colors.grey.shade200)),
-            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: AppTema.vurgu, width: 2)),
+            fillColor: r.kart,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: r.cizgiAcik)),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: r.cizgiAcik)),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: r.vurgu, width: 2)),
           ),
           ),
         ),

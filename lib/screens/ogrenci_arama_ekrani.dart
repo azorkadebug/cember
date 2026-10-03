@@ -4,6 +4,7 @@ import '../models/ogrenci.dart';
 import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
 import '../tema.dart';
+import '../tema_renkleri.dart';
 import 'ogrenci_listesi_ekrani.dart';
 import '../utils/metin.dart';
 import '../utils/egitim_yili.dart';
@@ -126,11 +127,12 @@ class _OgrenciAramaEkraniState extends State<OgrenciAramaEkrani> {
   Widget build(BuildContext context) {
     final sonuclar = _sonuclar;
     final bosArama = _metin.isEmpty;
+    final r = context.renk;
     return Scaffold(
-      backgroundColor: Colors.grey.shade100,
+      backgroundColor: r.sayfa,
       appBar: AppBar(
-        backgroundColor: AppTema.ana,
-        foregroundColor: Colors.white,
+        backgroundColor: r.bar,
+        foregroundColor: r.barMetin,
         elevation: 0,
         titleSpacing: 0,
         title: Semantics(
@@ -139,17 +141,17 @@ class _OgrenciAramaEkraniState extends State<OgrenciAramaEkrani> {
             controller: _ctrl,
             autofocus: true,
             textInputAction: TextInputAction.search,
-            style: const TextStyle(color: Colors.white, fontSize: 16),
-            cursorColor: Colors.white,
+            style: TextStyle(color: r.barMetin, fontSize: 16),
+            cursorColor: r.barMetin,
             onChanged: (v) => setState(() => _metin = trKucult(v.trim())),
             decoration: InputDecoration(
               hintText: 'Öğrenci ara…',
-              hintStyle: TextStyle(color: Colors.white.withAlpha(170)),
+              hintStyle: TextStyle(color: r.barMetin.withAlpha(170)),
               border: InputBorder.none,
               suffixIcon: _metin.isEmpty
                   ? null
                   : IconButton(
-                      icon: const Icon(Icons.close_rounded, color: Colors.white),
+                      icon: Icon(Icons.close_rounded, color: r.barMetin),
                       tooltip: 'Aramayı temizle',
                       onPressed: () {
                         _ctrl.clear();
@@ -161,13 +163,13 @@ class _OgrenciAramaEkraniState extends State<OgrenciAramaEkrani> {
         ),
       ),
       body: _yukleniyor
-          ? const Center(child: CircularProgressIndicator(color: AppTema.vurgu))
+          ? Center(child: CircularProgressIndicator(color: r.vurgu))
           : _hata
               ? Center(
                   child: Column(mainAxisSize: MainAxisSize.min, children: [
-                    Icon(Icons.cloud_off_rounded, size: 56, color: Colors.grey.shade300),
+                    Icon(Icons.cloud_off_rounded, size: 56, color: r.bosDurumIkonu),
                     const SizedBox(height: 12),
-                    const Text('Öğrenciler yüklenemedi', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppTema.metinIkincil)),
+                    Text('Öğrenciler yüklenemedi', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: r.metinIkincil)),
                     const SizedBox(height: 12),
                     FilledButton.icon(onPressed: _yukle, icon: const Icon(Icons.refresh_rounded), label: const Text('Tekrar dene')),
                   ]),
@@ -190,14 +192,14 @@ class _OgrenciAramaEkraniState extends State<OgrenciAramaEkrani> {
                             itemCount: sonuclar.length + (bosArama ? 1 : 0),
                             itemBuilder: (_, i) {
                               if (bosArama && i == 0) {
-                                return const Padding(
-                                  padding: EdgeInsets.fromLTRB(4, 8, 4, 8),
+                                return Padding(
+                                  padding: const EdgeInsets.fromLTRB(4, 8, 4, 8),
                                   child: Text('SON BAKILANLAR',
                                       style: TextStyle(
                                           fontSize: 12,
                                           fontWeight: FontWeight.w700,
                                           letterSpacing: 1.1,
-                                          color: AppTema.metinUcuncul)),
+                                          color: r.metinUcuncul)),
                                 );
                               }
                               return _satir(sonuclar[bosArama ? i - 1 : i]);
@@ -210,11 +212,12 @@ class _OgrenciAramaEkraniState extends State<OgrenciAramaEkrani> {
 
   Widget _satir(_AramaKaydi k) {
     final o = k.ogrenci;
+    final r = context.renk;
     final renk = o.isMale ? Colors.blue.shade500 : Colors.pink.shade500;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Material(
-        color: Colors.white,
+        color: r.kart,
         borderRadius: BorderRadius.circular(12),
         elevation: 1,
         shadowColor: Colors.black.withAlpha(15),
@@ -244,25 +247,25 @@ class _OgrenciAramaEkraniState extends State<OgrenciAramaEkrani> {
                       style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
                   const SizedBox(height: 2),
                   Row(children: [
-                    const Icon(Icons.class_outlined, size: 14, color: AppTema.metinUcuncul),
+                    Icon(Icons.class_outlined, size: 14, color: r.metinUcuncul),
                     const SizedBox(width: 4),
                     Flexible(
                       child: Text(k.sinifAd,
                           maxLines: 1, overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontSize: 12, color: AppTema.metinIkincil)),
+                          style: TextStyle(fontSize: 12, color: r.metinIkincil)),
                     ),
                     // Not içeriği bilerek gösterilmiyor (mahremiyet, 2026-08-28).
                     if (o.rozetler.isNotEmpty) ...[
                       const SizedBox(width: 8),
-                      const Icon(Icons.emoji_events_rounded, size: 14, color: AppTema.uyari),
+                      Icon(Icons.emoji_events_rounded, size: 14, color: r.uyari),
                       const SizedBox(width: 2),
                       Text('${o.rozetler.length}',
-                          style: const TextStyle(fontSize: 12, color: AppTema.uyari, fontWeight: FontWeight.w600)),
+                          style: TextStyle(fontSize: 12, color: r.uyari, fontWeight: FontWeight.w600)),
                     ],
                   ]),
                 ]),
               ),
-              const Icon(Icons.chevron_right_rounded, color: AppTema.metinUcuncul),
+              Icon(Icons.chevron_right_rounded, color: r.metinUcuncul),
             ]),
           ),
         ),
@@ -271,18 +274,19 @@ class _OgrenciAramaEkraniState extends State<OgrenciAramaEkrani> {
   }
 
   Widget _bilgi(IconData ikon, String baslik, String aciklama) {
+    final r = context.renk;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Icon(ikon, size: 64, color: Colors.grey.shade300),
+          Icon(ikon, size: 64, color: r.bosDurumIkonu),
           const SizedBox(height: 14),
           Text(baslik,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppTema.metinIkincil)),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: r.metinIkincil)),
           const SizedBox(height: 6),
           Text(aciklama,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: AppTema.metinUcuncul)),
+              style: TextStyle(color: r.metinUcuncul)),
         ]),
       ),
     );
