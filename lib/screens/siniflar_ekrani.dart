@@ -61,8 +61,11 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
   final Map<String, Stream<QuerySnapshot>> _ogrenciSayaclari = {};
 
   Stream<QuerySnapshot> _ogrenciSayisiAkisi(String sinifId) =>
+      // Çok aboneli: kart yeniden kurulunca (yeni sınıf eklenince, sınıftan
+      // geri dönünce) aynı akışa ikinci kez abone olunuyor; tek abonelikli
+      // akışta bu hata verip kart yenilenene kadar sayı hiç gelmiyordu.
       _ogrenciSayaclari.putIfAbsent(
-          sinifId, () => _db.ogrencilerStream(sinifId));
+          sinifId, () => _db.ogrencilerStream(sinifId).asBroadcastStream());
   /// Aynı akışa yeniden abone olunca ilk olay gelene kadar veri yok sayılıp
   /// "0 öğrenci" yazılıyordu (denetim #4 Y2); son değer saklanır.
   final Map<String, QuerySnapshot> _sonSayaclar = {};
@@ -74,7 +77,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
 
   Stream<QuerySnapshot> _sonYoklamaAkisi(String sinifId) =>
       _sonYoklamaAkislari.putIfAbsent(
-          sinifId, () => _db.sonYoklamaStream(sinifId));
+          sinifId, () => _db.sonYoklamaStream(sinifId).asBroadcastStream());
   QuerySnapshot? _sonSiniflar;
 
   @override
