@@ -6,7 +6,6 @@ import '../utils/egitim_yili.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import '../widgets/cikartma.dart';
 import '../widgets/girdi.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -16,6 +15,7 @@ import '../services/firestore_service.dart';
 import '../services/mac_durumu.dart';
 import '../models/kontrol_kalemi.dart';
 import '../widgets/yoklama_halkasi.dart';
+import '../widgets/ziplayan_logo.dart';
 import '../utils/sinif_ozeti.dart';
 import 'ogrenci_listesi_ekrani.dart';
 import 'ogrenci_arama_ekrani.dart';
@@ -129,7 +129,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
         title: Semantics(
           label: 'Çember',
           excludeSemantics: true,
-          child: SvgPicture.asset('assets/images/logo_simge.svg', width: 46, height: 46),
+          child: const ZiplayanLogo(),
         ),
         centerTitle: false,
         backgroundColor: Colors.transparent,
