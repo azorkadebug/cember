@@ -38,6 +38,11 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
   /// yazar. Tüm sınıf yazılınca iki cihazda son kaydeden kazanıyor, diğerinin
   /// işaretlediği devamsızlık siliniyordu (denetim #3 Y2).
   Map<String, _Kayit> _ilkKayitlar = {};
+  /// Bu tarih için Firestore'da yoklama dokümanı var mı? Yoksa ilk Kaydet,
+  /// değişiklik olmasa da dokümanı oluşturur: herkes geldiğinde ("Hepsini
+  /// Geldi Yap" + Kaydet) eskiden "Değişiklik yok." deyip hiçbir şey
+  /// yazmıyordu, sınıf kartındaki halka "yoklama alınmadı" kalıyordu.
+  bool _kayitVar = false;
   Map<String, _Kayit> _kopyala(Map<String, _Kayit> m) =>
       {for (final e in m.entries) e.key: _Kayit(geldi: e.value.geldi, kalemler: Map.of(e.value.kalemler))};
   /// Kontrol kalemi çipleri açık olan öğrenciler. Kartlar varsayılan olarak
@@ -71,6 +76,7 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
         ..sort((a, b) => a.gorunenAd.toLowerCase().compareTo(b.gorunenAd.toLowerCase()));
       final yoklama = await _db.yoklamaGetir(widget.sinifId, _tarihKey);
       final kayitlarRaw = (yoklama?['kayitlar'] as Map?) ?? {};
+      _kayitVar = yoklama != null;
 
       _kayitlar.clear();
       for (final o in ogrenciler) {
@@ -121,7 +127,7 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
       if (kalemFark.isNotEmpty) fark['kalemler'] = kalemFark;
       if (fark.isNotEmpty) kayitlar[o.id] = fark;
     }
-    if (kayitlar.isEmpty) {
+    if (kayitlar.isEmpty && _kayitVar) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Değişiklik yok.')));
       return;
     }
@@ -142,7 +148,7 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
           // Çevrimdışıyken süresiz bekliyordu, mesaj yoktu (denetim #3 Y8).
           .timeout(const Duration(seconds: 8));
       if (mounted) {
-        setState(() { _kaydediyor = false; _ilkKayitlar = _kopyala(_kayitlar); });
+        setState(() { _kaydediyor = false; _kayitVar = true; _ilkKayitlar = _kopyala(_kayitlar); });
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('$_tarihEtiketi yoklaması kaydedildi'),
           backgroundColor: Colors.green.shade700,
@@ -153,7 +159,7 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
     } on TimeoutException {
       // Yazma kuyrukta: kalıcı önbellek açık, bağlantı gelince gidecek.
       if (mounted) {
-        setState(() { _kaydediyor = false; _ilkKayitlar = _kopyala(_kayitlar); });
+        setState(() { _kaydediyor = false; _kayitVar = true; _ilkKayitlar = _kopyala(_kayitlar); });
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text('Bağlantı yok. Yoklama kaydedildi, internet gelince gönderilecek.'),
           backgroundColor: AppTema.uyari,
