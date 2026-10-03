@@ -559,34 +559,35 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
           setState(() {});
         });
       },
-      child: Container(
-        margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(colors: AppTema.panelGradient),
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [BoxShadow(color: Colors.black.withAlpha(20), blurRadius: 8, offset: const Offset(0, 2))],
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 8, height: 8,
-              decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle),
-            ),
-            const SizedBox(width: 10),
-            const Expanded(
-              child: Text("Etkinlik devam ediyor",
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13)),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.green.withAlpha(40),
-                borderRadius: BorderRadius.circular(8),
+      // Sınıflarım'daki bantla aynı sarı bilet (eskiden ayrı, lacivert
+      // bir tasarımdı — denetim #3).
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+        child: Cikartma(
+          renk: const Color(0xFFFFD84D),
+          kenarRengi: AppTema.ana,
+          yaricap: 18,
+          dolgu: const EdgeInsets.fromLTRB(14, 8, 8, 8),
+          child: Row(
+            children: [
+              const Icon(Icons.timer_rounded, color: AppTema.ana, size: 24),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Text("Etkinlik sürüyor",
+                    style: TextStyle(fontFamily: AppTema.baslikFontu, color: AppTema.ana, fontWeight: FontWeight.w600, fontSize: 18)),
               ),
-              child: const Text("Devam Et", style: TextStyle(color: Colors.green, fontWeight: FontWeight.w700, fontSize: 12)),
-            ),
-          ],
+              Container(
+                constraints: const BoxConstraints(minHeight: 44),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                alignment: Alignment.center,
+                decoration: const ShapeDecoration(
+                  color: Colors.white,
+                  shape: StadiumBorder(side: BorderSide(color: AppTema.ana, width: 2)),
+                ),
+                child: const Text("Devam Et", style: TextStyle(color: AppTema.ana, fontWeight: FontWeight.w800, fontSize: 15)),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -703,8 +704,8 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
               margin: const EdgeInsets.only(right: 3, bottom: 3),
               decoration: BoxDecoration(
                 color: o.buradaMi
-                    ? (r.koyuMu ? r.yokZemin : Colors.red.shade100)
-                    : (r.koyuMu ? r.geldiZemin : Colors.green.shade100),
+                    ? (r.yokZemin)
+                    : (r.geldiZemin),
                 borderRadius: BorderRadius.circular(18),
               ),
               child: Row(
@@ -712,10 +713,10 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                   // green.shade700, green.shade100 zemin üzerinde 3,1:1
                   // veriyordu; AppTema.basari (green900) 5,9:1.
                   Icon(o.buradaMi ? Icons.cancel_rounded : Icons.check_circle_rounded,
-                      color: o.buradaMi ? (r.koyuMu ? r.yokMetin : Colors.red.shade900) : r.basari),
+                      color: o.buradaMi ? (r.yokMetin) : r.basari),
                   const SizedBox(width: 8),
                   Text(o.buradaMi ? "Yok yaz" : "Geldi",
-                      style: TextStyle(fontWeight: FontWeight.w700, color: o.buradaMi ? (r.koyuMu ? r.yokMetin : Colors.red.shade900) : r.basari)),
+                      style: TextStyle(fontWeight: FontWeight.w700, color: o.buradaMi ? (r.yokMetin) : r.basari)),
                 ],
               ),
             ),
@@ -780,8 +781,8 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                                     angle: -0.07,
                                     child: Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                      decoration: BoxDecoration(color: AppTema.ana, borderRadius: BorderRadius.circular(10)),
-                                      child: const Text("Yok", style: TextStyle(fontSize: 12, color: Colors.white, fontWeight: FontWeight.w800)),
+                                      decoration: BoxDecoration(color: r.murekkepDolgu, borderRadius: BorderRadius.circular(10)),
+                                      child: Text("Yok", style: TextStyle(fontSize: 12, color: r.murekkepUstu, fontWeight: FontWeight.w800)),
                                     ),
                                   ),
                                 ],
@@ -1103,7 +1104,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: ctx.renk.koyuMu ? ctx.renk.uyariZemin : Colors.amber.shade50, borderRadius: BorderRadius.circular(10)),
+                decoration: BoxDecoration(color: ctx.renk.uyariZemin, borderRadius: BorderRadius.circular(10)),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -1147,7 +1148,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                     decoration: BoxDecoration(
-                      color: ctx.renk.koyuMu ? ctx.renk.yuzeyGri : Colors.grey.shade50,
+                      color: ctx.renk.yuzeyGri,
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(color: ctx.renk.cizgiAcik),
                     ),
@@ -1497,7 +1498,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                             maxLines: 3,
                             decoration: alanDeko('Özel Not').copyWith(
                               hintText: demo ? 'Demo modunda notlar gizli' : 'Yalnız sen görürsün',
-                              hintStyle: TextStyle(color: r.koyuMu ? r.metinUcuncul : Colors.grey.shade500),
+                              hintStyle: TextStyle(color: r.metinUcuncul),
                             ),
                           ),
 
@@ -1916,9 +1917,9 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                               buildCounter: gizliSayac,
                               decoration: InputDecoration(
                                 hintText: "Ad Soyad",
-                                hintStyle: TextStyle(color: r.koyuMu ? r.metinUcuncul : Colors.grey.shade400, fontSize: 14),
+                                hintStyle: TextStyle(color: r.metinUcuncul, fontSize: 14),
                                 filled: true,
-                                fillColor: r.koyuMu ? r.yuzeyGri : Colors.grey.shade50,
+                                fillColor: r.yuzeyGri,
                                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: r.cizgiAcik)),
                                 enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: r.cizgiAcik)),
                                 focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: r.vurgu, width: 1.5)),
@@ -1969,9 +1970,9 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                               buildCounter: gizliSayac,
                               decoration: InputDecoration(
                                 hintText: "100",
-                                hintStyle: TextStyle(color: r.koyuMu ? r.metinUcuncul : Colors.grey.shade400, fontWeight: FontWeight.w600),
+                                hintStyle: TextStyle(color: r.metinUcuncul, fontWeight: FontWeight.w600),
                                 filled: true,
-                                fillColor: r.koyuMu ? r.yuzeyGri : Colors.grey.shade50,
+                                fillColor: r.yuzeyGri,
                                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: r.cizgiAcik)),
                                 enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: r.cizgiAcik)),
                                 focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: r.vurgu, width: 1.5)),
@@ -2043,7 +2044,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                     const Spacer(),
                     TextButton(
                       onPressed: durum.kaydediyor ? null : () => Navigator.pop(sheetContext),
-                      child: Text("İptal", style: TextStyle(color: r.koyuMu ? r.metinIkincil : Colors.grey.shade600)),
+                      child: Text("İptal", style: TextStyle(color: r.metinIkincil)),
                     ),
                     const SizedBox(width: 12),
                     ElevatedButton.icon(
@@ -2181,7 +2182,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
             const Text("Aynı İsim Var", style: TextStyle(fontWeight: FontWeight.w700)),
           ]),
           content: Column(mainAxisSize: MainAxisSize.min, children: [
-            Text("Bu isimlerle zaten kayıtlı öğrenci var:", style: TextStyle(color: r.koyuMu ? r.metinGovde : Colors.grey.shade700)),
+            Text("Bu isimlerle zaten kayıtlı öğrenci var:", style: TextStyle(color: r.metinGovde)),
             const SizedBox(height: 12),
             ...cakisanlar.map((ad) => Padding(
               padding: const EdgeInsets.only(bottom: 4),
@@ -2192,10 +2193,10 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
               ]),
             )),
             const SizedBox(height: 12),
-            Text("Yine de ekleyelim mi?", style: TextStyle(color: r.koyuMu ? r.metinIkincil : Colors.grey.shade600)),
+            Text("Yine de ekleyelim mi?", style: TextStyle(color: r.metinIkincil)),
           ]),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(c, false), child: Text("Atla", style: TextStyle(color: r.koyuMu ? r.metinIkincil : Colors.grey.shade600))),
+            TextButton(onPressed: () => Navigator.pop(c, false), child: Text("Atla", style: TextStyle(color: r.metinIkincil))),
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: r.vurgu, foregroundColor: r.vurguMetin,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),

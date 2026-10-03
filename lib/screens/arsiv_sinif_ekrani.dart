@@ -67,7 +67,7 @@ class _ArsivSinifEkraniState extends State<ArsivSinifEkrani> {
         content: Text(
             "${widget.sinifAd} (${widget.egitimYili}) sınıfı, öğrencileri ve yoklama geçmişiyle birlikte kalıcı olarak silinecek. "
             "Bu yıla aktardığın öğrenciler etkilenmez.",
-            style: TextStyle(color: r.koyuMu ? r.metinGovde : Colors.grey.shade700, height: 1.5)),
+            style: TextStyle(color: r.metinGovde, height: 1.5)),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text("İptal")),
           ElevatedButton(
@@ -127,8 +127,8 @@ class _ArsivSinifEkraniState extends State<ArsivSinifEkrani> {
                 value: 'sil',
                 child: ListTile(
                   contentPadding: EdgeInsets.zero,
-                  leading: Icon(Icons.delete_rounded, color: r.koyuMu ? r.tehlike : Colors.red.shade600),
-                  title: Text('Sınıfı Sil', style: TextStyle(color: r.koyuMu ? r.tehlike : Colors.red.shade600, fontWeight: FontWeight.w600)),
+                  leading: Icon(Icons.delete_rounded, color: r.tehlike),
+                  title: Text('Sınıfı Sil', style: TextStyle(color: r.tehlike, fontWeight: FontWeight.w600)),
                 ),
               ),
             ],

@@ -254,7 +254,7 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
                               style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800)),
                           const SizedBox(height: 4),
                           Text("Seni daha iyi tanıyalım.",
-                              style: TextStyle(color: r.koyuMu ? r.metinIkincil : Colors.grey.shade600, fontSize: 14)),
+                              style: TextStyle(color: r.metinIkincil, fontSize: 14)),
                           const SizedBox(height: 28),
                         ],
                         _buildField("Ad Soyad", _adCtrl, Icons.person_rounded),
@@ -263,7 +263,7 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
                         const SizedBox(height: 16),
                         _buildField("Şehir", _sehirCtrl, Icons.location_city_rounded),
                         const SizedBox(height: 16),
-                        Text("Branş", style: TextStyle(color: r.koyuMu ? r.metinGovde : Colors.grey.shade700, fontWeight: FontWeight.w600, fontSize: 13)),
+                        Text("Branş", style: TextStyle(color: r.metinGovde, fontWeight: FontWeight.w600, fontSize: 13)),
                         const SizedBox(height: 8),
                         // Çıplak DropdownButton, diğer alanların prefixIcon +
                         // OutlineInputBorder desenine uymuyordu; odak durumu
@@ -301,7 +301,7 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
                         // Görünüm cihaz ayarı: hemen uygulanır, form verisi
                         // değil — "kaydedilmemiş değişiklik" sayılmaz.
                         const SizedBox(height: 28),
-                        Text("Görünüm", style: TextStyle(color: r.koyuMu ? r.metinGovde : Colors.grey.shade700, fontWeight: FontWeight.w600, fontSize: 13)),
+                        Text("Görünüm", style: TextStyle(color: r.metinGovde, fontWeight: FontWeight.w600, fontSize: 13)),
                         const SizedBox(height: 8),
                         ValueListenableBuilder<ThemeMode>(
                           valueListenable: TemaTercihi.mod,
@@ -366,7 +366,7 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
                           const SizedBox(height: 8),
                           Text(
                             "Hesabını silmek tüm sınıflarını, öğrenci kayıtlarını, profil bilgilerini ve giriş hesabını kalıcı olarak siler. Bu işlem geri alınamaz.",
-                            style: TextStyle(color: r.koyuMu ? r.metinIkincil : Colors.grey.shade600, fontSize: 13, height: 1.5),
+                            style: TextStyle(color: r.metinIkincil, fontSize: 13, height: 1.5),
                           ),
                           const SizedBox(height: 14),
                           SizedBox(
@@ -500,7 +500,7 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: canConfirm
-                      ? (ctx.renk.koyuMu ? ctx.renk.silDolgu : Colors.red.shade700)
+                      ? (ctx.renk.silDolgu)
                       : ctx.renk.cizgi,
                   foregroundColor: Colors.white,
                 ),
@@ -712,7 +712,7 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: TextStyle(color: r.koyuMu ? r.metinGovde : Colors.grey.shade700, fontWeight: FontWeight.w600, fontSize: 13)),
+        Text(label, style: TextStyle(color: r.metinGovde, fontWeight: FontWeight.w600, fontSize: 13)),
         const SizedBox(height: 8),
         // Görsel etiket ayrı bir Text; ekran okuyucu alanı boş "input" diye
         // okuyordu (denetim Y8). Satır içi label/hint alan doluyken
@@ -726,7 +726,7 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
           buildCounter: gizliSayac,
           textInputAction: TextInputAction.next,
           decoration: InputDecoration(
-            prefixIcon: Icon(icon, color: r.koyuMu ? r.ikonAna : AppTema.anaAcik, size: 20),
+            prefixIcon: Icon(icon, color: r.ikonAna, size: 20),
           ),
           ),
         ),

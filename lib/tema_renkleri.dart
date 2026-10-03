@@ -137,6 +137,11 @@ class CemberRenkleri extends ThemeExtension<CemberRenkleri> {
 
   bool get koyuMu => sayfa.computeLuminance() < 0.2;
 
+  /// Mürekkep dolgulu küçük öğe ("Yok" etiketi, DURDUR): koyu kartta
+  /// mürekkep 1,1:1 kalıp kayboluyordu; koyuda krem dolgu + mürekkep yazı.
+  Color get murekkepDolgu => koyuMu ? const Color(0xFFF4F1EA) : AppTema.ana;
+  Color get murekkepUstu => koyuMu ? AppTema.ana : Colors.white;
+
   /// Bugünkü görünüm — değerler ekranlardaki eski elle yazılmış renklerin aynısı.
   /// "Teneffüs" açık: krem sayfa, beyaz kart, mürekkep yazı ve kenar.
   static const acik = CemberRenkleri(

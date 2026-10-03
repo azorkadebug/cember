@@ -242,7 +242,7 @@ class _GecenYildanEkleEkraniState extends State<GecenYildanEkleEkrani> {
         const SizedBox(width: 6),
         Flexible(child: Text(o.gorunenAd, overflow: TextOverflow.ellipsis,
             style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600,
-                color: sinifta ? r.metinUcuncul : (r.koyuMu ? r.metin : Colors.black87)))),
+                color: sinifta ? r.metinUcuncul : (r.metin)))),
         if (o.saglikNotlari.isNotEmpty) ...[
           const SizedBox(width: 6),
           const OzelSimgeWidget(OzelSimge.saglik, size: 16, color: Colors.teal),

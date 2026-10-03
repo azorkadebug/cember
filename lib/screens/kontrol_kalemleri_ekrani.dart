@@ -86,7 +86,7 @@ class _KontrolKalemleriEkraniState extends State<KontrolKalemleriEkrani> {
                 ),
               ),
               const SizedBox(height: 16),
-              Text('Tür', style: TextStyle(fontWeight: FontWeight.w600, color: r.koyuMu ? r.metinGovde : Colors.grey.shade700, fontSize: 13)),
+              Text('Tür', style: TextStyle(fontWeight: FontWeight.w600, color: r.metinGovde, fontSize: 13)),
               const SizedBox(height: 6),
               Row(children: [
                 _tipChip('Günlük ✓/✗', tip == KalemTipi.gunluk, () => setLocal(() => tip = KalemTipi.gunluk)),
@@ -101,7 +101,7 @@ class _KontrolKalemleriEkraniState extends State<KontrolKalemleriEkrani> {
                 style: TextStyle(color: r.metinIkincil, fontSize: 12),
               ),
               const SizedBox(height: 16),
-              Text('İkon', style: TextStyle(fontWeight: FontWeight.w600, color: r.koyuMu ? r.metinGovde : Colors.grey.shade700, fontSize: 13)),
+              Text('İkon', style: TextStyle(fontWeight: FontWeight.w600, color: r.metinGovde, fontSize: 13)),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8, runSpacing: 8,
@@ -112,11 +112,11 @@ class _KontrolKalemleriEkraniState extends State<KontrolKalemleriEkrani> {
                     child: Container(
                       width: 44, height: 44,
                       decoration: BoxDecoration(
-                        color: secili ? (r.koyuMu ? r.vurguZemin : AppTema.ana) : r.yuzeyAna,
+                        color: secili ? (r.vurguZemin) : r.yuzeyAna,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: secili ? r.vurgu : Colors.transparent, width: 2),
                       ),
-                      child: KalemSimgesi(anahtar, color: secili ? (r.koyuMu ? r.vurguKoyu : Colors.white) : r.ikonAna, size: 22),
+                      child: KalemSimgesi(anahtar, color: secili ? (r.vurguKoyu) : r.ikonAna, size: 22),
                     ),
                   );
                 }).toList(),
@@ -126,7 +126,7 @@ class _KontrolKalemleriEkraniState extends State<KontrolKalemleriEkrani> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: Text('İptal', style: TextStyle(color: r.koyuMu ? r.metinIkincil : Colors.grey.shade600)),
+              child: Text('İptal', style: TextStyle(color: r.metinIkincil)),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
@@ -168,7 +168,7 @@ class _KontrolKalemleriEkraniState extends State<KontrolKalemleriEkrani> {
           borderRadius: BorderRadius.circular(10),
         ),
         child: Text(label, style: TextStyle(
-          color: secili ? r.vurguMetin : (r.koyuMu ? r.metinGovde : Colors.grey.shade700),
+          color: secili ? r.vurguMetin : (r.metinGovde),
           fontWeight: FontWeight.w600, fontSize: 13,
         )),
       ),
@@ -283,7 +283,7 @@ class _KontrolKalemleriEkraniState extends State<KontrolKalemleriEkrani> {
                         style: TextStyle(color: r.metinIkincil, fontSize: 12)),
                     trailing: Row(mainAxisSize: MainAxisSize.min, children: [
                       IconButton(
-                        icon: Icon(Icons.delete_outline_rounded, color: r.koyuMu ? r.tehlike : Colors.red.shade400),
+                        icon: Icon(Icons.delete_outline_rounded, color: r.tehlike),
                         tooltip: 'Kalemi sil',
                         onPressed: () => setState(() {
                           _kirli = true;

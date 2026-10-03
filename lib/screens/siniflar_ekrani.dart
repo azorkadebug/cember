@@ -297,10 +297,10 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.error_outline, size: 48, color: r.koyuMu ? r.tehlike : Colors.red.shade300),
+                          Icon(Icons.error_outline, size: 48, color: r.tehlike),
                           const SizedBox(height: 12),
                           Text(FirestoreService.hataMesaji(snapshot.error!), textAlign: TextAlign.center,
-                              style: TextStyle(color: r.koyuMu ? r.tehlike : Colors.red.shade700)),
+                              style: TextStyle(color: r.tehlike)),
                         ],
                       ),
                     ),
@@ -319,7 +319,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
                           Icon(Icons.class_outlined, size: 72, color: r.bosDurumIkonu),
                           const SizedBox(height: 16),
                           Text("Hoş geldin! 👋",
-                              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: r.koyuMu ? r.metinIkincil : Colors.grey.shade600)),
+                              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: r.metinIkincil)),
                           const SizedBox(height: 6),
                           Text("Üç adımda hazırsın:",
                               style: TextStyle(color: r.metinIkincil)),
@@ -495,8 +495,8 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
                       onTap: () => Navigator.pop(ctx, 'arsiv'),
                     ),
                     ListTile(
-                      leading: Icon(Icons.delete_rounded, color: ctx.renk.koyuMu ? ctx.renk.tehlike : Colors.red.shade600),
-                      title: Text("Sınıfı Sil", style: TextStyle(fontWeight: FontWeight.w600, color: ctx.renk.koyuMu ? ctx.renk.tehlike : Colors.red.shade600)),
+                      leading: Icon(Icons.delete_rounded, color: ctx.renk.tehlike),
+                      title: Text("Sınıfı Sil", style: TextStyle(fontWeight: FontWeight.w600, color: ctx.renk.tehlike)),
                       onTap: () => Navigator.pop(ctx, 'sil'),
                     ),
                     const SizedBox(height: 8),
@@ -521,7 +521,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
               color: r.cizgi,
               borderRadius: BorderRadius.circular(22),
             ),
-            child: Icon(Icons.more_horiz_rounded, color: r.koyuMu ? r.metinGovde : Colors.grey.shade700, size: 28),
+            child: Icon(Icons.more_horiz_rounded, color: r.metinGovde, size: 28),
           ),
           // Sınıfın rengi; seçili kart (iki sütun) kalın kenarla belli olur.
           child: Cikartma(
@@ -738,20 +738,20 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
         title: Row(children: [
           Container(
             padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: ctx.renk.koyuMu ? ctx.renk.tehlikeZemin : Colors.red.shade50, borderRadius: BorderRadius.circular(10)),
-            child: Icon(Icons.stop_rounded, color: ctx.renk.koyuMu ? ctx.renk.tehlike : Colors.red.shade700),
+            decoration: BoxDecoration(color: ctx.renk.tehlikeZemin, borderRadius: BorderRadius.circular(10)),
+            child: Icon(Icons.stop_rounded, color: ctx.renk.tehlike),
           ),
           const SizedBox(width: 12),
           const Text("Etkinliği Bitir", style: TextStyle(fontWeight: FontWeight.w700)),
         ]),
         content: Text(
           "Etkinliği tamamen bitirmek istediğine emin misin? Skorlar sıfırlanacak.",
-          style: TextStyle(color: ctx.renk.koyuMu ? ctx.renk.metinGovde : Colors.grey.shade700, height: 1.5),
+          style: TextStyle(color: ctx.renk.metinGovde, height: 1.5),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text("İptal", style: TextStyle(color: ctx.renk.koyuMu ? ctx.renk.metinIkincil : Colors.grey.shade600)),
+            child: Text("İptal", style: TextStyle(color: ctx.renk.metinIkincil)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -800,7 +800,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('İptal', style: TextStyle(color: ctx.renk.koyuMu ? ctx.renk.metinIkincil : Colors.grey.shade600)),
+            child: Text('İptal', style: TextStyle(color: ctx.renk.metinIkincil)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -861,7 +861,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
               ),
               const SizedBox(height: 18),
               Text('Branş',
-                  style: TextStyle(fontWeight: FontWeight.w600, color: context.renk.koyuMu ? context.renk.metinGovde : Colors.grey.shade700, fontSize: 13)),
+                  style: TextStyle(fontWeight: FontWeight.w600, color: context.renk.metinGovde, fontSize: 13)),
               const SizedBox(height: 6),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -920,7 +920,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('İptal', style: TextStyle(color: context.renk.koyuMu ? context.renk.metinIkincil : Colors.grey.shade600)),
+            child: Text('İptal', style: TextStyle(color: context.renk.metinIkincil)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -1006,8 +1006,8 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
           title: Row(children: [
             Container(
               padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(color: ctx.renk.koyuMu ? ctx.renk.yuzeyAna : Colors.indigo.shade50, borderRadius: BorderRadius.circular(10)),
-              child: Icon(Icons.sports_rounded, color: ctx.renk.koyuMu ? ctx.renk.ikonAna : Colors.indigo),
+              decoration: BoxDecoration(color: ctx.renk.yuzeyAna, borderRadius: BorderRadius.circular(10)),
+              child: Icon(Icons.sports_rounded, color: ctx.renk.ikonAna),
             ),
             const SizedBox(width: 12),
             const Text("Sınıflar Arası Yarışma", style: TextStyle(fontWeight: FontWeight.w700)),
@@ -1024,11 +1024,10 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: Text("İptal", style: TextStyle(color: ctx.renk.koyuMu ? ctx.renk.metinIkincil : Colors.grey.shade600)),
+              child: Text("İptal", style: TextStyle(color: ctx.renk.metinIkincil)),
             ),
             ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppTema.panelKoyu1, foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               ),
               icon: const Icon(Icons.sports_rounded, size: 20),
@@ -1097,7 +1096,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
         border: Border.all(color: _renkBul(secilenRenk).withAlpha(60)),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(etiket, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: context.renk.koyuMu ? context.renk.metinIkincil : Colors.grey.shade600)),
+        Text(etiket, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: context.renk.metinIkincil)),
         const SizedBox(height: 6),
         DropdownButtonFormField<String>(
           initialValue: secilenId,
@@ -1290,7 +1289,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
     final ad = ((d.data() as Map?)?['ad'] ?? d.id).toString();
     return ListTile(
       dense: true,
-      leading: Icon(Icons.groups_rounded, color: context.renk.koyuMu ? context.renk.metinUcuncul : Colors.grey.shade500),
+      leading: Icon(Icons.groups_rounded, color: context.renk.metinUcuncul),
       title: Text(ad, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
       trailing: Icon(Icons.chevron_right_rounded, color: context.renk.ikonPasif),
       onTap: () => Navigator.push(context, MaterialPageRoute(
@@ -1372,10 +1371,10 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: context.renk.koyuMu ? context.renk.tehlikeZemin : Colors.red.shade50,
+                color: context.renk.tehlikeZemin,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(Icons.warning_amber_rounded, color: context.renk.koyuMu ? context.renk.tehlike : Colors.red.shade700),
+              child: Icon(Icons.warning_amber_rounded, color: context.renk.tehlike),
             ),
             const SizedBox(width: 12),
             const Text("Sınıfı Sil", style: TextStyle(fontWeight: FontWeight.w700)),
@@ -1383,12 +1382,12 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
         ),
         content: Text(
           "$sinifAdi sınıfını ve tüm öğrencilerini silmek istediğine emin misin?\n\nBu işlem geri alınamaz.",
-          style: TextStyle(color: context.renk.koyuMu ? context.renk.metinGovde : Colors.grey.shade700, height: 1.5),
+          style: TextStyle(color: context.renk.metinGovde, height: 1.5),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text("İptal", style: TextStyle(color: context.renk.koyuMu ? context.renk.metinIkincil : Colors.grey.shade600)),
+            child: Text("İptal", style: TextStyle(color: context.renk.metinIkincil)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(

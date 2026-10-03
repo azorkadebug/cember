@@ -744,8 +744,8 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
 
   Widget _baslatDugmesi({bool kisa = false}) {
     final r = context.renk;
-    final zemin = _timerBitti ? r.tehlike : _timerCalisiyor ? AppTema.ana : r.vurgu;
-    final yazi = _timerBitti || _timerCalisiyor ? Colors.white : r.vurguMetin;
+    final zemin = _timerBitti ? r.tehlike : _timerCalisiyor ? r.murekkepDolgu : r.vurgu;
+    final yazi = _timerBitti ? Colors.white : _timerCalisiyor ? r.murekkepUstu : r.vurguMetin;
     final etiket = _timerBitti ? (kisa ? "BİTTİ" : "SÜRE BİTTİ") : _timerCalisiyor ? "DURDUR" : "BAŞLAT";
     final sekil = StadiumBorder(side: BorderSide(color: r.kenar, width: 2.5));
     return SertGolgeli(

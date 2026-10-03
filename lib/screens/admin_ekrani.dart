@@ -212,7 +212,7 @@ class _AdminEkraniState extends State<AdminEkrani> {
             margin: const EdgeInsets.only(bottom: 8),
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: r.koyuMu ? r.yuzeyGri : Colors.grey.shade50,
+              color: r.yuzeyGri,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
@@ -233,7 +233,7 @@ class _AdminEkraniState extends State<AdminEkrani> {
                       Text(k['ad'] ?? 'İsimsiz', style: const TextStyle(fontWeight: FontWeight.w700)),
                       Text(
                         [k['okul'], k['sehir']].where((e) => e != null && e.toString().isNotEmpty).join(' • '),
-                        style: TextStyle(color: r.koyuMu ? r.metinIkincil : Colors.grey.shade600, fontSize: 12),
+                        style: TextStyle(color: r.metinIkincil, fontSize: 12),
                       ),
                     ],
                   ),

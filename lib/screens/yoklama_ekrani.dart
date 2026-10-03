@@ -490,15 +490,15 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
                   constraints: const BoxConstraints(minHeight: 44, minWidth: 84),
                   padding: const EdgeInsets.symmetric(horizontal: 14),
                   decoration: ShapeDecoration(
-                    color: geldi ? const Color(0xFF63C77A) : AppTema.ana,
+                    color: geldi ? const Color(0xFF63C77A) : r.murekkepDolgu,
                     shape: const StadiumBorder(side: BorderSide(color: AppTema.ana, width: 2)),
                   ),
                   child: Row(mainAxisSize: MainAxisSize.min, mainAxisAlignment: MainAxisAlignment.center, children: [
                     Icon(geldi ? Icons.check_rounded : Icons.close_rounded,
-                        size: 18, color: geldi ? AppTema.ana : Colors.white),
+                        size: 18, color: geldi ? AppTema.ana : r.murekkepUstu),
                     const SizedBox(width: 4),
                     Text(geldi ? 'Geldi' : 'Yok',
-                        style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: geldi ? AppTema.ana : Colors.white)),
+                        style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: geldi ? AppTema.ana : r.murekkepUstu)),
                   ]),
                 ),
                 ),

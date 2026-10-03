@@ -316,7 +316,7 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
                           suffixIcon: IconButton(
                             tooltip: _obscurePass ? 'Şifreyi göster' : 'Şifreyi gizle',
                             icon: Icon(_obscurePass ? Icons.visibility_off_rounded : Icons.visibility_rounded,
-                                color: r.koyuMu ? r.metinUcuncul : Colors.grey.shade500, size: 20),
+                                color: r.metinUcuncul, size: 20),
                             onPressed: () => setState(() => _obscurePass = !_obscurePass),
                           ),
                         ),
