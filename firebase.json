@@ -10,6 +10,10 @@
     ],
     "rewrites": [
       {
+        "source": "/oryantasyon/@(1|2|3|4|5)",
+        "destination": "/oryantasyon/index.html"
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }

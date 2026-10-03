@@ -1780,7 +1780,16 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
 
   // --- HIZLI ÖĞRENCİ EKLE (İsim kontrolü ile) ---
   void _hizliSinifEkleDialog() {
-    List<TopluOgrenciSatiri> satirlar = List.generate(5, (i) => TopluOgrenciSatiri());
+    final uid = AuthService().uid;
+    final taslak = TopluEklemeTaslagi.geriYukle(uid, widget.sinifId);
+    // Boş satır eklenmeden önce say: `satirlar` taslak listesinin kendisi.
+    final geriYuklenen = taslak?.length ?? 0;
+    List<TopluOgrenciSatiri> satirlar = taslak ?? List.generate(5, (i) => TopluOgrenciSatiri());
+    // Taslaktan dönülünce boş satır bırak, öğretmen kaldığı yerden yazsın.
+    while (taslak != null && satirlar.length < 5) {
+      satirlar.add(TopluOgrenciSatiri());
+    }
+    final durum = _TopluKayitDurumu();
 
     showModalBottomSheet(
       context: context,
@@ -1811,6 +1820,32 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                     const Expanded(child: Text("Hızlı Öğrenci Ekle", style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800))),
                   ]),
                 ),
+                if (geriYuklenen > 0 && !durum.taslakTemizlendi)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
+                    child: Row(children: [
+                      Icon(Icons.history_rounded, size: 18, color: r.metinIkincil),
+                      const SizedBox(width: 8),
+                      Expanded(child: Text("Kaydedilmemiş $geriYuklenen isim geri getirildi.",
+                          style: TextStyle(color: r.metinIkincil, fontSize: 13))),
+                      TextButton(
+                        onPressed: durum.kaydediyor ? null : () => setSheetState(() {
+                          final eski = List.of(satirlar);
+                          satirlar
+                            ..clear()
+                            ..addAll(List.generate(5, (i) => TopluOgrenciSatiri()));
+                          durum.taslakTemizlendi = true;
+                          TopluEklemeTaslagi.sil(uid, widget.sinifId);
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            for (final e in eski) {
+                              e.dispose();
+                            }
+                          });
+                        }),
+                        child: const Text("Temizle"),
+                      ),
+                    ]),
+                  ),
                 const SizedBox(height: 12),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -1963,11 +1998,21 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                     color: r.kartUstu,
                     boxShadow: [BoxShadow(color: Colors.black.withAlpha(10), blurRadius: 8, offset: const Offset(0, -2))],
                   ),
-                  child: Row(children: [
+                  child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  if (durum.hata != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: Row(children: [
+                        Icon(Icons.error_outline_rounded, size: 18, color: r.yokMetin),
+                        const SizedBox(width: 8),
+                        Expanded(child: Text(durum.hata!, style: TextStyle(color: r.yokMetin, fontWeight: FontWeight.w600))),
+                      ]),
+                    ),
+                  Row(children: [
                     Text("${satirlar.length} satır", style: TextStyle(color: r.metinIkincil, fontWeight: FontWeight.w600)),
                     const Spacer(),
                     TextButton(
-                      onPressed: () => Navigator.pop(sheetContext),
+                      onPressed: durum.kaydediyor ? null : () => Navigator.pop(sheetContext),
                       child: Text("İptal", style: TextStyle(color: r.koyuMu ? r.metinIkincil : Colors.grey.shade600)),
                     ),
                     const SizedBox(width: 12),
@@ -1977,10 +2022,17 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14), elevation: 2,
                       ),
-                      icon: const Icon(Icons.save_rounded, size: 20),
-                      label: const Text("Tümünü Kaydet", style: TextStyle(fontWeight: FontWeight.w700)),
-                      onPressed: () => _topluKaydet(satirlar, sheetContext),
+                      icon: durum.kaydediyor
+                          ? SizedBox(width: 20, height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2.4, color: r.vurguMetin))
+                          : const Icon(Icons.save_rounded, size: 20),
+                      label: Text(durum.kaydediyor ? "Kaydediliyor…" : "Tümünü Kaydet",
+                          style: const TextStyle(fontWeight: FontWeight.w700)),
+                      onPressed: durum.kaydediyor
+                          ? null
+                          : () => _topluKaydet(satirlar, sheetContext, durum, setSheetState),
                     ),
+                  ]),
                   ]),
                 ),
               ],
@@ -1989,6 +2041,15 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
         },
       ),
     ).then((_) {
+      // Kaydedilmeden kapandıysa (İptal, dışarı dokunma, hata) yazılanlar
+      // bellekte kalsın; aynı sınıfta yeniden açınca geri gelir.
+      // Kayıt sürerken dışarı dokunup kapatıldıysa da saklama: yazma devam
+      // ediyor, taslak kalırsa aynı isimler ikinci kez kaydedilebilir.
+      if (durum.kaydedildi || durum.kaydediyor) {
+        TopluEklemeTaslagi.sil(uid, widget.sinifId);
+      } else {
+        TopluEklemeTaslagi.sakla(uid, widget.sinifId, satirlar);
+      }
       // .then() pop anında çalışır ama sheet kapanış animasyonu (~250ms)
       // henüz bitmemiştir; TextField'lar animasyon boyunca hâlâ bu
       // controller'lara bağlı. Animasyon bitene kadar bekleyip dispose et,
@@ -2004,37 +2065,53 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
   /// Toplu ekleme. Bu metot `onPressed` içinden await edilmeden çağrılıyor;
   /// gövdesi try/catch ile sarılmazsa bir hata (ağ kopması, kural reddi)
   /// sessizce yutulur ve kullanıcı ne başarı ne hata mesajı görür.
-  bool _topluKaydediyor = false;
-
-  Future<void> _topluKaydet(
-      List<TopluOgrenciSatiri> satirlar, BuildContext sheetContext) async {
+  ///
+  /// Hata olunca pencere KAPANMAZ: önceden kapanıyordu ve yazılan isimler
+  /// gidiyordu, öğretmen baştan yazmak zorunda kalıyordu (2 Eki 2026).
+  Future<void> _topluKaydet(List<TopluOgrenciSatiri> satirlar, BuildContext sheetContext,
+      _TopluKayitDurumu durum, StateSetter setSheetState) async {
     // Yavaş bağlantıda çift dokunuş işlemi iki kez koşturuyordu (denetim #3 Y8).
-    if (_topluKaydediyor) return;
-    _topluKaydediyor = true;
+    if (durum.kaydediyor) return;
+    setSheetState(() {
+      durum.kaydediyor = true;
+      durum.hata = null;
+    });
     try {
-      await _topluKaydetYurut(satirlar, sheetContext);
+      await _topluKaydetYurut(satirlar, sheetContext, durum);
     } catch (_) {
-      if (sheetContext.mounted) Navigator.pop(sheetContext);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: const Text("Öğrenciler eklenemedi. Bağlantını kontrol edip tekrar dene."),
-          backgroundColor: Colors.red.shade700,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        ));
+      if (sheetContext.mounted) {
+        setSheetState(() => durum.hata = "Kaydedilemedi. İsimler duruyor, tekrar dene.");
       }
     } finally {
-      _topluKaydediyor = false;
+      if (sheetContext.mounted) setSheetState(() => durum.kaydediyor = false);
     }
   }
 
-  Future<void> _topluKaydetYurut(
-      List<TopluOgrenciSatiri> satirlar, BuildContext sheetContext) async {
+  Future<void> _topluKaydetYurut(List<TopluOgrenciSatiri> satirlar,
+      BuildContext sheetContext, _TopluKayitDurumu durum) async {
     int eklenen = 0;
     int atlanan = 0;
+    // Sunucu 10 sn'de onay vermezse yazma kuyrukta sayılır: kalıcı önbellek
+    // açık, kayıt cihazda yapıldı, bağlantı gelince gider. Önceden süresiz
+    // bekliyordu ve pencere takılı kalıyordu (yoklama ekranıyla aynı kalıp).
+    bool kuyrukta = false;
+    Future<void> yaz(List<Ogrenci> liste) async {
+      try {
+        await _db.ogrencilerTopluEkle(widget.sinifId, liste)
+            .timeout(const Duration(seconds: 10));
+      } on TimeoutException {
+        kuyrukta = true;
+      }
+    }
 
-    // Tüm mevcut isimleri tek sorguda al
-    final mevcutAdlar = await _db.mevcutOgrenciAdlari(widget.sinifId);
+    // Tüm mevcut isimleri tek sorguda al; sunucu yavaşsa cihazdaki kopya
+    Set<String> mevcutAdlar;
+    try {
+      mevcutAdlar = await _db.mevcutOgrenciAdlari(widget.sinifId)
+          .timeout(const Duration(seconds: 8));
+    } on TimeoutException {
+      mevcutAdlar = await _db.mevcutOgrenciAdlari(widget.sinifId, sadeceOnbellek: true);
+    }
 
     // Yeni ve çakışan öğrencileri ayır
     final yeniOgrenciler = <Ogrenci>[];
@@ -2058,7 +2135,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
 
     // Yeni öğrencileri toplu ekle
     if (yeniOgrenciler.isNotEmpty) {
-      await _db.ogrencilerTopluEkle(widget.sinifId, yeniOgrenciler);
+      await yaz(yeniOgrenciler);
       eklenen = yeniOgrenciler.length;
     }
 
@@ -2107,7 +2184,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
           id: '', ad: s.adCtrl.text.trim(), isMale: s.isMale,
           puan: int.tryParse(s.puanCtrl.text) ?? 100,
         )).toList();
-        await _db.ogrencilerTopluEkle(widget.sinifId, cakisanOgrenciler);
+        await yaz(cakisanOgrenciler);
         eklenen += cakisanOgrenciler.length;
       } else {
         atlanan = cakisanlar.length;
@@ -2115,11 +2192,13 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
     }
 
     // Not: controller dispose'u sheet kapanışındaki .then() içinde yapılıyor.
+    durum.kaydedildi = true;
     if (sheetContext.mounted) Navigator.pop(sheetContext);
     if (mounted) {
+      final ozet = atlanan > 0 ? "$eklenen eklendi, $atlanan atlandı" : "$eklenen öğrenci eklendi!";
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(atlanan > 0 ? "$eklenen eklendi, $atlanan atlandı" : "$eklenen öğrenci eklendi!"),
-        backgroundColor: Colors.green.shade700,
+        content: Text(kuyrukta ? "$ozet Bağlantı yavaş, internet gelince gönderilecek." : ozet),
+        backgroundColor: kuyrukta ? AppTema.uyari : Colors.green.shade700,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ));
@@ -2516,4 +2595,12 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
       ),
     ).ignore();
   }
+}
+
+/// "Hızlı Öğrenci Ekle" penceresinin kayıt durumu (pencereye özgü).
+class _TopluKayitDurumu {
+  bool kaydediyor = false;
+  bool kaydedildi = false;
+  bool taslakTemizlendi = false;
+  String? hata;
 }
