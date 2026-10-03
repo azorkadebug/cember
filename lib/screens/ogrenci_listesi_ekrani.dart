@@ -23,66 +23,53 @@ import 'yoklama_ekrani.dart';
 import 'kontrol_kalemleri_ekrani.dart';
 import 'gecen_yildan_ekle_ekrani.dart';
 
+// Rastgele takım adları: yalnız Türkçe, ortaokul mizahı (Sabri, 2026-10-04:
+// İngilizce olanlar — FC, United, Lag, AFK, WiFi… — çıkarıldı). Kimseyi
+// etiketlemeyen, kaba olmayan absürtler; denetim #4'te ayıklananlar geri
+// gelmesin (Sus Len, Biber Gazı Spor, taraftar göndermeleri…).
 const List<String> _takimIsimHavuzu = [
-  // Oyun & internet kültürü
-  "Lag Kralları", "AFK Takımı", "Respawn FC", "Noob Avcıları", "GG United",
-  "Bot Ordusu", "Ctrl+Z Spor", "Alt+F4 Kalesi", "Pro Oyuncular", "Ping Canavarları",
-  "Combo Kralları", "Double Kill FC", "Glitch Takımı", "Bug Avcıları",
-  // Kantin & yemek teması
-  "Tost Mafyası", "Ayran United", "Simit Karteli", "Poğaça Operasyonu",
+  // Kantin & yemek
+  "Tost Mafyası", "Ayran Kardeşliği", "Simit Karteli", "Poğaça Operasyonu",
   "Kantin Korsanları", "Çikolata Çetesi", "Kraker Komandoları", "Cips Fırtınası",
-  "Susamlı Şimşekler", "Ketçap Canavarları", "Kola Kasırgası",
-  // Okul teması
-  "Teneffüs Kaplanları", "Ödev Avcıları", "Zil Korsanları", "Sınav Hayaletleri",
-  "Silgi Savaşçıları", "Uçan Tebeşirler", "Mega Cetvel", "Defter Ejderhaları",
-  "Çılgın Silgiler", "Kalem Açar Birliği", "Tahta Kalesi FC", "Müdür Yardımcıları",
-  "Sıra Arkası Spor", "Yoklama Fantastikleri",
-  // Absürt hayvan
-  "Ninja Kaplumbağalar", "Korsan Papağanlar", "Viking Kedileri", "Şimşek Hamsterlar",
-  "Perişan Penguenler", "Süpersonik Sincaplar", "Panik Ahtapotlar", "Disko Arıları",
-  "Turbo Salyangozlar", "Karambol Kedileri", "Torpido Tilkileri", "Roket Tavukları",
-  "Lazer Koyunları", "Bumerang Balıkları", "Tsunami Tavşanları", "Atom Karıncaları",
-  "Kızgın Flamingolar", "Parkur Pandaları", "Dubstep Yunusları",
-  // Absürt yemek
-  "Uçan Lahmacunlar", "Galaktik Börekler", "Patlayan Mısırlar", "Meteor Kurabiyeler",
-  "Kozmik Köfteciler", "Turşu Yıldızları", "Dinamit Domatesler", "Kaptan Patlıcan",
-  "Fantom Peynirler", "Kızgın Bamyalar", "Fırtınalı Fasulye",
-  // Absürt eşya & kavram
-  "Çaydanlık United", "Ejder Çorapları", "Gizli Ajanlar FC", "Gök Gürültüsü FC",
+  "Susamlı Şimşekler", "Ketçap Canavarları", "Uçan Lahmacunlar", "Galaktik Börekler",
+  "Patlayan Mısırlar", "Kozmik Köfteciler", "Turşu Yıldızları", "Dinamit Domatesler",
+  "Kaptan Patlıcan", "Kızgın Bamyalar", "Fırtınalı Fasulyeler", "Hızlı Hıyarlar",
+  "Şaşkın Şalgamlar", "Gizemli Gofretler", "Fırıldak Fındıklar", "Zıpzıp Zerdeçallar",
+  "Lazerli Lokumlar", "Uçan Köfteler", "Pilav Üstü Kahramanlar", "Mercimek Muhafızları",
+  "Sucuklu Yumurta Birliği", "Kaşık Düşmanları", "Çorba Savaşçıları", "Pişmaniye Paşaları",
+  // Okul & ders
+  "Teneffüs Kaplanları", "Teneffüs Tayfası", "Ödev Avcıları", "Zil Korsanları",
+  "Silgi Savaşçıları", "Uçan Tebeşirler", "Dev Cetvel", "Defter Ejderhaları",
+  "Çılgın Silgiler", "Kalemtıraş Kardeşliği", "Kozmik Kalemtıraşlar", "Kayıp Kalem Uçları",
+  "Sıra Arkası Spor", "Yoklama Ustaları", "Beslenme Çantası Birliği", "Kırmızı Kalem Korkusu",
+  "Pisagor Çetesi", "Bölen Bulunmaz", "Kesirli Kahramanlar", "Virgülden Sonrası",
+  "Türev Canavarları", "X'i Bulanlar", "Çarpım Tablosu Çetesi", "Pi Sayısı Takımı",
+  // Sınıf içi klasikler
+  "Son Sıra Kulübü", "Geç Kalanlar Birliği", "Unuttum Spor", "Ders Bitti Spor",
+  "Pardon Hocam", "Ben Yapmadım Spor", "Beş Dakika Daha", "Zil Çalsın Yeter",
+  "Tahtaya Kalkmam", "Hocam Bir Soru", "Kalem Ödünç Alanlar", "Yarın Getiririm",
+  "Defterim Evde Kaldı", "Sessiz Sınıf", "Parmak Kaldıranlar",
+  // Absürt hayvanlar
+  "Korsan Papağanlar", "Viking Kedileri", "Şimşek Hamsterlar", "Perişan Penguenler",
+  "Sesten Hızlı Sincaplar", "Panik Ahtapotlar", "Halaycı Arılar", "Roketli Salyangozlar",
+  "Karambol Kedileri", "Torpido Tilkileri", "Roket Tavukları", "Lazer Koyunları",
+  "Bumerang Balıkları", "Dalgalı Tavşanlar", "Atom Karıncaları", "Kızgın Flamingolar",
+  "Parkurcu Pandalar", "Göbek Atan Yunuslar", "Uykucu Kaplumbağalar", "Hapşıran Zürafalar",
+  "Kaykaycı Kirpiler", "Gözlüklü Baykuşlar", "Davulcu Ördekler", "Mırmır Aslanlar",
+  // Absürt eşya & doğa
+  "Çaydanlık Kardeşliği", "Ejder Çorapları", "Gizli Ajanlar", "Gök Gürültüsü Takımı",
   "Buldozer Kelebekler", "Sihirli Noktalar", "Nükleer Cevizler", "Dalga Delileri",
-  "Yıkılmaz Yumurtalar", "Uçan Halıcılar",
-  // Epik & komik karışım
-  "Meşhur Patatesler", "Efsane Peçeteler", "Korkusuz Krakerler", "Sönen Yıldızlar",
-  "Asi Kurabiyeler", "Gölge Simsarları", "Fırtına Fıstıkları", "Yanan Buzlar",
-  "Demir Elmalar", "Altın Sakızlar", "Elmas Dirsekler",
-  // Trend & pop kültür
-  "WiFi Avcıları", "Şarj Bitti FC", "Ekran Kırıkları", "Caps Efsaneleri",
-  "Meme Lordu", "Hashtag Ordusu", "Emoji Savaşçıları", "TikTok Kaplanları",
-  "Spotify Hayaletleri", "Netflix Nöbetçileri", "Bluetooth Korsanları",
-  // Sınıf içi klasikler & self-deprecating
-  "Son Sıra Kulübü", "Geç Kalanlar Birliği", "Unuttum Spor", "Ders Bitti FC",
-  "Kitap Unutanlar", "Rapor Kralları", "Pardon Hocam", "Ben Yapmadım FC",
-  "Beş Dakika Daha", "Zil Çalsın Yeter", "Tahtaya Kalkmam",
-  // Ortaokul meme / gündelik dil
-  "Efsane Çocuklar", "Mood Bozanlar", "Resmen Biz", "Aynen Öyle FC",
-  "Off Yine mi Biz", "Tamamdır Reis", "Hadi Canım",
-  "Valla Olmaz", "Yok Artık", 
-  // Absürt süper kahraman
+  "Yıkılmaz Yumurtalar", "Uçan Halıcılar", "Fırtına Fıstıkları", "Yanan Buzlar",
+  "Demir Elmalar", "Altın Sakızlar", "Elmas Dirsekler", "Atomik Ayakkabılar",
+  "Yağmur Botları", "Hortum Takımı", "Kar Topu Ordusu", "Şimşek Şemsiyeler",
+  // Epik & komik
+  "Meşhur Patatesler", "Efsane Peçeteler", "Korkusuz Krakerler", "Asi Kurabiyeler",
+  "Efsane Çocuklar", "Aynen Öyle Takımı", "Tamamdır Reis", "Yok Artık",
+  "Valla Olmaz", "Hadi Canım", "Kimse Bizi Tutamaz", "Bugün Bizim Günümüz",
+  // Süper kahraman & çakma spor
   "Kaptan Kek", "Süper Simit", "Işın Kılıçlı Kalemler", "Radyoaktif Silgiler",
-  "X-Men Yok Biz Varız", "Lazerli Lokumlar", "Atomik Ayakkabılar",
-  // Ortaokul spor & çakma marka
-  "Adidos FC", "Nayki United", "Pumba Spor", 
-  "Real Mısır", "Barçelona Börek", "Manchester Mantı",
-  // Matematik & ders esprisi
-  "Pisagor Çetesi", "Bölen Bulunmaz", "Kesirli Kahramanlar",
-  // Denetim #4 (2026-09-06): kaba/küçük düşürücü/taraftar göndermeli 10 ad
-  // çıkarıldı (Sus Len, Kaşarlı Ejderhalar, Biber Gazı Spor, Negatif Enerji,
-  // Sıfırın Altı, Gümüş Göbekler, Bana mı Dedin, Kopya Ajanları, Beşiktoast,
-  // Galatasaray Tost); yerine kimseyi etiketlemeyen absürtler:
-  "Uçan Köfteler", "Kozmik Kalemtıraşlar", "Hızlı Hıyarlar", "Şaşkın Şalgamlar",
-  "Gizemli Gofretler", "Kayıp Kalem Uçları", "Fırıldak Fındıklar", "Teneffüs Tayfası",
-  "Sıra Kapmaca FC", "Çıtır Çıtır United", "Zıpzıp Zerdeçallar", 
-  "Virgülden Sonrası", "Türev Canavarları", "X'i Bulanlar",
+  "Pelerinli Pankekler", "Görünmez Çantalar", "Adidos Spor", "Pumba Spor",
+  "Real Mısır", "Barçelona Börek", "Mantıspor", "Lahmacunspor",
 ];
 
 class OgrenciListesiEkrani extends StatefulWidget {
