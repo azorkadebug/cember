@@ -68,12 +68,13 @@
         "headers": [
           {
             "key": "Cache-Control",
-            "value": "public, max-age=86400"
+            "value": "no-cache"
           }
-        ]
+        ],
+        "_comment": "no-cache: Flutter simge yazı tipini (MaterialIcons, ağaç-silkelemeli) ve FontManifest'i her derlemede AYNI adla değiştiriyor; önbellekte eski kalınca yeni simgeler boş daire çıkıyordu (Profil düğmesi, 2026-10-04). ETag ile 304 döner, maliyeti düşük."
       },
       {
-        "source": "**/*.@(otf|ttf|woff2|wav|png|jpg|webp)",
+        "source": "**/*.@(wav|jpg|webp)",
         "headers": [
           {
             "key": "Cache-Control",
