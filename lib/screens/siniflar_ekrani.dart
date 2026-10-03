@@ -398,7 +398,9 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
             child: FloatingActionButton(
               heroTag: 'mac',
               onPressed: () => _siniflarArasiMacDialog(context),
-              backgroundColor: const Color(0xFFFFD84D),
+              // Limon sarısıydı; sarı sınıf kartının üstüne gelince
+              // kayboluyordu (Sabri'nin ekranı, 5C). Beyaz her kartta seçilir.
+              backgroundColor: Colors.white,
               foregroundColor: AppTema.ana,
               shape: const CircleBorder(side: BorderSide(color: AppTema.ana, width: 2.5)),
               tooltip: 'Sınıflar Arası Yarışma',
