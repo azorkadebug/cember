@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>Yoklama 7-A</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700;800;900&amp;family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,400,1,0&amp;display=swap">
+<style>
+body{margin:0}
+.ms{font-family:"Material Symbols Rounded";font-weight:normal;font-style:normal;line-height:1;letter-spacing:normal;text-transform:none;white-space:nowrap;font-variation-settings:"FILL" 1;-webkit-font-smoothing:antialiased}
+button{font:inherit;cursor:pointer}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; position: relative; overflow: hidden; box-sizing: border-box; font-family: Roboto, system-ui, sans-serif; background: {{c.sayfa}}; color: {{c.metin}}; display: flex; flex-direction: column">
+  <div style="background: {{c.bar}}; color: {{c.barMetin}}; height: 56px; padding: 0 8px 0 4px; display: flex; align-items: center; gap: 4px; flex: none">
+    <button aria-label="Geri" style="width: 44px; height: 44px; border: 0; background: transparent; color: {{c.barMetin}}; display: grid; place-items: center"><span class="ms" style="font-size: 24px">arrow_back</span></button>
+    <div style="flex-grow: 1">
+      <div style="font-size: 16px; font-weight: 800">Yoklama • 7-A</div>
+      <div style="font-size: 12px; opacity: .86; display: flex; align-items: center; gap: 2px">Bugün — 2 Ekim 2026<span class="ms" style="font-size: 16px">expand_more</span></div>
+    </div>
+    <button aria-label="Tarih seç" style="width: 44px; height: 44px; border: 0; background: transparent; color: {{c.barMetin}}; display: grid; place-items: center"><span class="ms" style="font-size: 20px">calendar_today</span></button>
+  </div>
+  <div style="background: {{c.kart}}; padding: 8px 8px 8px 16px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid {{c.kartCizgi}}; flex: none">
+    <span class="ms" style="font-size: 18px; color: {{c.ucuncul}}">info</span>
+    <span style="font-size: 13px; color: {{c.ikincil}}; flex-grow: 1">Karta dokununca kalemler açılır</span>
+    <button style="min-height: 44px; border: 0; background: transparent; color: {{c.uyari}}; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 6px; padding: 0 8px"><span class="ms" style="font-size: 18px">refresh</span>Hepsini Geldi Yap</button>
+  </div>
+
+  <div style="padding: 12px; display: flex; flex-direction: column; gap: 8px">
+    <sc-for list="{{ogrenciler}}" as="o" hint-placeholder-count="7">
+      <div style="background: {{c.kart}}; border-radius: 14px; border-left: 4px solid {{o.serit}}; padding: 8px 8px 8px 10px; display: flex; align-items: center; gap: 8px; box-shadow: 0 1px 3px {{c.golge}}">
+        <div style="flex-grow: 1; min-width: 0; display: flex; align-items: center; gap: 8px">
+          <span style="font-size: 16px; font-weight: 700; color: {{c.metin}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{o.ad}}</span>
+          <sc-if value="{{o.eksikVar}}" hint-placeholder-val="{{false}}">
+            <span style="background: {{c.eksikZ}}; color: {{c.eksikM}}; border-radius: 8px; padding: 4px 8px; font-size: 12px; font-weight: 700; white-space: nowrap">{{o.eksik}}</span>
+          </sc-if>
+        </div>
+        <button style="background: {{o.dZ}}; border: 1px solid {{o.dC}}; color: {{o.dM}}; border-radius: 10px; padding: 11px 14px; font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 6px"><span class="ms" style="font-size: 16px">{{o.ikon}}</span>{{o.durum}}</button>
+        <span class="ms" style="font-size: 22px; color: {{c.ucuncul}}">expand_more</span>
+      </div>
+    </sc-for>
+  </div>
+
+  <div style="position: absolute; left: 0; right: 0; bottom: 0; background: {{c.altbar}}; box-shadow: 0 -2px 10px {{c.golge}}; border-top: 1px solid {{c.kartCizgi}}; padding: 8px 16px 20px; display: flex; align-items: center; gap: 8px">
+    <span class="ms" style="font-size: 22px; color: {{c.ikonAna}}">groups</span>
+    <span style="font-size: 16px; font-weight: 800; color: {{c.metin}}; flex-grow: 1">18 / 22 geldi</span>
+    <button style="border: 0; border-radius: 14px; background: {{c.vurgu}}; color: {{c.vurguMetin}}; padding: 14px 24px; font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 4px rgba(0,0,0,.2)"><span class="ms" style="font-size: 20px">save</span>Kaydet</button>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tema":{"editor":"enum","options":["acik","lacivert","charcoal"],"default":"acik"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var P = {
+      acik: { sayfa: '#f5f5f5', kart: '#ffffff', kartCizgi: '#eeeeee', metin: '#263238', ikincil: '#5a6870', ucuncul: '#67757d', uyari: '#8a5300', ikonAna: '#37474f',
+        bar: '#37474f', barMetin: '#ffffff', golge: 'rgba(0,0,0,.06)', altbar: '#ffffff', vurgu: '#00897b', vurguMetin: '#ffffff',
+        geldiZ: '#e8f5e9', geldiC: '#a5d6a7', geldiM: '#1b5e20', yokZ: '#ffebee', yokC: '#ef9a9a', yokM: '#d32f2f',
+        seritG: '#4caf50', seritY: '#e57373', eksikZ: '#fdecea', eksikM: '#b3261e' },
+      lacivert: { sayfa: '#1a1a2e', kart: '#16213e', kartCizgi: 'rgba(255,255,255,.06)', metin: '#eef1f7', ikincil: '#a9b3c7', ucuncul: '#8f9ab0', uyari: '#ffb74d', ikonAna: '#a9b3c7',
+        bar: '#121225', barMetin: '#eef1f7', golge: 'rgba(0,0,0,.35)', altbar: '#16213e', vurgu: '#4db6ac', vurguMetin: '#062925',
+        geldiZ: '#173a2e', geldiC: '#2e6b4a', geldiM: '#81c784', yokZ: '#3d1c28', yokC: '#7a3344', yokM: '#ff8a80',
+        seritG: '#66bb6a', seritY: '#e57373', eksikZ: '#3d1c28', eksikM: '#ff8a80' },
+      charcoal: { sayfa: '#111517', kart: '#1c2327', kartCizgi: 'rgba(255,255,255,.05)', metin: '#eceff1', ikincil: '#a7b4bb', ucuncul: '#8d9aa1', uyari: '#ffb74d', ikonAna: '#a7b4bb',
+        bar: '#1c2327', barMetin: '#eceff1', golge: 'rgba(0,0,0,.4)', altbar: '#1c2327', vurgu: '#4db6ac', vurguMetin: '#062925',
+        geldiZ: '#1b3322', geldiC: '#2f5d3a', geldiM: '#81c784', yokZ: '#3a1d1d', yokC: '#6e3434', yokM: '#ff8a80',
+        seritG: '#66bb6a', seritY: '#e57373', eksikZ: '#3a1d1d', eksikM: '#ff8a80' }
+    };
+    var c = P[this.props.tema] || P.acik;
+    var veri = [
+      { ad: 'Ayşe Yılmaz', geldi: true },
+      { ad: 'Can Öztürk', geldi: true, eksik: '2 eksik' },
+      { ad: 'Elif Şahin', geldi: true },
+      { ad: 'Mert Demir', geldi: false },
+      { ad: 'Zeynep Arslan', geldi: true, eksik: '1 eksik' },
+      { ad: 'Emre Kaya', geldi: true },
+      { ad: 'Deniz Aydın', geldi: false },
+      { ad: 'Yusuf Çelik', geldi: true },
+      { ad: 'Ela Koç', geldi: true }
+    ];
+    return {
+      c: c,
+      ogrenciler: veri.map(function (o) {
+        return {
+          ad: o.ad, eksik: o.eksik || '', eksikVar: !!o.eksik,
+          serit: o.geldi ? c.seritG : c.seritY,
+          dZ: o.geldi ? c.geldiZ : c.yokZ, dC: o.geldi ? c.geldiC : c.yokC, dM: o.geldi ? c.geldiM : c.yokM,
+          ikon: o.geldi ? 'check_circle' : 'cancel', durum: o.geldi ? 'Geldi' : 'Yok'
+        };
+      })
+    };
+  }
+}
+</script>
+</body>
+</html>

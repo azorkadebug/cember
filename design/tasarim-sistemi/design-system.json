@@ -1,0 +1,93 @@
+{
+ "v": 3,
+ "layout": "files",
+ "createdOnFiles": {
+  "v": 1,
+  "at": "2026-10-02T20:14:03Z"
+ },
+ "title": "Çember",
+ "namespace": "Cember",
+ "libraries": [],
+ "sections": {},
+ "groups": [
+  "Logos",
+  "Simgeler"
+ ],
+ "assetGroups": {
+  "Logos": {
+   "name": "Logos",
+   "tile": "l",
+   "order": [
+    "logo.png",
+    "logo_256.png"
+   ],
+   "files": {
+    "logo.png": {
+     "name": "logo.png",
+     "blob": "6b1f8988b417217c596c3170224e3c66",
+     "size": 546011,
+     "type": "image/png"
+    },
+    "logo_256.png": {
+     "name": "logo_256.png",
+     "blob": "d16be68af3519a814487f39a9d4bcb98",
+     "size": 62251,
+     "type": "image/png"
+    }
+   }
+  },
+  "Simgeler": {
+   "name": "Simgeler",
+   "tile": "s",
+   "order": [
+    "kiyafet.svg",
+    "ayakkabi.svg",
+    "sari-kart.svg",
+    "saglik.svg",
+    "mola.svg"
+   ],
+   "files": {
+    "kiyafet.svg": {
+     "name": "kiyafet.svg",
+     "blob": "02c1f0d086c19fd80517fbf1d938863e",
+     "size": 418,
+     "type": "image/svg+xml"
+    },
+    "ayakkabi.svg": {
+     "name": "ayakkabi.svg",
+     "blob": "60318af4f062057945cb50e165c6cd4a",
+     "size": 504,
+     "type": "image/svg+xml"
+    },
+    "sari-kart.svg": {
+     "name": "sari-kart.svg",
+     "blob": "bdc4543269ccf157b39bdb4a83a1cba2",
+     "size": 290,
+     "type": "image/svg+xml"
+    },
+    "saglik.svg": {
+     "name": "saglik.svg",
+     "blob": "729af517338536d6d917562ed0dcf6d3",
+     "size": 335,
+     "type": "image/svg+xml"
+    },
+    "mola.svg": {
+     "name": "mola.svg",
+     "blob": "e717798dd652ee343d616e3f450e35d0",
+     "size": 487,
+     "type": "image/svg+xml"
+    }
+   }
+  }
+ },
+ "blobs": {},
+ "docs": {
+  "sections": []
+ },
+ "lastChange": {
+  "by": "Çakamax",
+  "at": "2026-10-02T20:51:36Z",
+  "via": "Claude (Cowork)",
+  "note": "Sınıf kartı: gradyanlı ikon karosu yerine yoklama halkası"
+ }
+}

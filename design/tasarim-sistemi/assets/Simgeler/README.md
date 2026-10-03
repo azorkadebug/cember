@@ -1,0 +1,1 @@
+Kontrol kalemi simgeleri (Kıyafet, Ayakkabı, Sarı Kart, Sağlık, Mola): 24×24, dolu, tek mürekkep `ana` (#37474f). Dosya olarak gösterildiklerinde bu renktedir; uygulamada SVG yolunu satır içi koyup `fill="currentColor"` ver. Kullanım kuralları: `KalemSimgeleri` bileşeni.
