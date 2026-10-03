@@ -795,11 +795,6 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
           buildCounter: gizliSayac,
           decoration: InputDecoration(
             hintText: 'Örn: 8/B',
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: ctx.renk.koyuMu ? ctx.renk.vurgu : ctx.renk.ikonAna, width: 2),
-            ),
           ),
         ),
         actions: [
@@ -862,11 +857,6 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
                 buildCounter: gizliSayac,
                 decoration: InputDecoration(
                   hintText: 'Örn: 8/B',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide(color: context.renk.koyuMu ? context.renk.vurgu : context.renk.ikonAna, width: 2),
-                  ),
                 ),
               ),
               const SizedBox(height: 18),
@@ -1114,7 +1104,6 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
           isExpanded: true,
           decoration: InputDecoration(
             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
             isDense: true,
           ),
           items: siniflar.map((s) => DropdownMenuItem(value: s['id'] as String, child: Text(s['ad'] as String, style: const TextStyle(fontWeight: FontWeight.w600)))).toList(),

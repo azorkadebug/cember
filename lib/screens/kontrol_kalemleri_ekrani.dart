@@ -83,7 +83,6 @@ class _KontrolKalemleriEkraniState extends State<KontrolKalemleriEkrani> {
                 buildCounter: gizliSayac,
                 decoration: InputDecoration(
                   hintText: 'Örn: Kitap, Boya, Sarı Kart...',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 ),
               ),
               const SizedBox(height: 16),
@@ -217,15 +216,17 @@ class _KontrolKalemleriEkraniState extends State<KontrolKalemleriEkrani> {
     return Scaffold(
       backgroundColor: r.sayfa,
       appBar: AppBar(
-        backgroundColor: r.bar,
-        foregroundColor: r.barMetin,
+        backgroundColor: r.sayfa,
+        surfaceTintColor: Colors.transparent,
+        scrolledUnderElevation: 0,
+        foregroundColor: r.metin,
         title: const Text('Kontrol Kalemleri'),
         actions: [
           TextButton(
             onPressed: _kaydediyor ? null : _kaydet,
             child: _kaydediyor
-                ? SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: r.barMetin))
-                : Text('Kaydet', style: TextStyle(color: r.barMetin, fontWeight: FontWeight.w700)),
+                ? SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: r.metin))
+                : Text('Kaydet', style: TextStyle(color: r.metin, fontWeight: FontWeight.w700)),
           ),
         ],
       ),

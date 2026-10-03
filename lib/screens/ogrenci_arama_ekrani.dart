@@ -133,8 +133,10 @@ class _OgrenciAramaEkraniState extends State<OgrenciAramaEkrani> {
     return Scaffold(
       backgroundColor: r.sayfa,
       appBar: AppBar(
-        backgroundColor: r.bar,
-        foregroundColor: r.barMetin,
+        backgroundColor: r.sayfa,
+        surfaceTintColor: Colors.transparent,
+        scrolledUnderElevation: 0,
+        foregroundColor: r.metin,
         elevation: 0,
         titleSpacing: 0,
         title: Semantics(
@@ -143,17 +145,17 @@ class _OgrenciAramaEkraniState extends State<OgrenciAramaEkrani> {
             controller: _ctrl,
             autofocus: true,
             textInputAction: TextInputAction.search,
-            style: TextStyle(color: r.barMetin, fontSize: 16),
-            cursorColor: r.barMetin,
+            style: TextStyle(color: r.metin, fontSize: 16),
+            cursorColor: r.metin,
             onChanged: (v) => setState(() => _metin = trKucult(v.trim())),
             decoration: InputDecoration(
               hintText: 'Öğrenci ara…',
-              hintStyle: TextStyle(color: r.barMetin.withAlpha(170)),
+              hintStyle: TextStyle(color: r.metinUcuncul),
               border: InputBorder.none,
               suffixIcon: _metin.isEmpty
                   ? null
                   : IconButton(
-                      icon: Icon(Icons.close_rounded, color: r.barMetin),
+                      icon: Icon(Icons.close_rounded, color: r.metin),
                       tooltip: 'Aramayı temizle',
                       onPressed: () {
                         _ctrl.clear();

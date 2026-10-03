@@ -187,8 +187,10 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
       child: Scaffold(
         backgroundColor: r.sayfa,
         appBar: AppBar(
-          backgroundColor: r.bar,
-          foregroundColor: r.barMetin,
+          backgroundColor: r.sayfa,
+        surfaceTintColor: Colors.transparent,
+        scrolledUnderElevation: 0,
+          foregroundColor: r.metin,
           title: Text(widget.ilkKayit ? "Profilini Tamamla" : "Profilim",
               style: const TextStyle(fontWeight: FontWeight.w800)),
           centerTitle: true,
@@ -272,21 +274,7 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
                           borderRadius: BorderRadius.circular(14),
                           decoration: InputDecoration(
                             prefixIcon: Icon(Icons.school_rounded, color: r.ikonAna, size: 20),
-                            filled: true,
-                            fillColor: r.kart,
                             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(14),
-                              borderSide: BorderSide(color: r.cizgiAcik),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(14),
-                              borderSide: BorderSide(color: r.cizgiAcik),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(14),
-                              borderSide: BorderSide(color: r.koyuMu ? r.vurgu : r.ikonAna, width: 2),
-                            ),
                           ),
                           items: _branslar.map((b) => DropdownMenuItem(value: b, child: Text(b))).toList(),
                           onChanged: (val) => setState(() {
@@ -500,9 +488,6 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
                   onChanged: (_) => setLocalState(() {}),
                   decoration: InputDecoration(
                     hintText: 'SİL',
-                    filled: true,
-                    fillColor: ctx.renk.yuzeyGri,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                   ),
                 ),
               ],
@@ -589,11 +574,6 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
               buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
               decoration: InputDecoration(
                 hintText: 'Şifren',
-                filled: true,
-                fillColor: ctx.renk.yuzeyGri,
-                border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none),
               ),
             ),
           ],
@@ -747,11 +727,6 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
           textInputAction: TextInputAction.next,
           decoration: InputDecoration(
             prefixIcon: Icon(icon, color: r.koyuMu ? r.ikonAna : AppTema.anaAcik, size: 20),
-            filled: true,
-            fillColor: r.kart,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: r.cizgiAcik)),
-            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: r.cizgiAcik)),
-            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: r.vurgu, width: 2)),
           ),
           ),
         ),

@@ -328,15 +328,18 @@ ThemeData cemberTemasi(Brightness parlaklik) {
     canvasColor: r.sayfa,
     textTheme: metinTemasi,
     extensions: [r],
+    // Üst çubuklar krem; renkli başlık isteyen ekran (öğrenci listesi)
+    // kendi rengini ve yazı rengini açıkça verir.
     appBarTheme: AppBarTheme(
-      backgroundColor: r.bar,
-      foregroundColor: r.barMetin,
+      backgroundColor: r.sayfa,
+      foregroundColor: r.metin,
       surfaceTintColor: Colors.transparent,
+      scrolledUnderElevation: 0,
       titleTextStyle: TextStyle(
         fontFamily: AppTema.baslikFontu,
         fontSize: 22,
         fontWeight: FontWeight.w600,
-        color: r.barMetin,
+        color: r.metin,
       ),
     ),
     dialogTheme: DialogThemeData(

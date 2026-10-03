@@ -101,8 +101,10 @@ class _ArsivSinifEkraniState extends State<ArsivSinifEkrani> {
     return Scaffold(
       backgroundColor: r.sayfa,
       appBar: AppBar(
-        backgroundColor: r.bar,
-        foregroundColor: r.barMetin,
+        backgroundColor: r.sayfa,
+        surfaceTintColor: Colors.transparent,
+        scrolledUnderElevation: 0,
+        foregroundColor: r.metin,
         elevation: 0,
         title: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(widget.sinifAd, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),

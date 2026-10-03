@@ -116,8 +116,10 @@ class _GecenYildanEkleEkraniState extends State<GecenYildanEkleEkrani> {
     return Scaffold(
       backgroundColor: r.sayfa,
       appBar: AppBar(
-        backgroundColor: r.bar,
-        foregroundColor: r.barMetin,
+        backgroundColor: r.sayfa,
+        surfaceTintColor: Colors.transparent,
+        scrolledUnderElevation: 0,
+        foregroundColor: r.metin,
         elevation: 0,
         title: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           const Text("Geçen Yıldan Ekle", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
@@ -210,9 +212,6 @@ class _GecenYildanEkleEkraniState extends State<GecenYildanEkleEkrani> {
           decoration: InputDecoration(
             hintText: "Öğrenci ara...",
             prefixIcon: const Icon(Icons.search_rounded),
-            filled: true,
-            fillColor: r.kart,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
           ),
         ),
         const SizedBox(height: 8),

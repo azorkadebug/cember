@@ -4,6 +4,7 @@ import '../tema_renkleri.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import '../services/analytics_service.dart';
@@ -180,72 +181,66 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
       backgroundColor: r.sayfa,
       body: Column(
         children: [
-          // Üst kısım: Charcoal gradient + logo
+          // Üst kısım: "Teneffüs" — limon sarısı, çıkartma logo.
           Expanded(
             flex: 4,
             child: Container(
               width: double.infinity,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [r.barKoyu, r.bar, r.barAcik],
-                ),
-                borderRadius: const BorderRadius.only(
+              decoration: const BoxDecoration(
+                color: Color(0xFFFFD84D),
+                borderRadius: BorderRadius.only(
                   bottomLeft: Radius.circular(40),
                   bottomRight: Radius.circular(40),
                 ),
+                border: Border(bottom: BorderSide(color: AppTema.ana, width: 2.5)),
               ),
               child: SafeArea(
                 child: FadeTransition(
                   opacity: _fadeCtrl,
-                  // Klavye açıkken üst bölüm de orantılı olarak sıkışıyor ama
-                  // içindeki 110px logo + iki metin sabit yükseklikteydi —
-                  // kısa cihazlarda taşma riski vardı. Klavye açıldığında
-                  // logo küçülüyor, alt başlık gizleniyor; forma da yer açılıyor.
+                  // Küçülme klavyeye (viewInsets) bakıyordu; web/PWA'da klavye
+                  // viewInsets vermediği için hiç çalışmıyordu (denetim #3).
+                  // Artık bölümün yüksekliğine bakıyor; sığmazsa ölçekleniyor
+                  // (yatay telefonda yazı açık zemine taşıyordu).
                   child: LayoutBuilder(builder: (context, c) {
-                    final klavyeAcik = MediaQuery.viewInsetsOf(context).bottom > 0;
-                    final logoBoyut = klavyeAcik ? 64.0 : 110.0;
-                    return Column(
-                      mainAxisSize: MainAxisSize.min,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          width: logoBoyut,
-                          height: logoBoyut,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(klavyeAcik ? 18 : 28),
-                            boxShadow: [
-                              BoxShadow(color: Colors.black.withAlpha(60), blurRadius: 24, offset: const Offset(0, 10)),
+                    final kucuk = c.maxHeight < 230;
+                    final logoBoyut = kucuk ? 64.0 : 104.0;
+                    return Center(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: logoBoyut,
+                                height: logoBoyut,
+                                padding: EdgeInsets.all(kucuk ? 8 : 14),
+                                decoration: const ShapeDecoration(
+                                  color: Colors.white,
+                                  shape: CircleBorder(side: BorderSide(color: AppTema.ana, width: 3)),
+                                  shadows: [BoxShadow(color: AppTema.ana, offset: Offset(5, 5))],
+                                ),
+                                // 1024 px / 546 KB'lık dosya 100 px'te gösteriliyordu (denetim #3 O11).
+                                child: Image.asset('assets/images/logo_256.png', fit: BoxFit.contain),
+                              ),
+                              SizedBox(height: kucuk ? 8 : 16),
+                              Text("Çember",
+                                  style: TextStyle(
+                                      fontFamily: AppTema.baslikFontu,
+                                      fontSize: kucuk ? 30 : 42,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppTema.ana,
+                                      height: 1)),
+                              if (!kucuk) ...[
+                                const SizedBox(height: 6),
+                                const Text("Sınıf Yönetimi Asistanı",
+                                    style: TextStyle(color: AppTema.ana, fontSize: 15, fontWeight: FontWeight.w700)),
+                              ],
                             ],
                           ),
-                          // Kodla çizilen nokta-çember yerine App Store'daki
-                          // gerçek logo — iki farklı logo vardı (2026-09-05).
-                          child: Padding(
-                            padding: EdgeInsets.all(klavyeAcik ? 8 : 12),
-                            child: // 1024 px / 546 KB'lık dosya 100 px'te gösteriliyordu (denetim #3 O11).
-                            Image.asset('assets/images/logo_256.png', fit: BoxFit.contain),
-                          ),
                         ),
-                        SizedBox(height: klavyeAcik ? 10 : 20),
-                        Text("ÇEMBER",
-                            style: TextStyle(
-                                fontSize: klavyeAcik ? 22 : 30,
-                                fontWeight: FontWeight.w900,
-                                color: r.barMetin,
-                                letterSpacing: 6)),
-                        if (!klavyeAcik) ...[
-                          const SizedBox(height: 6),
-                          Text("Sınıf Yönetimi Asistanı",
-                              style: TextStyle(
-                                  // withAlpha(180) gradyanın açık ucunda 3,6:1
-                                  // veriyordu; 220 ile AA eşiğini geçiyor.
-                                  color: r.barMetin.withAlpha(220),
-                                  fontSize: 13,
-                                  letterSpacing: 1.5)),
-                        ],
-                      ],
+                      ),
                     );
                   }),
                 ),
@@ -414,7 +409,8 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
                       ],
                       SizedBox(
                         width: double.infinity,
-                        child: _socialBtn(Icons.g_mobiledata, "Google ile Giriş", Colors.red, _googleGiris),
+                        // Google'ın çok renkli G'si; g_mobiledata ikonu kırmızı tek renkti (denetim #3).
+                        child: _socialBtn(SvgPicture.asset('assets/images/google_g.svg', width: 22, height: 22), "Google ile Giriş", _googleGiris),
                       ),
                       const SizedBox(height: 12),
                       // Sosyal girişte de politika görünür olsun.
@@ -491,39 +487,32 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
       // (denetim Y8).
       labelText: hint,
       floatingLabelBehavior: FloatingLabelBehavior.never,
-      labelStyle: TextStyle(color: r.koyuMu ? r.metinUcuncul : Colors.grey.shade500),
-      prefixIcon: Icon(icon, color: r.koyuMu ? r.ikonAna : AppTema.anaAcik, size: 20),
-      filled: true,
-      fillColor: r.koyuMu ? r.kart : Colors.grey.shade50,
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: r.cizgiAcik)),
-      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: r.cizgiAcik)),
-      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: r.vurgu, width: 2)),
+      // Çerçeve ve dolgu temadan (mürekkep kenarlı çıkartma); eski gri 500
+      // etiket 2,6:1'di (denetim #3).
+      labelStyle: TextStyle(color: r.metinUcuncul, fontWeight: FontWeight.w600),
+      prefixIcon: Icon(icon, color: r.ikonAna, size: 20),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
     );
   }
 
-  Widget _socialBtn(IconData icon, String label, Color iconColor, VoidCallback onTap) {
+  Widget _socialBtn(Widget ikon, String label, VoidCallback onTap) {
     final r = context.renk;
+    final sekil = StadiumBorder(side: BorderSide(color: r.kenar, width: 2.5));
     return Material(
-      color: r.kart,
-      borderRadius: BorderRadius.circular(14),
-      elevation: 1,
-      shadowColor: Colors.black.withAlpha(10),
+      // Google logosu beyaz zemin ister; koyu temada da beyaz hap.
+      color: Colors.white,
+      shape: sekil,
       child: InkWell(
-        borderRadius: BorderRadius.circular(14),
+        customBorder: sekil,
         onTap: _loading ? null : onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: r.cizgiAcik),
-          ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 13),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, color: iconColor, size: 24),
-              const SizedBox(width: 8),
-              Text(label, style: TextStyle(color: r.koyuMu ? r.metinGovde : Colors.grey.shade700, fontWeight: FontWeight.w600, fontSize: 14)),
+              ikon,
+              const SizedBox(width: 10),
+              Text(label, style: const TextStyle(color: AppTema.ana, fontWeight: FontWeight.w800, fontSize: 15)),
             ],
           ),
         ),

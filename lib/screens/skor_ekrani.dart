@@ -818,8 +818,6 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
           maxLength: GirdiSiniri.ogrenciAdi,
           buildCounter: gizliSayac,
           decoration: InputDecoration(
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: AppTema.vurgu, width: 2)),
           ),
         ),
         actions: [
