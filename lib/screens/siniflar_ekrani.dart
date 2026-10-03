@@ -38,6 +38,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
   static const double _ikiSutunEsigi = 900;
   String? _seciliSinifId;
   String? _seciliSinifAd;
+  Color? _seciliSinifRenk;
 
   late final FirestoreService _db = FirestoreService(uid: AuthService().uid);
   bool _migrationYapildi = false;
@@ -226,6 +227,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
                     sinifId: _seciliSinifId!,
                     sinifAd: _seciliSinifAd,
                     gomulu: true,
+                    renk: _seciliSinifRenk,
                   ),
           ),
         ]);
@@ -527,11 +529,11 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
             dolgu: const EdgeInsets.fromLTRB(14, 14, 10, 14),
             onTap: () {
               if (ikiSutun) {
-                setState(() { _seciliSinifId = docId; _seciliSinifAd = ad; });
+                setState(() { _seciliSinifId = docId; _seciliSinifAd = ad; _seciliSinifRenk = renk; });
               } else {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => OgrenciListesiEkrani(sinifId: docId, sinifAd: ad)),
+                  MaterialPageRoute(builder: (context) => OgrenciListesiEkrani(sinifId: docId, sinifAd: ad, renk: renk)),
                 );
               }
             },

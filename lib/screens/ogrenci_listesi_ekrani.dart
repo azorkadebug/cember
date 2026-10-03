@@ -8,6 +8,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../widgets/girdi.dart';
 import '../widgets/simgeler.dart';
+import '../widgets/cikartma.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/ogrenci.dart';
 import '../models/kontrol_kalemi.dart';
@@ -92,7 +93,9 @@ class OgrenciListesiEkrani extends StatefulWidget {
   final String? acilacakOgrenciId;
   /// Geniş ekranda Sınıflarım'ın sağ sütununa gömülü: geri oku yok.
   final bool gomulu;
-  const OgrenciListesiEkrani({super.key, required this.sinifId, this.sinifAd, this.acilacakOgrenciId, this.gomulu = false});
+  /// Sınıfın Sınıflarım'daki rengi; verilmezse kimlikten sabit bir renk.
+  final Color? renk;
+  const OgrenciListesiEkrani({super.key, required this.sinifId, this.sinifAd, this.acilacakOgrenciId, this.gomulu = false, this.renk});
   @override
   State<OgrenciListesiEkrani> createState() => _OgrenciListesiEkraniState();
 }
@@ -205,9 +208,14 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
     }
   }
 
+  Color get _sinifRengi => widget.renk ?? AppTema.sinifRengiKimlikten(widget.sinifId);
+
   @override
   Widget build(BuildContext context) {
     final r = context.renk;
+    // Büyük yazıda başlık bloğu uzar; sabit 160 px'te istatistikler alttan
+    // kırpılıyordu (denetim #3).
+    final olcek = MediaQuery.textScalerOf(context).scale(1);
     return Scaffold(
       backgroundColor: r.sayfa,
       body: NestedScrollView(
@@ -217,18 +225,26 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
             // şeridiyle aynı yüksekliğe düşüp aksiyon ikonlarının üstüne
             // çiziliyordu. Başlık artık Column'un başındaki SizedBox ile
             // şeridin ALTINA itiliyor; expandedHeight de ona göre büyüdü.
-            expandedHeight: 160,
+            expandedHeight: 110 + 50 * olcek,
             floating: false,
             pinned: true,
             automaticallyImplyLeading: !widget.gomulu,
-            backgroundColor: r.bar,
-            foregroundColor: r.barMetin,
+            // "Teneffüs": başlık sınıfın renginde, altı yuvarlak ve mürekkep kenarlı.
+            backgroundColor: _sinifRengi,
+            foregroundColor: AppTema.ana,
+            surfaceTintColor: Colors.transparent,
+            clipBehavior: Clip.antiAlias,
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),
+              side: BorderSide(color: AppTema.ana, width: 2.5),
+            ),
             centerTitle: true,
             title: innerBoxIsScrolled
                 ? Text(_sinifAd ?? '',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18))
+                    style: const TextStyle(
+                        fontFamily: AppTema.baslikFontu, fontWeight: FontWeight.w600, fontSize: 21, color: AppTema.ana))
                 : null,
             actions: [
               IconButton(
@@ -353,32 +369,26 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
               ),
             ],
             flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter, end: Alignment.bottomCenter,
-                    colors: [r.bar, r.barKoyu],
-                  ),
-                ),
-                child: SafeArea(
+              background: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, kToolbarHeight, 20, 16),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.end,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Aksiyon ikonlarının şeridini boş bırakır — başlık
-                      // artık onların altından başlıyor.
-                      const SizedBox(height: kToolbarHeight),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Text(
-                          _sinifAd ?? '',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(color: r.barMetin, fontSize: 26, fontWeight: FontWeight.w900, letterSpacing: 1),
-                        ),
+                      Text(
+                        _sinifAd ?? '',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                            fontFamily: AppTema.baslikFontu,
+                            color: AppTema.ana,
+                            fontSize: 34,
+                            fontWeight: FontWeight.w700,
+                            height: 1.1),
                       ),
-                      const SizedBox(height: 4),
-                      // Kompakt istatistik satırı
+                      const SizedBox(height: 10),
+                      // İstatistikler çıkartma çipler.
                       StreamBuilder<QuerySnapshot>(
                         stream: _ogrencilerAkisiBaslik,
                         initialData: _sonBaslik,
@@ -389,42 +399,29 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                             stream: _sonYoklamaAkisi,
                             initialData: _sonYoklama,
                             builder: (context, ySnap) {
-                          if (ySnap.hasData) _sonYoklama = ySnap.data;
-                          // Sayım ana sayfadaki halkayla aynı kaynaktan: bugünkü
-                          // yoklama kaydı (kaydı olmayan öğrenci "geldi").
-                          final bugunku = ySnap.data?.docs.where((d) => d.id == _bugunAnahtari()).firstOrNull;
-                          final ozet = bugunku == null || !snapshot.hasData
-                              ? null
-                              : yoklamaOzeti(bugunku.data() as Map<String, dynamic>?, snapshot.data!.docs.map((d) => d.id));
-                          final bugunAlindi = ozet != null;
-                          final present = ozet?.gelen ?? 0;
-                          return Container(
-                            margin: const EdgeInsets.symmetric(horizontal: 40),
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withAlpha(25),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: [
-                                _miniStat(Icons.people_alt_rounded, "$total", "Toplam", r.barMetin),
-                                _miniDivider(),
-                                if (bugunAlindi) ...[
-                                  _miniStat(Icons.check_circle_rounded, "$present", "Mevcut", Colors.greenAccent.shade100),
-                                  _miniDivider(),
-                                  _miniStat(Icons.cancel_rounded, "${total - present}", "Yok",
-                                      (total - present) > 0 ? Colors.redAccent.shade100 : Colors.white.withAlpha(140)),
-                                ] else
-                                  _miniStat(Icons.fact_check_outlined, "—", "Yoklama alınmadı", Colors.white.withAlpha(200)),
-                              ],
-                            ),
-                          );
+                              if (ySnap.hasData) _sonYoklama = ySnap.data;
+                              // Sayım ana sayfadaki halkayla aynı kaynaktan: bugünkü
+                              // yoklama kaydı (kaydı olmayan öğrenci "geldi").
+                              final bugunku = ySnap.data?.docs.where((d) => d.id == _bugunAnahtari()).firstOrNull;
+                              final ozet = bugunku == null || !snapshot.hasData
+                                  ? null
+                                  : yoklamaOzeti(bugunku.data() as Map<String, dynamic>?, snapshot.data!.docs.map((d) => d.id));
+                              return Wrap(
+                                spacing: 8,
+                                runSpacing: 6,
+                                children: [
+                                  _baslikCipi(Icons.people_alt_rounded, "$total öğrenci", Colors.white, AppTema.ana),
+                                  if (ozet != null) ...[
+                                    _baslikCipi(Icons.check_rounded, "${ozet.gelen} geldi", const Color(0xFF63C77A), AppTema.ana),
+                                    _baslikCipi(Icons.close_rounded, "${ozet.toplam - ozet.gelen} yok", AppTema.ana, Colors.white),
+                                  ] else
+                                    _baslikCipi(Icons.fact_check_rounded, "Yoklama alınmadı", Colors.white, AppTema.ana),
+                                ],
+                              );
                             },
                           );
                         },
                       ),
-                      const SizedBox(height: 14),
                     ],
                   ),
                 ),
@@ -450,8 +447,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                 onChanged: (val) => setState(() => _aramaMetni = trKucult(val)),
                 decoration: InputDecoration(
                   hintText: "Öğrenci ara...",
-                  hintStyle: TextStyle(color: r.koyuMu ? r.metinUcuncul : Colors.grey.shade500),
-                  prefixIcon: Icon(Icons.search_rounded, color: r.koyuMu ? r.metinUcuncul : Colors.grey.shade500),
+                  prefixIcon: Icon(Icons.search_rounded, color: r.metinUcuncul),
                   suffixIcon: _aramaMetni.isEmpty
                       ? null
                       : IconButton(
@@ -462,9 +458,6 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                             setState(() => _aramaMetni = '');
                           },
                         ),
-                  filled: true,
-                  fillColor: r.kart,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
                   contentPadding: const EdgeInsets.symmetric(vertical: 12),
                   isDense: true,
                 ),
@@ -477,17 +470,21 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
       bottomNavigationBar: IgnorePointer(
         ignoring: _kartKapaniyor,
         child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
               decoration: BoxDecoration(
-                color: r.kart,
-                boxShadow: [BoxShadow(color: Colors.black.withAlpha(15), blurRadius: 10, offset: const Offset(0, -2))],
+                color: r.sayfa,
+                border: Border(top: BorderSide(color: r.cizgi, width: 1.5)),
               ),
               child: SafeArea(
                 child: Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                      decoration: BoxDecoration(color: r.yuzeyGri, borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: r.kart,
+                        borderRadius: BorderRadius.circular(26),
+                        border: Border.all(color: r.kenar, width: 2.5),
+                      ),
                       child: DropdownButton<int>(
                         value: secilenTakimSayisi,
                         underline: const SizedBox(),
@@ -495,22 +492,22 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                         items: List.generate(
                           formaRenkleri.length > 1 ? formaRenkleri.length - 1 : 1,
                           (i) => i + 2,
-                        ).map((e) => DropdownMenuItem(value: e, child: Text("$e Takım", style: const TextStyle(fontWeight: FontWeight.w600)))).toList(),
+                        ).map((e) => DropdownMenuItem(value: e, child: Text("$e takım", style: const TextStyle(fontFamily: AppTema.baslikFontu, fontSize: 17, fontWeight: FontWeight.w600)))).toList(),
                         onChanged: (val) => setState(() => secilenTakimSayisi = val!),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: r.vurgu,
-                          foregroundColor: r.vurguMetin,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          elevation: 2,
+                      child: SertGolgeli(
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            minimumSize: const Size.fromHeight(54),
+                          ),
+                          onPressed: _takimlariKur,
+                          icon: const Icon(Icons.auto_awesome_rounded),
+                          label: const Text("Takım Kur", style: TextStyle(fontSize: 19)),
                         ),
-                        onPressed: _takimlariKur,
-                        icon: const Icon(Icons.auto_awesome_rounded),
-                        label: const Text("Takım Kur", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
                       ),
                     ),
                   ],
@@ -536,26 +533,29 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
     ));
   }
 
-  Widget _miniStat(IconData icon, String value, String label, Color renk) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: renk, size: 15),
-            const SizedBox(width: 5),
-            Text(value, style: TextStyle(color: renk, fontSize: 16, fontWeight: FontWeight.w800)),
-          ],
-        ),
-        const SizedBox(height: 2),
-        Text(label, style: TextStyle(color: Colors.white.withAlpha(160), fontSize: 11, letterSpacing: 0.5)),
-      ],
-    );
+  /// "Ayşe Yılmaz" → "AY" (Türkçe büyük harf).
+  static String _basHarfler(String ad) {
+    final parca = ad.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
+    if (parca.isEmpty) return '?';
+    final harfler = parca.length == 1 ? parca.first.characters.take(1).toString()
+        : '${parca.first.characters.first}${parca.last.characters.first}';
+    return trBuyut(harfler);
   }
 
-  Widget _miniDivider() {
-    return Container(width: 1, height: 28, color: Colors.white.withAlpha(60));
+  Widget _baslikCipi(IconData ikon, String metin, Color zemin, Color yazi) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: zemin,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppTema.ana, width: 2.5),
+      ),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Icon(ikon, size: 17, color: yazi),
+        const SizedBox(width: 5),
+        Text(metin, style: TextStyle(color: yazi, fontSize: 15, fontWeight: FontWeight.w800)),
+      ]),
+    );
   }
 
   Widget _aktifMacBanner() {
@@ -709,11 +709,12 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
             background: Container(
               alignment: Alignment.centerLeft,
               padding: const EdgeInsets.only(left: 24),
+              margin: const EdgeInsets.only(right: 3, bottom: 3),
               decoration: BoxDecoration(
                 color: o.buradaMi
                     ? (r.koyuMu ? r.yokZemin : Colors.red.shade100)
                     : (r.koyuMu ? r.geldiZemin : Colors.green.shade100),
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(18),
               ),
               child: Row(
                 children: [
@@ -727,31 +728,41 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                 ],
               ),
             ),
-            child: Material(
-              borderRadius: BorderRadius.circular(12),
-              color: r.kart,
-              elevation: 1,
-              shadowColor: Colors.black.withAlpha(15),
-              child: InkWell(
-                borderRadius: BorderRadius.circular(12),
-                onTap: () => _ogrenciKartiAc(o, tumOgrenciler),
+            child: Cikartma(
+              yaricap: 18,
+              kayma: 3,
+              kenarKalinligi: 2,
+              onTap: () => _ogrenciKartiAc(o, tumOgrenciler),
                 child: Row(
                   children: [
-                    // Cinsiyet yalnızca renkle gösteriliyordu; ekran
-                    // okuyucu için etiket eklendi.
-                    Semantics(
-                      label: o.isMale ? 'Erkek öğrenci' : 'Kız öğrenci',
-                      child: Container(
-                        width: 3.5,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          color: o.isMale ? Colors.blue.shade400 : Colors.pink.shade400,
-                          borderRadius: BorderRadius.circular(2),
+                    // Cinsiyet şeridi yerine baş harfli yuvarlak: kız pembe,
+                    // erkek mavi; ekran okuyucu için etiketli.
+                    Padding(
+                      padding: const EdgeInsets.only(left: 10),
+                      child: Semantics(
+                        label: o.isMale ? 'Erkek öğrenci' : 'Kız öğrenci',
+                        child: Container(
+                          width: 42,
+                          height: 42,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: !o.buradaMi
+                                ? const Color(0xFFE6E2DA)
+                                : (o.isMale ? const Color(0xFFB9DCFF) : const Color(0xFFFFC2D1)),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: AppTema.ana, width: 2),
+                          ),
+                          child: Text(
+                            _basHarfler(o.gorunenAd),
+                            textScaler: TextScaler.noScaling,
+                            style: const TextStyle(
+                                fontFamily: AppTema.baslikFontu, fontSize: 16, fontWeight: FontWeight.w600, color: AppTema.ana),
+                          ),
                         ),
                       ),
                     ),
                     Expanded(child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                   child: Row(
                     children: [
                       Expanded(
@@ -764,19 +775,23 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                                   child: Text(o.gorunenAd,
                                       maxLines: 1, overflow: TextOverflow.ellipsis,
                                       style: TextStyle(
-                                        fontWeight: FontWeight.w700, fontSize: 14,
+                                        fontWeight: FontWeight.w800, fontSize: 16,
                                         decoration: o.buradaMi ? null : TextDecoration.lineThrough,
                                         color: o.buradaMi
-                                            ? (r.koyuMu ? r.metin : Colors.black87)
-                                            : (r.koyuMu ? r.metinUcuncul : Colors.grey),
+                                            ? r.metin
+                                            : r.metinUcuncul,
                                       )),
                                 ),
                                 if (!o.buradaMi) ...[
                                   const SizedBox(width: 6),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                                    decoration: BoxDecoration(color: r.yokZemin, borderRadius: BorderRadius.circular(6)),
-                                    child: Text("Yok", style: TextStyle(fontSize: 9, color: r.yokMetin, fontWeight: FontWeight.w600)),
+                                  // 9 px'ti (denetim #3); çıkartma etiketi.
+                                  Transform.rotate(
+                                    angle: -0.07,
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                      decoration: BoxDecoration(color: AppTema.ana, borderRadius: BorderRadius.circular(10)),
+                                      child: const Text("Yok", style: TextStyle(fontSize: 12, color: Colors.white, fontWeight: FontWeight.w800)),
+                                    ),
                                   ),
                                 ],
                               ],
@@ -848,7 +863,6 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                 )),
                   ],
                 ),
-              ),
             ),
           ),
         );
@@ -894,8 +908,11 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 2),
       child: Badge(
-        label: Text('${val.abs()}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 9)),
-        backgroundColor: val < 0 ? Colors.red : Colors.green,
+        // 9 px, yeşil üstünde 2,78:1 ve "eksik" sayısı yeşildi (denetim #3):
+        // nötr mürekkep, 11 px, beyaz yazı.
+        label: Text('${val.abs()}', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 11)),
+        backgroundColor: AppTema.ana,
+        textColor: Colors.white,
         child: Container(
           width: 32, height: 32,
           decoration: BoxDecoration(color: renk.withAlpha(40), borderRadius: BorderRadius.circular(8)),

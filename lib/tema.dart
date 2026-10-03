@@ -26,6 +26,10 @@ class AppTema {
     Color(0xFFFFA63D), // portakal
   ];
 
+  /// Sınıflarım dışından (arama, etkinlik bandı) açılan sınıfa sabit renk.
+  static Color sinifRengiKimlikten(String id) =>
+      sinifRenkleri[id.codeUnits.fold<int>(0, (a, b) => a + b) % sinifRenkleri.length];
+
   // ---------------------------------------------------------------
   // Marka vurgu rengi (Sabri seçti, 2026-09-05): turkuaz. Yalnız ANA
   // EYLEMLERDE kullanılır — birincil düğmeler, FAB'lar, odak çerçevesi,
