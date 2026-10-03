@@ -478,35 +478,28 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
               child: SafeArea(
                 child: Row(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: r.kart,
-                        borderRadius: BorderRadius.circular(26),
-                        border: Border.all(color: r.kenar, width: 2.5),
-                      ),
-                      child: DropdownButton<int>(
-                        value: secilenTakimSayisi,
-                        underline: const SizedBox(),
-                        borderRadius: BorderRadius.circular(12),
-                        items: List.generate(
-                          formaRenkleri.length > 1 ? formaRenkleri.length - 1 : 1,
-                          (i) => i + 2,
-                        ).map((e) => DropdownMenuItem(value: e, child: Text("$e takım", style: const TextStyle(fontFamily: AppTema.baslikFontu, fontSize: 17, fontWeight: FontWeight.w600)))).toList(),
-                        onChanged: (val) => setState(() => secilenTakimSayisi = val!),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
+                    // Açılır menü yerine sayaç (Sabri: menüyü açıp seçmek
+                    // sıkıcı): tek dokunuşla bir artır/azalt. Sınır aynı:
+                    // 2 ile sınıfın forma rengi sayısı arası.
+                    _takimSayaci(),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: SertGolgeli(
-                        child: ElevatedButton.icon(
+                        // 320 px'te sayacın yanında sığsın diye küçülebilir.
+                        child: ElevatedButton(
                           style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
                             minimumSize: const Size.fromHeight(54),
                           ),
                           onPressed: _takimlariKur,
-                          icon: const Icon(Icons.auto_awesome_rounded),
-                          label: const Text("Takım Kur", style: TextStyle(fontSize: 19)),
+                          child: const FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Row(mainAxisSize: MainAxisSize.min, children: [
+                              Icon(Icons.auto_awesome_rounded),
+                              SizedBox(width: 8),
+                              Text("Takım Kur", style: TextStyle(fontSize: 19)),
+                            ]),
+                          ),
                         ),
                       ),
                     ),
@@ -531,6 +524,46 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
       content: Text("$eklenen öğrenci geçen yıldan eklendi."),
       backgroundColor: AppTema.basari,
     ));
+  }
+
+  int get _enCokTakim => formaRenkleri.length > 2 ? formaRenkleri.length : 2;
+
+  Widget _takimSayaci() {
+    final r = context.renk;
+    final n = secilenTakimSayisi.clamp(2, _enCokTakim);
+    Widget dugme(IconData ikon, String ipucu, bool etkin, int fark) => IconButton(
+          tooltip: ipucu,
+          onPressed: etkin ? () => setState(() => secilenTakimSayisi = n + fark) : null,
+          icon: Icon(ikon, size: 24),
+          style: IconButton.styleFrom(
+            minimumSize: const Size(44, 44),
+            backgroundColor: r.kart,
+            foregroundColor: r.metin,
+            disabledBackgroundColor: r.kart,
+            disabledForegroundColor: r.cizgi,
+            side: BorderSide(color: etkin ? r.kenar : r.cizgi, width: 2.5),
+          ),
+        );
+    return Row(mainAxisSize: MainAxisSize.min, children: [
+      dugme(Icons.remove_rounded, 'Takım sayısını azalt', n > 2, -1),
+      Semantics(
+        liveRegion: true,
+        label: '$n takım',
+        excludeSemantics: true,
+        child: SizedBox(
+          width: 58,
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Text('$n',
+                textScaler: TextScaler.noScaling,
+                style: TextStyle(fontFamily: AppTema.baslikFontu, fontSize: 26, fontWeight: FontWeight.w700, color: r.metin, height: 1)),
+            Text('takım',
+                textScaler: TextScaler.noScaling,
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: r.metinIkincil)),
+          ]),
+        ),
+      ),
+      dugme(Icons.add_rounded, 'Takım sayısını artır', n < _enCokTakim, 1),
+    ]);
   }
 
   Widget _baslikCipi(IconData ikon, String metin, Color zemin, Color yazi) {
@@ -2289,6 +2322,8 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
   Color _takimRenginiBul(String renkAdi) => AppTema.formaRengi(renkAdi);
 
   Future<void> _takimlariKur() async {
+    // Forma listesi kısaldıysa sayaçta kalan eski değer sınırı aşmasın.
+    secilenTakimSayisi = secilenTakimSayisi.clamp(2, _enCokTakim);
     final List<Ogrenci> gelenler;
     try {
       gelenler = (await _db.ogrencileriGetir(widget.sinifId)).where((o) => o.buradaMi).toList();
