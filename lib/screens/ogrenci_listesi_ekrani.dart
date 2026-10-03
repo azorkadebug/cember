@@ -18,6 +18,7 @@ import '../services/analytics_service.dart';
 import '../services/firestore_service.dart';
 import '../services/demo_modu.dart';
 import '../services/mac_durumu.dart';
+import '../widgets/sus_daireleri.dart';
 import '../widgets/yardim_diyalogu.dart';
 import 'skor_ekrani.dart';
 import 'yoklama_ekrani.dart';
@@ -208,12 +209,24 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
       backgroundColor: r.sayfa,
       body: NestedScrollView(
         headerSliverBuilder: (context, innerBoxIsScrolled) => [
-          SliverAppBar(
+          // Eylemler maketteki gibi beyaz, mürekkep kenarlı yuvarlak düğmeler.
+          Theme(
+            data: Theme.of(context).copyWith(
+              iconButtonTheme: IconButtonThemeData(
+                style: IconButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: AppTema.ana,
+                  side: const BorderSide(color: AppTema.ana, width: 2.5),
+                  fixedSize: const Size(44, 44),
+                ),
+              ),
+            ),
+            child: SliverAppBar(
             // 120 iken flexibleSpace'teki büyük başlık, 56px'lik toolbar
             // şeridiyle aynı yüksekliğe düşüp aksiyon ikonlarının üstüne
             // çiziliyordu. Başlık artık Column'un başındaki SizedBox ile
             // şeridin ALTINA itiliyor; expandedHeight de ona göre büyüdü.
-            expandedHeight: 110 + 50 * olcek,
+            expandedHeight: 122 + 56 * olcek,
             floating: false,
             pinned: true,
             automaticallyImplyLeading: !widget.gomulu,
@@ -242,6 +255,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                   builder: (_) => YoklamaEkrani(sinifId: widget.sinifId, sinifAd: _sinifAd, kalemler: _kontrolKalemleri),
                 )),
               ),
+              const SizedBox(width: 8),
               IconButton(
                 icon: const Icon(Icons.help_outline_rounded),
                 tooltip: 'Yardım',
@@ -308,6 +322,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
               ),
               // Beş ikon dar ekranda başlıkla yarışıyordu; üçü taşır menüye
               // alındı. Yoklama ve Yardım en sık kullanılanlar, dışarıda kaldı.
+              const SizedBox(width: 8),
               PopupMenuButton<String>(
                 icon: const Icon(Icons.more_vert_rounded),
                 tooltip: 'Daha fazla',
@@ -361,9 +376,23 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                   ),
                 ],
               ),
+              const SizedBox(width: 12),
             ],
             flexibleSpace: FlexibleSpaceBar(
-              background: SafeArea(
+              background: Stack(
+                children: [
+                  // Maketteki süs daireleri (sağ üstte limon, sol altta beyaz),
+                  // yavaşça süzülür.
+                  Positioned.fill(
+                    child: SusDaireleri(daireler: [
+                      SusDaire(const Offset(0.94, 0.08), 150,
+                          _sinifRengi == const Color(0xFFFFD84D) ? Colors.white.withAlpha(110) : const Color(0xFFFFD84D).withAlpha(140),
+                          genlik: 12),
+                      SusDaire(const Offset(0.03, 0.96), 96, Colors.white.withAlpha(46)),
+                      SusDaire(const Offset(0.86, 0.6), 18, Colors.white.withAlpha(90), genlik: 6),
+                    ]),
+                  ),
+                  SafeArea(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(20, kToolbarHeight, 20, 16),
                   child: Column(
@@ -377,9 +406,9 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                         style: const TextStyle(
                             fontFamily: AppTema.baslikFontu,
                             color: AppTema.ana,
-                            fontSize: 34,
+                            fontSize: 44,
                             fontWeight: FontWeight.w700,
-                            height: 1.1),
+                            height: 1.05),
                       ),
                       const SizedBox(height: 10),
                       // İstatistikler çıkartma çipler.
@@ -420,7 +449,10 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                   ),
                 ),
               ),
+                ],
+              ),
             ),
+          ),
           ),
         ],
         body: Column(

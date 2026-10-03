@@ -12,6 +12,7 @@ import '../widgets/girdi.dart';
 import '../models/ogrenci.dart';
 import '../services/mac_durumu.dart';
 import '../services/demo_modu.dart';
+import '../widgets/sus_daireleri.dart';
 import '../widgets/yardim_diyalogu.dart';
 
 class TakimBilgi {
@@ -403,6 +404,17 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
         ],
       ),
       body: Stack(children: [
+        // Krem zeminde yavaşça süzülen renkli daireler (Teneffüs).
+        if (!_sunum)
+          const Positioned.fill(
+            child: SusDaireleri(daireler: [
+              SusDaire(Offset(1.0, 0.10), 230, Color(0xB3FFD84D), genlik: 14),
+              SusDaire(Offset(-0.03, 0.40), 170, Color(0x994DD9C6), genlik: 12),
+              SusDaire(Offset(0.98, 0.66), 110, Color(0x99FF6B57)),
+              SusDaire(Offset(0.06, 0.92), 210, Color(0x80B794F6), genlik: 14),
+              SusDaire(Offset(0.02, 0.08), 40, Color(0xB34FA3F7), genlik: 8),
+            ]),
+          ),
         if (_sunum)
           SafeArea(child: _sunumGovdesi())
         else

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import '../tema.dart';
 import '../tema_renkleri.dart';
+import 'cikartma.dart';
 
 /// Her ekranın app bar'ına eklenebilen yardım dialogu.
 ///
@@ -99,57 +101,60 @@ class YardimDiyalogu extends StatelessWidget {
       minChildSize: 0.4,
       maxChildSize: 0.95,
       expand: false,
+      // "Teneffüs": krem zemin, mürekkep kenar, bölümler çıkartma kartlar.
       builder: (_, scrollController) => Container(
         decoration: BoxDecoration(
-          color: r.kartUstu,
+          color: r.sayfa,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          border: Border.all(color: r.kenar, width: 2.5),
         ),
         child: Column(
           children: [
-            // Sürükleme tutamacı
             Container(
               margin: const EdgeInsets.only(top: 12, bottom: 4),
               width: 40,
               height: 4,
-              decoration: BoxDecoration(
-                color: r.cizgi,
-                borderRadius: BorderRadius.circular(2),
-              ),
+              decoration: BoxDecoration(color: r.cizgi, borderRadius: BorderRadius.circular(2)),
             ),
-            // Başlık
             Padding(
-              padding: const EdgeInsets.fromLTRB(24, 16, 16, 16),
+              padding: const EdgeInsets.fromLTRB(20, 12, 16, 8),
               child: Row(
                 children: [
-                  Icon(Icons.help_outline_rounded, color: r.ikonAna, size: 26),
-                  const SizedBox(width: 10),
+                  Container(
+                    width: 44, height: 44,
+                    alignment: Alignment.center,
+                    decoration: ShapeDecoration(
+                      color: const Color(0xFFFFD84D),
+                      shape: CircleBorder(side: BorderSide(color: r.kenar, width: 2.5)),
+                    ),
+                    child: const Icon(Icons.question_mark_rounded, color: AppTema.ana, size: 24),
+                  ),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Text(
                       baslik,
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.3,
-                      ),
+                      style: TextStyle(fontFamily: AppTema.baslikFontu, fontSize: 24, fontWeight: FontWeight.w600, color: r.metin, height: 1.15),
                     ),
                   ),
                   IconButton(
                     icon: const Icon(Icons.close_rounded),
                     tooltip: 'Kapat',
-                    color: r.metinIkincil,
+                    color: r.metin,
+                    style: IconButton.styleFrom(
+                      backgroundColor: r.kart,
+                      side: BorderSide(color: r.kenar, width: 2),
+                    ),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ],
               ),
             ),
-            Divider(height: 1, color: r.cizgiAcik),
-            // İçerik
             Expanded(
               child: ListView.separated(
                 controller: scrollController,
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                 itemCount: bolumler.length,
-                separatorBuilder: (_, _) => const SizedBox(height: 18),
+                separatorBuilder: (_, _) => const SizedBox(height: 10),
                 itemBuilder: (_, i) => _BolumKart(bolum: bolumler[i]),
               ),
             ),
@@ -174,6 +179,27 @@ class YardimBolumu {
   });
 }
 
+/// Yardım bölümlerine eski Material renkleri verilmiş (yeşil 43A047, mavi
+/// 1976D2…); her birini tonuna en yakın Teneffüs rengine çevirir.
+Color _teneffusRengi(Color c) {
+  const palet = [
+    Color(0xFFFF6B57), // domates
+    Color(0xFFFFA63D), // portakal
+    Color(0xFFFFD84D), // limon
+    Color(0xFF63C77A), // çimen
+    Color(0xFF4DD9C6), // turkuaz
+    Color(0xFF4FA3F7), // gök
+    Color(0xFFB794F6), // mürdüm
+    Color(0xFFFF8FB1), // pembe
+  ];
+  final h = HSVColor.fromColor(c).hue;
+  double fark(Color p) {
+    final d = (HSVColor.fromColor(p).hue - h).abs();
+    return d > 180 ? 360 - d : d;
+  }
+  return palet.reduce((a, b) => fark(a) <= fark(b) ? a : b);
+}
+
 class _BolumKart extends StatelessWidget {
   final YardimBolumu bolum;
   const _BolumKart({required this.bolum});
@@ -181,43 +207,42 @@ class _BolumKart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final r = context.renk;
-    final renk = bolum.renk ?? r.ikonAna;
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: renk.withAlpha(25),
-            borderRadius: BorderRadius.circular(12),
+    final renk = _teneffusRengi(bolum.renk ?? AppTema.vurgu);
+    return Cikartma(
+      kayma: 3,
+      yaricap: 20,
+      dolgu: const EdgeInsets.fromLTRB(12, 12, 14, 14),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 44, height: 44,
+            alignment: Alignment.center,
+            decoration: ShapeDecoration(
+              color: renk,
+              shape: CircleBorder(side: BorderSide(color: r.kenar, width: 2)),
+            ),
+            child: Icon(bolum.ikon, color: AppTema.ana, size: 22),
           ),
-          child: Icon(bolum.ikon, color: renk, size: 22),
-        ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                bolum.baslik,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  bolum.baslik,
+                  style: TextStyle(fontFamily: AppTema.baslikFontu, fontSize: 18, fontWeight: FontWeight.w600, color: r.metin, height: 1.2),
                 ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                bolum.aciklama,
-                style: TextStyle(
-                  fontSize: 14,
-                  height: 1.5,
-                  color: r.metinGovde,
+                const SizedBox(height: 4),
+                Text(
+                  bolum.aciklama,
+                  style: TextStyle(fontSize: 15, height: 1.45, fontWeight: FontWeight.w600, color: r.metinGovde),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
