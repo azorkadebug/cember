@@ -101,23 +101,10 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
     final r = context.renk;
     return Scaffold(
       backgroundColor: r.sayfa,
-      // "Teneffüs": koyu çubuk yerine krem zemin, solda logo; büyük başlık
-      // aşağıda (_solPanel).
+      // "Teneffüs": koyu çubuk yerine krem zemin; büyük başlık aşağıda
+      // (_solPanel). Küçük logo kaldırıldı (Sabri, 2026-10-04): ince çizgili
+      // küre 34 px'te karalamaya dönüyordu; logo giriş ekranında büyük.
       appBar: AppBar(
-        title: Semantics(
-          label: 'Sınıflarım',
-          excludeSemantics: true,
-          child: Container(
-            width: 44, height: 44,
-            padding: const EdgeInsets.all(5),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-              border: Border.all(color: r.kenar, width: 2.5),
-            ),
-            child: Image.asset('assets/images/logo_256.png'),
-          ),
-        ),
         centerTitle: false,
         backgroundColor: r.sayfa,
         foregroundColor: r.metin,
