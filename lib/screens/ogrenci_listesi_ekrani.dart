@@ -884,7 +884,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
   }
 
   /// Sağdaki çıkartmalar: kare içinde kare yok (Sabri, 2026-10-04) —
-  /// sarı kart eğik sarı etiket, rozet mor yıldız, sağlık beyaz yuvarlak,
+  /// sarı kart eğik sarı etiket, rozet mor yıldız, sağlık kırmızı çanta,
   /// Yok mürekkep etiket; en sonda hızlı not.
   Widget _rozetGrubu(Ogrenci o) {
     final r = context.renk;
@@ -920,16 +920,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
           // Kıyafet/ayakkabı eksik ve diğer sayaçlar: çerçevesiz renkli
           // çıkartma, 2+ ise köşede sayı.
           KalemCikartmasi(k.ikon, sayi: o.kalemDeger(k.id)),
-      if (o.saglikDurumu != 0)
-        Container(
-          width: 30, height: 30,
-          alignment: Alignment.center,
-          decoration: const ShapeDecoration(
-            color: Colors.white,
-            shape: CircleBorder(side: BorderSide(color: AppTema.ana, width: 2)),
-          ),
-          child: const OzelSimgeWidget(OzelSimge.saglik, color: Color(0xFFE5483A), size: 17),
-        ),
+      if (o.saglikDurumu != 0) const KalemCikartmasi('saglik'),
       if (o.not.isNotEmpty) const NotCikartmasi(),
       if (o.rozetler.isNotEmpty)
         Container(
@@ -986,7 +977,8 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
       // Kare içinde kare yok (Sabri): simge doğrudan, − beyaz / + sarı
       // yuvarlak çıkartma; etiket esnek (320 px + büyük yazıda taşıyordu).
       child: Row(children: [
-        KalemSimgesi(ikonAnahtari, size: 24, color: context.renk.metin),
+        // Listedeki çıkartmaların aynısı (Sabri: üçü siyah, sağlık kırmızıydı).
+        SizedBox(width: 30, child: Center(child: KalemCikartmasi(ikonAnahtari, boyut: 28))),
         const SizedBox(width: 10),
         Expanded(
           child: Text(label,
@@ -1035,7 +1027,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
             child: ConstrainedBox(
               constraints: const BoxConstraints(minHeight: 44),
               child: Row(children: [
-                const OzelSimgeWidget(OzelSimge.saglik, size: 24, color: Color(0xFFE5483A)),
+                const SizedBox(width: 30, child: Center(child: KalemCikartmasi('saglik', boyut: 28))),
                 const SizedBox(width: 10),
                 const Flexible(child: Text("Sağlık", style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700))),
                 if (o.saglikNotlari.isNotEmpty) ...[
