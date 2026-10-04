@@ -139,6 +139,8 @@ class _OgrenciAramaEkraniState extends State<OgrenciAramaEkrani> {
         foregroundColor: r.metin,
         elevation: 0,
         titleSpacing: 0,
+        // Arama kutusu ekranın üst kenarına yapışıktı (denetim #4).
+        toolbarHeight: 72,
         title: Semantics(
           label: 'Öğrenci ara',
           child: TextField(

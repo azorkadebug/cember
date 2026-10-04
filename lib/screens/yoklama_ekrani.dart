@@ -453,8 +453,10 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
               CinsiyetSimgesi(o.isMale, boyut: 16),
               const SizedBox(width: 3),
               Expanded(
+                // Büyük yazıda ve "eksik" rozetiyle ad "Ayşe Yıl…" diye
+                // kesiliyordu, aynı adlılar ayırt edilemiyordu (denetim #4).
                 child: Text(o.gorunenAd,
-                    maxLines: 1,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: geldi ? r.metin : r.metinUcuncul)),
               ),
@@ -468,6 +470,7 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
                     border: Border.all(color: r.tehlike, width: 1.5),
                   ),
                   child: Text('$eksikSayisi eksik',
+                      textScaler: TextScaler.noScaling,
                       style: TextStyle(
                           fontSize: 13, fontWeight: FontWeight.w800, color: r.tehlike)),
                 ),
@@ -501,6 +504,7 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
                         size: 18, color: geldi ? AppTema.ana : r.murekkepUstu),
                     const SizedBox(width: 4),
                     Text(geldi ? 'Geldi' : 'Yok',
+                        textScaler: TextScaler.noScaling,
                         style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: geldi ? AppTema.ana : r.murekkepUstu)),
                   ]),
                 ),

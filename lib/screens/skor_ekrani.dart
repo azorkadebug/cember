@@ -383,7 +383,7 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
                 YardimBolumu(
                   ikon: Icons.report_rounded,
                   baslik: '2 dakika mola',
-                  aciklama: 'Takım kartındaki "2 dk Mola" düğmesi → oyuncuyu seç. Oyuncu 2 dakika oyundan çıkar (üstte kırmızı şerit), süre dolunca kendiliğinden döner. Buz hokeyi/futsal mantığı: dışlama yerine soğuma molası. Perdede "molada" görünür, "ceza" değil.',
+                  aciklama: 'Takım kartındaki "Mola" düğmesi → oyuncuyu seç. Oyuncu 2 dakika oyundan çıkar (üstte kırmızı şerit), süre dolunca kendiliğinden döner. Buz hokeyi/futsal mantığı: dışlama yerine soğuma molası. Perdede "molada" görünür, "ceza" değil.',
                   renk: Color(0xFFE53935),
                 ),
                 YardimBolumu(
@@ -507,12 +507,25 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
       crossAxisAlignment: genis ? CrossAxisAlignment.start : CrossAxisAlignment.center,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(ad,
-            maxLines: genis ? 2 : 1,
-            overflow: TextOverflow.ellipsis,
-            textAlign: genis ? TextAlign.start : TextAlign.center,
-            style: TextStyle(
-                fontFamily: AppTema.baslikFontu, fontSize: genis ? 24 : 18, fontWeight: FontWeight.w600, color: metin, height: 1.1)),
+        // En uzun kelime satıra sığmıyorsa yazı küçülür; yoksa "Kraker
+        // Ko/mandoları" diye kelime ortasından bölünüyordu (denetim #4).
+        LayoutBuilder(builder: (context, kutu) {
+          var stil = TextStyle(
+              fontFamily: AppTema.baslikFontu, fontSize: genis ? 24 : 18, fontWeight: FontWeight.w600, color: metin, height: 1.1);
+          final olcek = MediaQuery.textScalerOf(context);
+          final enUzun = ad.split(' ').map((k) {
+            final tp = TextPainter(text: TextSpan(text: k, style: stil), textDirection: TextDirection.ltr, textScaler: olcek)..layout();
+            return tp.width;
+          }).fold(0.0, (a, b) => b > a ? b : a);
+          if (kutu.maxWidth.isFinite && enUzun > kutu.maxWidth) {
+            stil = stil.copyWith(fontSize: stil.fontSize! * kutu.maxWidth / enUzun * 0.98);
+          }
+          return Text(ad,
+              maxLines: genis ? 2 : 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: genis ? TextAlign.start : TextAlign.center,
+              style: stil);
+        }),
         const SizedBox(height: 2),
         Text('${t.renkAdi} · ${t.oyuncular.length} kişi',
             maxLines: 1,
@@ -671,7 +684,7 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
                       },
                       customBorder: const CircleBorder(),
                       child: Semantics(
-                        label: '${c.oyuncu.gorunenAd} cezasını iptal et',
+                        label: '${c.oyuncu.gorunenAd} molasını iptal et',
                         button: true,
                         child: SizedBox(width: 44, height: 44, child: Icon(Icons.close_rounded, color: r.metin, size: 20)),
                       ),
@@ -923,15 +936,25 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
             Expanded(child: Padding(padding: const EdgeInsets.all(6), child: _sunumTakimPaneli(i))),
         ]);
       } else {
-        // Yükseklik azken oran negatife/sıfıra düşebiliyordu (denetim #3).
-        final satir = (n + 1) ~/ 2;
-        final hucreY = ((c.maxHeight - 200).clamp(160.0, double.infinity)) / satir;
-        paneller = GridView.count(
-          crossAxisCount: 2,
-          physics: const NeverScrollableScrollPhysics(),
-          childAspectRatio: (c.maxWidth / 2) / hucreY,
-          children: [for (var i = 0; i < n; i++) Padding(padding: const EdgeInsets.all(6), child: _sunumTakimPaneli(i))],
-        );
+        // Izgara yüksekliği süre şeridini 200 px sayıyordu, şerit daha
+        // uzun olunca 4 takımda alt sıra şeridin altında kalıyordu
+        // (denetim #4). Satırlar artık kalan alanı paylaşır.
+        // Yatayda 5+ takım üç sütun; dikeyde iki.
+        final sutun = yatay ? 3 : 2;
+        final satir = (n + sutun - 1) ~/ sutun;
+        paneller = Column(children: [
+          for (var s = 0; s < satir; s++)
+            Expanded(
+              child: Row(children: [
+                for (var i = s * sutun; i < s * sutun + sutun; i++)
+                  Expanded(
+                    child: i < n
+                        ? Padding(padding: const EdgeInsets.all(6), child: _sunumTakimPaneli(i))
+                        : const SizedBox.shrink(),
+                  ),
+              ]),
+            ),
+        ]);
       }
       return Column(children: [
         Expanded(child: paneller),
@@ -968,15 +991,23 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
             child: InkWell(
               onTap: () => setState(() { t.skor++; MacDurumu().kaydet(); }),
               onLongPress: () => setState(() { if (t.skor > 0) { t.skor--; MacDurumu().kaydet(); } }),
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+              child: LayoutBuilder(builder: (context, kutu) {
+                // Alçak panelde (6+ takım, dar ya da yatay ekran) renk adı
+                // ve alt düğmeler gizlenir; dokun +1 / basılı tut −1 kalır.
+                final kompakt = kutu.maxHeight < 190;
+                return Padding(
+                padding: kompakt ? const EdgeInsets.fromLTRB(12, 8, 12, 6) : const EdgeInsets.fromLTRB(16, 16, 16, 12),
                 child: Column(children: [
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(_takimAdi(t),
-                        style: TextStyle(fontFamily: AppTema.baslikFontu, color: metin, fontWeight: FontWeight.w600, fontSize: 30)),
+                  SizedBox(
+                    // Çok alçak panelde ad da küçülür (FittedBox), taşmaz.
+                    height: kompakt ? (kutu.maxHeight * 0.28).clamp(14.0, 36.0) : null,
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(_takimAdi(t),
+                          style: TextStyle(fontFamily: AppTema.baslikFontu, color: metin, fontWeight: FontWeight.w600, fontSize: 30)),
+                    ),
                   ),
-                  Text(t.renkAdi, style: TextStyle(color: metin, fontSize: 15, fontWeight: FontWeight.w700)),
+                  if (!kompakt) Text(t.renkAdi, style: TextStyle(color: metin, fontSize: 15, fontWeight: FontWeight.w700)),
                   Expanded(
                     child: Center(
                       child: FittedBox(
@@ -992,7 +1023,7 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
                       ),
                     ),
                   ),
-                  Row(children: [
+                  if (!kompakt) Row(children: [
                     _yuvarlakDugme(Icons.remove_rounded, '${_takimAdi(t)} skorunu azalt',
                         () => setState(() { if (t.skor > 0) { t.skor--; MacDurumu().kaydet(); } })),
                     const SizedBox(width: 8),
@@ -1018,7 +1049,8 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
                     ),
                   ]),
                 ]),
-              ),
+              );
+              }),
             ),
           ),
         ),

@@ -130,7 +130,8 @@ class AppTema {
 
   static Color formaRengi(String renkAdi) {
     switch (renkAdi.toLowerCase().trim()) {
-      case 'kırmızı': return const Color(0xFFE53935);
+      // E53935 üstünde beyaz küçük yazı 4,2:1'di (denetim #4); D32F2F 5:1.
+      case 'kırmızı': return const Color(0xFFD32F2F);
       case 'mavi': return const Color(0xFF1E88E5);
       case 'sarı': return const Color(0xFFFFB300);
       case 'yeşil': return const Color(0xFF43A047);

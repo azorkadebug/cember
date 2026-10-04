@@ -146,6 +146,34 @@ void main() {
       expect(catisma(yirmi, 2, duzeltme: true), 0);
     });
 
+    test('denetim #4: sular kız, ateşler erkek — takasla hiç çatışma kalmaz', () {
+      for (final takim in [2, 3, 4]) {
+        var catismaVar = 0, dengesiz = 0;
+        for (var seed = 0; seed < 500; seed++) {
+          final r = Random(seed);
+          final sinif = [
+            ..._sinif(kiz: 5, erkek: 7, rnd: r),
+          ];
+          sinif[0].element = 'su';
+          sinif[1].element = 'su';
+          sinif[5].element = 'ates';
+          sinif[6].element = 'ates';
+          final t = takimlariDagit(sinif, takim, random: r, kisitlilarOnce: true, takasla: true);
+          final catisiyor = t.any((tk) {
+            final e = tk.map((o) => o.element).toSet();
+            return e.contains('ates') && e.contains('su');
+          });
+          if (catisiyor) catismaVar++;
+          if (_maxFark(t) > 1) dengesiz++;
+          final kizlar = t.map((tk) => tk.where((o) => !o.isMale).length).toList();
+          if (kizlar.reduce(max) - kizlar.reduce(min) > 1) dengesiz++;
+          expect(t.expand((x) => x).length, sinif.length);
+        }
+        expect(catismaVar, 0, reason: '$takim takım');
+        expect(dengesiz, 0, reason: '$takim takım');
+      }
+    });
+
     test('kişi dengesi element uyumundan önce gelir (3 ateş + 1 su, 2 takım)',
         () {
       final sinif = [

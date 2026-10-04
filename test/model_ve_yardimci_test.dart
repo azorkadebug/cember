@@ -242,7 +242,7 @@ void main() {
     test('formaRengi ad → renk; bilinmeyen ad charcoal', () {
       expect(AppTema.formaRengi('turuncu'), const Color(0xFFF57C00));
       expect(AppTema.formaRengi('turuncu'), isNot(AppTema.ana));
-      expect(AppTema.formaRengi(' Kırmızı '), const Color(0xFFE53935));
+      expect(AppTema.formaRengi(' Kırmızı '), const Color(0xFFD32F2F));
       expect(AppTema.formaRengi('KIRMIZI'), AppTema.ana,
           reason: 'toLowerCase() Türkçe İ/I bilmez: "KIRMIZI" → "kirmizi" '
               '≠ "kırmızı" (tema.dart:96) — formaRenkAdlari sabiti '

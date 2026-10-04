@@ -13,6 +13,7 @@ import '../widgets/cikartma.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/ogrenci.dart';
 import '../models/kontrol_kalemi.dart';
+import '../services/takim_takasi.dart';
 import '../services/auth_service.dart';
 import '../services/analytics_service.dart';
 import '../services/firestore_service.dart';
@@ -111,6 +112,12 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
   /// yoksa "15 Mevcut" yoklama alınmış gibi görünüyordu (denetim #3).
   late final Stream<QuerySnapshot> _sonYoklamaAkisi = _db.sonYoklamaStream(widget.sinifId);
   QuerySnapshot? _sonYoklama;
+  /// Bugünkü yoklamada eksik işaretlenen günlük kalemler (öğrenci id →
+  /// kalem id'leri). Listede çıkartma olarak görünür; eskiden yalnız
+  /// karttaki sayaçlar görünüyordu, yoklamadaki işaret listeye yansımıyordu
+  /// (denetim #4, Sabri).
+  Map<String, Set<String>> _bugunEksikler = const {};
+  StreamSubscription<QuerySnapshot>? _yoklamaAbonelik;
 
   static String _bugunAnahtari() {
     final b = DateTime.now();
@@ -139,6 +146,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
 
   @override
   void dispose() {
+    _yoklamaAbonelik?.cancel();
     _aramaCtrl.dispose();
     super.dispose();
   }
@@ -161,6 +169,18 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
     _db = FirestoreService(uid: AuthService().uid);
     _sinifAd = widget.sinifAd; // sınıf listesinden geldiyse anında göster; yoksa fetch dolduracak
     _sinifBilgisiHazir = _formaRenkleriniYukle();
+    _yoklamaAbonelik = _db.sonYoklamaStream(widget.sinifId).listen((snap) {
+      final bugun = snap.docs.where((d) => d.id == _bugunAnahtari()).firstOrNull;
+      final kayitlar = ((bugun?.data() as Map<String, dynamic>?)?['kayitlar'] as Map?) ?? const {};
+      final eksikler = <String, Set<String>>{};
+      kayitlar.forEach((ogrId, kayit) {
+        final kalemler = kayit is Map ? kayit['kalemler'] : null;
+        if (kalemler is! Map) return;
+        final eksik = {for (final e in kalemler.entries) if (e.value == false) e.key as String};
+        if (eksik.isNotEmpty) eksikler[ogrId as String] = eksik;
+      });
+      if (mounted) setState(() => _bugunEksikler = eksikler);
+    }, onError: (_) {});
   }
 
   List<KontrolKalemi> _kontrolKalemleriCoz(Map<String, dynamic>? data) {
@@ -399,17 +419,20 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                     mainAxisAlignment: MainAxisAlignment.end,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      // Büyük yazıda "ZZ4 DEN…" oluyordu: sığmazsa küçülür.
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
                         _sinifAd ?? '',
                         maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                             fontFamily: AppTema.baslikFontu,
                             color: AppTema.ana,
                             fontSize: 44,
                             fontWeight: FontWeight.w700,
                             height: 1.05),
-                      ),
+                      )),
                       const SizedBox(height: 10),
                       // İstatistikler çıkartma çipler.
                       StreamBuilder<QuerySnapshot>(
@@ -429,9 +452,14 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                               final ozet = bugunku == null || !snapshot.hasData
                                   ? null
                                   : yoklamaOzeti(bugunku.data() as Map<String, dynamic>?, snapshot.data!.docs.map((d) => d.id));
-                              return Wrap(
+                              // Wrap'ta ikinci çip alt satıra düşüp başlığın
+                              // altında yarım kalıyordu (320 px / büyük yazı,
+                              // denetim #4): tek satır, sığmazsa kayar.
+                              return SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                clipBehavior: Clip.none,
+                                child: Row(
                                 spacing: 8,
-                                runSpacing: 6,
                                 children: [
                                   _baslikCipi(Icons.people_alt_rounded, "$total öğrenci", Colors.white, AppTema.ana),
                                   if (ozet != null) ...[
@@ -440,7 +468,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                                   ] else
                                     _baslikCipi(Icons.fact_check_rounded, "Yoklama alınmadı", Colors.white, AppTema.ana),
                                 ],
-                              );
+                              ));
                             },
                           );
                         },
@@ -919,7 +947,10 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
         else if (o.kalemDeger(k.id) > 0)
           // Kıyafet/ayakkabı eksik ve diğer sayaçlar: çerçevesiz renkli
           // çıkartma, 2+ ise köşede sayı.
-          KalemCikartmasi(k.ikon, sayi: o.kalemDeger(k.id)),
+          KalemCikartmasi(k.ikon, sayi: o.kalemDeger(k.id))
+        else if (o.buradaMi && (_bugunEksikler[o.id]?.contains(k.id) ?? false))
+          // Bugünkü yoklamada eksik işaretlenen günlük kalem.
+          KalemCikartmasi(k.ikon),
       if (o.saglikDurumu != 0) const KalemCikartmasi('saglik'),
       if (o.not.isNotEmpty) const NotCikartmasi(),
       if (o.rozetler.isNotEmpty)
@@ -939,7 +970,10 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
     final etiket = [
       if (!o.buradaMi) 'yok',
       for (final k in _kontrolKalemleri)
-        if (o.kalemDeger(k.id) > 0) '${k.ad} ${o.kalemDeger(k.id)}',
+        if (o.kalemDeger(k.id) > 0)
+          '${k.ad} ${o.kalemDeger(k.id)}'
+        else if (o.buradaMi && (_bugunEksikler[o.id]?.contains(k.id) ?? false))
+          '${k.ad} bugün eksik',
       if (o.saglikDurumu != 0) 'sağlık notu',
       if (o.not.isNotEmpty) 'not var',
       if (o.rozetler.isNotEmpty) '${o.rozetler.length} rozet',
@@ -1454,6 +1488,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
         );
 
     showModalBottomSheet<String>(
+      barrierLabel: 'Kapat',
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
@@ -1907,6 +1942,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
     final durum = _TopluKayitDurumu();
 
     showModalBottomSheet(
+      barrierLabel: 'Kapat',
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -2018,6 +2054,10 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                           ),
                           const SizedBox(width: 8),
                           Semantics(
+                            // container olmadan düğüm satırın tamamını
+                            // kaplıyor, ekran okuyucuda yanlış öğe
+                            // tetikleniyordu (denetim #4).
+                            container: true,
                             button: true,
                             label: 'Cinsiyet: ${!satir.cinsiyetSecildi ? "seçilmedi" : (satir.isMale ? "erkek" : "kız")}, değiştirmek için dokun',
                             excludeSemantics: true,
@@ -2498,6 +2538,9 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
     List<Ogrenci> kisitlilarOnce(List<Ogrenci> l) => [...l.where(kisitli), ...l.where((o) => !kisitli(o))];
     dengeliDagit(kisitlilarOnce(kizlar));
     dengeliDagit(kisitlilarOnce(erkekler));
+    // Kızlar ve erkekler ayrı dağıtıldığı için cinsiyetler arası çatışma
+    // kalabiliyor; aynı cinsiyetten takasla ayır.
+    catismalariTakasla(takimlar, efektifPuan);
 
     final takimIsimleri = _rastgeleTakimIsimleri(secilenTakimSayisi);
     if (!mounted) return;
@@ -2522,6 +2565,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
     unawaited(AnalyticsService.takimKuruldu(takimSayisi: secilenTakimSayisi, oyuncuSayisi: gelenler.length));
 
     showModalBottomSheet(
+      barrierLabel: 'Kapat',
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,

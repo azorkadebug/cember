@@ -442,7 +442,9 @@ ThemeData cemberTemasi(Brightness parlaklik) {
       style: SegmentedButton.styleFrom(
         side: kenar,
         selectedBackgroundColor: r.vurguZemin,
-        selectedForegroundColor: r.metin,
+        // Koyu temada seçili segment yalnız zeminle ayrılıyordu (1,3:1,
+        // denetim #4); yazı ve simge de vurgu renginde.
+        selectedForegroundColor: r.vurguKoyu,
         foregroundColor: r.metin,
         textStyle: const TextStyle(fontFamily: AppTema.govdeFontu, fontWeight: FontWeight.w700),
       ),
