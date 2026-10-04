@@ -19,5 +19,12 @@
     setTimeout(function () { if (s.parentNode) s.parentNode.removeChild(s); }, 500);
   }
   window.cemberHazir = kaldir;
+  // Uygulama temasına göre sayfa zemini ve tema rengi (lib/utils/acilis_sinyali_web.dart).
+  window.cemberZemin = function (renk) {
+    document.documentElement.style.background = renk;
+    document.body.style.background = renk;
+    var m = document.querySelector('meta[name="theme-color"]');
+    if (m) m.setAttribute('content', renk);
+  };
   setTimeout(kaldir, 20000);
 })();

@@ -6,6 +6,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'firebase_options.dart';
+import 'utils/acilis_sinyali.dart';
 import 'widgets/acilis_bekleme.dart';
 import 'screens/giris_ekrani.dart';
 import 'screens/profil_ekrani.dart';
@@ -64,6 +65,7 @@ class CemberApp extends StatelessWidget {
       // ve 44 px'lik düğmeler 1,5 üstünde kırpılıyor (denetim D8).
       builder: (context, child) {
         final mq = MediaQuery.of(context);
+        sayfaZemininiAyarla(Theme.of(context).scaffoldBackgroundColor.toARGB32());
         return MediaQuery(
           data: mq.copyWith(textScaler: mq.textScaler.clamp(maxScaleFactor: 1.5)),
           child: _DemoSeridi(child: child ?? const SizedBox.shrink()),

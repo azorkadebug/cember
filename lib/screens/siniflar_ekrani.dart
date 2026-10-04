@@ -638,7 +638,10 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
                         // "yoklama bekliyor" iki sütunda "yoklama bekli…" diye
                         // kesiliyordu (denetim #4).
                         ? "$count öğrenci · yoklama yok"
-                        : "$gunEtiketi ${ozet.gelen}/${ozet.toplam} geldi";
+                        // Sayı ile "geldi" bölünmez boşlukla bağlı: satır
+                        // sığmazsa "geldi" tek başına alta düşmesin, gün
+                        // etiketi ayrılsın (Sabri, 2026-10-05).
+                        : "$gunEtiketi ${ozet.gelen}/${ozet.toplam}\u00A0geldi";
             final semantik = "$ad, $alt";
             const yazi = AppTema.ana;
             // Kart tek etiketle okunur; ⋯ düğmesi ayrıca ulaşılabilir kalır.
