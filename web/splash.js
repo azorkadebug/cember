@@ -13,9 +13,10 @@
     kaldirildi = true;
     var s = document.getElementById('cember-splash');
     if (!s) return;
-    s.style.opacity = '0';
+    s.classList.add('cikis');      // logo küçülüp kaybolur (.18 sn)
+    s.style.opacity = '0';         // zemin .18 sn gecikmeyle söner
     s.style.pointerEvents = 'none';
-    setTimeout(function () { if (s.parentNode) s.parentNode.removeChild(s); }, 450);
+    setTimeout(function () { if (s.parentNode) s.parentNode.removeChild(s); }, 500);
   }
   window.cemberHazir = kaldir;
   setTimeout(kaldir, 20000);
