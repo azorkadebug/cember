@@ -27,7 +27,11 @@
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="theme-color" content="#FFF6EA">
+  <!-- Ana ekrandan açılınca iPhone durum çubuğu (saat/pil) bu renkte;
+       sonradan JS ile değişmiyor, o yüzden telefonun açık/koyu moduna göre
+       baştan iki renk (2026-10-05: koyu temada üstte krem şerit kalıyordu). -->
+  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#FFF6EA">
+  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#171A21">
   <meta name="apple-mobile-web-app-title" content="Çember">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 
@@ -54,6 +58,12 @@
     /* Safari'nin alt çubuğunun arkası sayfa zemini; tanımsızken beyazdı.
        Uygulama açılınca temaya göre splash.js cemberZemin ile güncellenir. */
     html,body{background:#FFF6EA}
+    @media (prefers-color-scheme: dark){
+      html,body{background:#171A21}
+      #cember-splash{background:#171A21!important;color:#F4F1EA!important}
+      #cember-splash span{color:#B4B8C4!important}
+      #cember-splash i{background:#F4F1EA!important}
+    }
     #cember-splash{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
       gap:14px;background:#FFF6EA;color:#1F2430;font-family:-apple-system,"Segoe UI",Roboto,sans-serif;z-index:9999;
       transition:opacity .25s ease .18s}
