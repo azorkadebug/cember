@@ -24,6 +24,7 @@ import '../widgets/yardim_diyalogu.dart';
 import 'skor_ekrani.dart';
 import 'yoklama_ekrani.dart';
 import 'kontrol_kalemleri_ekrani.dart';
+import 'kura_ekrani.dart';
 import 'gecen_yildan_ekle_ekrani.dart';
 
 // Rastgele takım adları: yalnız Türkçe, ortaokul mizahı (Sabri, 2026-10-04:
@@ -276,6 +277,20 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                 )),
               ),
               const SizedBox(width: 8),
+              // Rastgele öğrenci (Sabri, 2026-10-05).
+              IconButton(
+                icon: const Icon(Icons.casino_rounded),
+                tooltip: 'Kura çek',
+                onPressed: () => Navigator.push(context, MaterialPageRoute(
+                  builder: (_) => KuraEkrani(
+                    sinifId: widget.sinifId,
+                    sinifAd: _sinifAd,
+                    ogrenciler: _tumOgrenciler,
+                    renkler: _renkler,
+                  ),
+                )),
+              ),
+              const SizedBox(width: 8),
               IconButton(
                 icon: const Icon(Icons.help_outline_rounded),
                 tooltip: 'Yardım',
@@ -312,6 +327,12 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                       baslik: 'Eşleştirme 🔗',
                       aciklama: 'Öğrenci kartındaki "Eşleş" satırından iki öğrenciyi birbirine bağla. Takım kurucu bu ikiliyi hep aynı takıma koyar; elementten bağımsızdır. Birlikte oynamaktan hoşlanan iki arkadaşı ayırmamak için.',
                       renk: Color(0xFF3949AB),
+                    ),
+                    YardimBolumu(
+                      ikon: Icons.casino_rounded,
+                      baslik: 'Kura',
+                      aciklama: 'Üstteki zar simgesi rastgele bir öğrenci seçer; yalnız gelenler kuraya girer. "Çıkan öğrenci tekrar çıkmasın" açıkken aynı gün herkes bir kez çıkmadan kimse ikinci kez çıkmaz. Kim çıktığı yalnız bu cihazda tutulur.',
+                      renk: Color(0xFFB794F6),
                     ),
                     YardimBolumu(
                       ikon: Icons.checklist_rounded,
