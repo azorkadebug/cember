@@ -23,8 +23,8 @@
   window.cemberZemin = function (renk) {
     document.documentElement.style.background = renk;
     document.body.style.background = renk;
-    var m = document.querySelector('meta[name="theme-color"]');
-    if (m) m.setAttribute('content', renk);
+    // Profil'de tema elle seçildiyse iki renk de onu göstersin.
+    document.querySelectorAll('meta[name="theme-color"]').forEach(function (m) { m.setAttribute('content', renk); });
   };
   setTimeout(kaldir, 20000);
 })();
