@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../models/kontrol_kalemi.dart';
 import '../tema.dart';
+import '../tema_renkleri.dart';
 
 /// Çember'e özel çizilmiş simgeler (tasarım sistemi: KalemSimgeleri,
 /// `design/tasarim-sistemi/assets/Simgeler/`).
@@ -94,6 +95,8 @@ class KalemSimgesi extends StatelessWidget {
 // ---------------------------------------------------------------------------
 const String _tisortCikartma = '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="-1 0 26 24"><path d="M9 3.2C9.6 4.6 10.7 5.4 12 5.4S14.4 4.6 15 3.2L19.6 5C20.3 5.3 20.8 5.8 21.1 6.5L22.4 9.6C22.6 10.1 22.4 10.6 21.9 10.8L19.2 12C18.7 12.2 18.2 12 18 11.5V19.5C18 20.3 17.3 21 16.5 21H7.5C6.7 21 6 20.3 6 19.5V11.5C5.8 12 5.3 12.2 4.8 12L2.1 10.8C1.6 10.6 1.4 10.1 1.6 9.6L2.9 6.5C3.2 5.8 3.7 5.3 4.4 5Z" fill="#4FA3F7" stroke="#1F2430" stroke-width="1.7" stroke-linejoin="round"/><path d="M9 3.2C9.6 4.6 10.7 5.4 12 5.4S14.4 4.6 15 3.2" fill="none" stroke="#1F2430" stroke-width="1.7" stroke-linecap="round"/></svg>''';
 const String _ayakkabiCikartma = '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 2 24 21"><path d="M3.5 6C4.3 6 5 6.6 5 7.4V8C5 9.1 5.9 10 7 10C8.4 10 9.4 9 9.6 7.7L9.8 6.6L14 9.8L18.6 12.3C20.9 13.4 22 14.6 22 16.3V17.6H2V7.5C2 6.7 2.7 6 3.5 6Z" fill="#FFA63D" stroke="#1F2430" stroke-width="1.6" stroke-linejoin="round"/><circle cx="12" cy="10.9" r=".95" fill="#1F2430"/><circle cx="14.4" cy="12.3" r=".95" fill="#1F2430"/><circle cx="16.8" cy="13.6" r=".95" fill="#1F2430"/><path d="M2 17.6H22V18.8C22 20.1 21.1 21 20 21H4C2.9 21 2 20.1 2 18.8Z" fill="#FFFFFF" stroke="#1F2430" stroke-width="1.6" stroke-linejoin="round"/></svg>''';
+const String _sariKartCikartma = '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect x="1.2" y="8.6" width="5" height="2" rx="1" fill="#1F2430"/><rect x="2.2" y="12.6" width="3.6" height="2" rx="1" fill="#1F2430"/><rect x="8" y="3" width="11" height="16" rx="2" transform="rotate(12 13.5 11)" fill="#FFD84D" stroke="#1F2430" stroke-width="1.7" stroke-linejoin="round"/></svg>''';
+const String _saglikCikartma = '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9 3.5H15A1.5 1.5 0 0 1 16.5 5V7.5H14.5V5.5H9.5V7.5H7.5V5A1.5 1.5 0 0 1 9 3.5Z" fill="#1F2430"/><rect x="2" y="7" width="20" height="14" rx="2.5" fill="#FF6B57" stroke="#1F2430" stroke-width="1.7" stroke-linejoin="round"/><path d="M11 10.5H13V13H15.5V15H13V17.5H11V15H8.5V13H11Z" fill="#FFFFFF" stroke="#1F2430" stroke-width="0.9" stroke-linejoin="round"/></svg>''';
 const String _notCikartma = '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M5 3.5H15.5L20 8V19.5C20 20.3 19.3 21 18.5 21H5.5C4.7 21 4 20.3 4 19.5V4.5C4 3.9 4.4 3.5 5 3.5Z" fill="#FFD84D" stroke="#1F2430" stroke-width="1.7" stroke-linejoin="round"/><path d="M15.5 3.5V7C15.5 7.6 15.9 8 16.5 8H20" fill="#FFF2B0" stroke="#1F2430" stroke-width="1.7" stroke-linejoin="round"/><path d="M7.5 12H16M7.5 15.5H13.5" stroke="#1F2430" stroke-width="1.6" stroke-linecap="round"/></svg>''';
 
 /// Eksik/sayaç kalemi çıkartması. Kıyafet ve ayakkabı renkli çizim; diğer
@@ -109,7 +112,10 @@ class KalemCikartmasi extends StatelessWidget {
     final Widget sekil = switch (anahtar) {
       'shirt' => SvgPicture.string(_tisortCikartma, width: boyut, height: boyut),
       'shoe' => SvgPicture.string(_ayakkabiCikartma, width: boyut * 1.05, height: boyut),
-      _ => KalemSimgesi(anahtar, size: boyut * 0.85, color: AppTema.ana),
+      'card' => SvgPicture.string(_sariKartCikartma, width: boyut, height: boyut),
+      'saglik' => SvgPicture.string(_saglikCikartma, width: boyut, height: boyut),
+      // Koyu temada mürekkep kartın zeminiyle aynıydı; tema metin rengi.
+      _ => KalemSimgesi(anahtar, size: boyut * 0.85, color: context.renk.metin),
     };
     if (sayi < 2) return sekil;
     return Stack(clipBehavior: Clip.none, children: [
