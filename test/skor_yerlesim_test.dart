@@ -13,8 +13,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 List<TakimBilgi> _takimlar(int n, {int skor = 0}) {
-  const adlar = ['Kozmik Köfteciler', 'Roket Tavukları', 'Ayran United', 'Tahtaya Kalkmam'];
-  const renkler = ['Kırmızı', 'Mavi', 'Sarı', 'Siyah'];
+  const adlar = ['Kozmik Köfteciler', 'Roket Tavukları', 'Ayran United', 'Tahtaya Kalkmam', 'Kraker Komandoları', 'Patlayan Mısırlar'];
+  const renkler = ['Kırmızı', 'Mavi', 'Sarı', 'Siyah', 'Yeşil', 'Turuncu'];
   return List.generate(n, (i) {
     final oyuncular = List.generate(
         7, (j) => Ogrenci(id: 't$i-$j', ad: 'Öğrenci Uzunsoyadlıoğlu $i$j', isMale: j.isEven));
@@ -67,7 +67,7 @@ void main() {
   };
 
   for (final b in boyutlar.entries) {
-    for (final n in [2, 3, 4]) {
+    for (final n in [2, 3, 4, 6]) {
       for (final olcek in [1.0, 1.5]) {
         for (final skor in [0, 105]) {
           testWidgets('${b.key}, $n takım, ölçek $olcek, skor $skor', (tester) async {

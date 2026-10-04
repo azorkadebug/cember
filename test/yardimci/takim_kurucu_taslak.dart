@@ -13,6 +13,7 @@
 import 'dart:math';
 
 import 'package:cember/models/ogrenci.dart';
+import 'package:cember/services/takim_takasi.dart';
 
 List<List<Ogrenci>> takimlariDagit(
   List<Ogrenci> gelenler,
@@ -24,6 +25,8 @@ List<List<Ogrenci>> takimlariDagit(
   /// çatışan takıma itmeden önce yerleşmiş olurlar. 1000 tohumluk
   /// ölçümde çatışma 237/1000 → 0/1000, ortalama puan farkı 11,04 → 11,08.
   bool kisitlilarOnce = false,
+  /// Uygulamadaki son adım: çatışmaları aynı cinsiyet takasıyla ayır.
+  bool takasla = false,
 }) {
   final rnd = random ?? Random();
 
@@ -114,5 +117,6 @@ List<List<Ogrenci>> takimlariDagit(
 
   dengeliDagit(kizlarSirali);
   dengeliDagit(erkeklerSirali);
+  if (takasla) catismalariTakasla(takimlar, efektifPuan);
   return takimlar;
 }

@@ -479,7 +479,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
         },
         onLongPress: () => _sinifIslemleri(context, docId, ad),
         child: SizedBox(
-          height: 172,
+          height: _kartYuksekligi(context),
           child: Padding(
             padding: const EdgeInsets.fromLTRB(14, 12, 4, 6),
             child: _sinifOzeti(docId, ad, secili),
@@ -488,6 +488,11 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
       ),
     );
   }
+
+  /// Büyük yazı ayarında alt yazılar kartın dibinden taşıp kesiliyordu
+  /// (denetim #4); kart yazıyla birlikte uzar.
+  double _kartYuksekligi(BuildContext context) =>
+      172 + (MediaQuery.textScalerOf(context).scale(10) / 10 - 1).clamp(0.0, 1.0) * 110;
 
   Widget _yarismaKarti(BuildContext context) {
     final r = context.renk;
@@ -503,7 +508,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
           child: CustomPaint(
             painter: _KesikKenar(renk: r.kenar, yaricap: 24),
             child: SizedBox(
-              height: 172,
+              height: _kartYuksekligi(context),
               child: Padding(
                 padding: const EdgeInsets.all(12),
                 child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
@@ -534,6 +539,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
 
   Future<void> _sinifIslemleri(BuildContext context, String docId, String ad) async {
     final result = await showModalBottomSheet<String>(
+      barrierLabel: 'Kapat',
       context: context,
       showDragHandle: true,
       builder: (ctx) => SafeArea(
@@ -629,7 +635,9 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
                 : bos
                     ? "öğrenci ekle"
                     : ozet == null
-                        ? "$count öğrenci · yoklama bekliyor"
+                        // "yoklama bekliyor" iki sütunda "yoklama bekli…" diye
+                        // kesiliyordu (denetim #4).
+                        ? "$count öğrenci · yoklama yok"
                         : "$gunEtiketi ${ozet.gelen}/${ozet.toplam} geldi";
             final semantik = "$ad, $alt";
             const yazi = AppTema.ana;
@@ -693,7 +701,8 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
                           style: const TextStyle(color: yazi, fontSize: 13, fontWeight: FontWeight.w800, height: 1.2))),
                     ),
                     IconButton(
-                      tooltip: 'Sınıf işlemleri',
+                      // Ekran okuyucuda hepsi aynı "Sınıf işlemleri"ydi.
+                      tooltip: '$ad işlemleri',
                       onPressed: () => _sinifIslemleri(context, docId, ad),
                       icon: const Icon(Icons.more_horiz_rounded, color: yazi, size: 24),
                       constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
@@ -761,7 +770,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
                         if (skor != null)
                           Text(
                             skor,
-                            maxLines: 2,
+                            maxLines: 3,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                                 color: AppTema.ana, fontFamily: AppTema.baslikFontu, fontWeight: FontWeight.w600, fontSize: 18, height: 1.15),

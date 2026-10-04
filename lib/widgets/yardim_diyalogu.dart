@@ -86,6 +86,7 @@ class YardimDiyalogu extends StatelessWidget {
     required List<YardimBolumu> bolumler,
   }) {
     return showModalBottomSheet(
+      barrierLabel: 'Kapat',
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
