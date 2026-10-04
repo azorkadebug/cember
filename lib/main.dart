@@ -6,6 +6,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'firebase_options.dart';
+import 'widgets/acilis_bekleme.dart';
 import 'screens/giris_ekrani.dart';
 import 'screens/profil_ekrani.dart';
 import 'screens/siniflar_ekrani.dart';
@@ -37,6 +38,7 @@ void main() async {
     );
   } catch (_) {}
   runApp(const CemberApp());
+  AcilisBekleme.ilkKareKontrol();
 }
 
 class CemberApp extends StatelessWidget {
@@ -128,8 +130,7 @@ class AuthWrapper extends StatelessWidget {
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-              body: Center(child: CircularProgressIndicator()));
+          return const AcilisBekleme();
         }
         if (snapshot.hasData) {
           final uid = snapshot.data!.uid;
@@ -173,7 +174,7 @@ class _TanitimVeyaGirisState extends State<_TanitimVeyaGiris> {
   @override
   Widget build(BuildContext context) {
     if (_goruldu == null) {
-      return Scaffold(body: Center(child: CircularProgressIndicator(color: context.renk.ikonAna)));
+      return const AcilisBekleme();
     }
     if (!_goruldu!) {
       return TanitimEkrani(onTamamlandi: () => setState(() => _goruldu = true));
@@ -217,7 +218,7 @@ class _ProfilKontrolState extends State<_ProfilKontrol> {
   @override
   Widget build(BuildContext context) {
     if (_kontrol) {
-      return Scaffold(body: Center(child: CircularProgressIndicator(color: context.renk.ikonAna)));
+      return const AcilisBekleme();
     }
     if (_hata) {
       final r = context.renk;
