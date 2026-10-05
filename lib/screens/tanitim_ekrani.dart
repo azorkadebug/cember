@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../widgets/cikartma.dart';
+import '../widgets/yenilikler_penceresi.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../tema.dart';
 import '../tema_renkleri.dart';
@@ -73,6 +74,8 @@ class _TanitimEkraniState extends State<TanitimEkrani> {
 
   Future<void> _bitir() async {
     await TanitimEkrani.goruldueIsaretle();
+    // Tanıtımı yeni gören, "yenilikler" penceresini de görmüş sayılır.
+    await YeniliklerPenceresi.goruldueIsaretle();
     widget.onTamamlandi();
   }
 

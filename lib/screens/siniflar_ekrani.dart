@@ -16,6 +16,7 @@ import '../services/mac_durumu.dart';
 import '../models/kontrol_kalemi.dart';
 import '../widgets/yoklama_halkasi.dart';
 import '../widgets/ziplayan_logo.dart';
+import '../widgets/yenilikler_penceresi.dart';
 import '../utils/sinif_ozeti.dart';
 import 'ogrenci_listesi_ekrani.dart';
 import 'ogrenci_arama_ekrani.dart';
@@ -82,6 +83,9 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
   void initState() {
     super.initState();
     _migrationKontrol();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) YeniliklerPenceresi.gerekirseGoster(context);
+    });
   }
 
   Future<void> _migrationKontrol() async {
