@@ -13,7 +13,7 @@ import 'cikartma.dart';
 /// ilk günden "yenilik" listesi görmesin. Sınıflarım açılışında gösterilir;
 /// yoklama ve skor ekranını hiç kesmez.
 ///
-/// Yeni sürümde: [surum]'u ve [_maddeler]'i güncelle. En çok 3 madde —
+/// Yeni sürümde: [surum]'u ve [_maddeler]'i güncelle. En çok 4 madde —
 /// öğretmen bunu teneffüste okuyor.
 class YeniliklerPenceresi extends StatelessWidget {
   const YeniliklerPenceresi({super.key});
@@ -25,7 +25,9 @@ class YeniliklerPenceresi extends StatelessWidget {
 
   static const _maddeler = [
     _Madde(Icons.palette_rounded, 0,
-        "Yepyeni Teneffüs görünümü. Koyu temayı Profil'deki Görünüm ayarından seç."),
+        'Yepyeni Teneffüs görünümü: renkli sınıflar, her öğrenciye ayrı renk.'),
+    _Madde(Icons.dark_mode_rounded, 4,
+        "Koyu tema geldi: Profil'deki Görünüm ayarından seç."),
     _Madde(Icons.casino_rounded, 3,
         'Sınıf ekranındaki zar simgesiyle rastgele öğrenci seç; aynı gün kimse iki kez çıkmaz.'),
     _Madde(Icons.event_repeat_rounded, 2,
