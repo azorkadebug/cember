@@ -73,7 +73,7 @@ const List<String> _takimIsimHavuzu = [
   "Valla Olmaz", "Hadi Canım", "Kimse Bizi Tutamaz", "Bugün Bizim Günümüz",
   // Süper kahraman & çakma spor
   "Kaptan Kek", "Süper Simit", "Işın Kılıçlı Kalemler", "Radyoaktif Silgiler",
-  "Pelerinli Pankekler", "Görünmez Çantalar", "Adidos Spor", "Pumba Spor",
+  "Pelerinli Pankekler", "Görünmez Çantalar",
   "Real Mısır", "Barçelona Börek", "Mantıspor", "Lahmacunspor",
 ];
 

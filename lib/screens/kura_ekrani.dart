@@ -187,6 +187,10 @@ class _KuraEkraniState extends State<KuraEkrani> {
                         label: Text(o == null ? 'Kura Çek' : 'Tekrar Çek'),
                         style: FilledButton.styleFrom(
                           minimumSize: const Size.fromHeight(60),
+                          // Dönerken düğme devre dışı; temanın gri-siyah
+                          // devre dışı rengi siyah şerit gibi duruyordu.
+                          disabledBackgroundColor: AppTema.vurgu.withAlpha(150),
+                          disabledForegroundColor: Colors.white,
                           textStyle: const TextStyle(fontFamily: AppTema.baslikFontu, fontSize: 22, fontWeight: FontWeight.w600),
                         ),
                       ),
