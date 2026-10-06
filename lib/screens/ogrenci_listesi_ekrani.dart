@@ -13,6 +13,7 @@ import '../widgets/cikartma.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/ogrenci.dart';
 import '../models/kontrol_kalemi.dart';
+import '../services/deneme_sinifi.dart';
 import '../services/takim_takasi.dart';
 import '../services/auth_service.dart';
 import '../services/analytics_service.dart';
@@ -205,6 +206,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
       if (!mounted) return;
       setState(() {
         if (ad != null && ad.isNotEmpty) _sinifAd = ad;
+        _deneme = data?['deneme'] == true;
         _kontrolKalemleri = kalemler;
         formaRenkleri = data != null && data['formaRenkleri'] != null
             ? List<String>.from(data['formaRenkleri'])
@@ -217,6 +219,9 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
       });
     }
   }
+
+  /// Yeni öğretmene kurulan Deneme Sınıfı mı (açıklama şeridi).
+  bool _deneme = false;
 
   Color get _sinifRengi => widget.renk ?? AppTema.sinifRengiKimlikten(widget.sinifId);
 
@@ -514,6 +519,28 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                   ? _aktifMacBanner()
                   : const SizedBox.shrink(),
             ),
+            if (_deneme)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                child: Cikartma(
+                  renk: const Color(0xFFFFD84D),
+                  kenarRengi: AppTema.ana,
+                  kayma: 3,
+                  yaricap: 18,
+                  dolgu: const EdgeInsets.fromLTRB(14, 10, 14, 12),
+                  child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    const Padding(
+                      padding: EdgeInsets.only(top: 2),
+                      child: Icon(Icons.science_rounded, color: AppTema.ana, size: 22),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(DenemeSinifi.aciklama,
+                          style: const TextStyle(color: AppTema.ana, fontSize: 14, fontWeight: FontWeight.w700, height: 1.35)),
+                    ),
+                  ]),
+                ),
+              ),
             // Arama çubuğu
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),

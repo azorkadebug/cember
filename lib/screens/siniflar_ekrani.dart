@@ -96,6 +96,13 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
     // artık şifreleme yapılmadığı için yanlış olmasının yanında, öğretmenin
     // hakkında bir şey yapabileceği bir olay da değil. Sessiz çalışıyor.
     await _db.tumSiniflariMigrate();
+    // Yeni öğretmen bomboş sayfa görmesin: ilk girişte Deneme Sınıfı.
+    try {
+      await _db.denemeSinifiGerekirseKur();
+    } catch (_) {
+      // Çevrimdışı ya da kural hatası: bir sonraki açılışta işaret yoksa
+      // yeniden denenir; kullanıcıya gösterilecek bir şey yok.
+    }
   }
 
   @override
