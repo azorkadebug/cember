@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../tema.dart';
 import '../models/ogrenci.dart';
+import 'deneme_sinifi.dart';
 import '../models/kontrol_kalemi.dart';
 import '../utils/egitim_yili.dart';
 
@@ -46,6 +47,43 @@ class FirestoreService {
       'kontrolKalemleri': kalemler.map((k) => k.toMap()).toList(),
       'formaRenkleri': formaRenkleri ?? AppTema.formaRenkAdlari,
     });
+  }
+
+  /// Yeni öğretmene bir kez "Deneme Sınıfı" kurar (Sabri, 2026-10-06).
+  /// Profilde `denemeSinifi` işareti yoksa: hiç sınıfı yoksa kurar, varsa
+  /// yalnız işaretler. İşaret önce yazılır; deneme sınıfı silinse de, iki
+  /// cihaz aynı anda açılsa da tekrar kurulmaz. Kurulduysa true döner.
+  Future<bool> denemeSinifiGerekirseKur() async {
+    final profil = await _db.collection('users').doc(uid).get();
+    if (profil.data()?['denemeSinifi'] != null) return false;
+    final siniflar = await siniflarGetir();
+    final kur = siniflar.docs.isEmpty;
+    await profilKaydet({'denemeSinifi': kur ? 'kuruldu' : 'gerekmedi'});
+    if (!kur) return false;
+    final brans = 'beden_egitimi';
+    final sinif = await _db.collection('siniflar').add({
+      'created': FieldValue.serverTimestamp(),
+      'ownerId': uid,
+      'ad': DenemeSinifi.ad,
+      'deneme': true,
+      'egitimYili': EgitimYili.simdiki,
+      'brans': brans,
+      'kontrolKalemleri': bransSablonu(brans).varsayilanKalemler.map((k) => k.toMap()).toList(),
+      'formaRenkleri': AppTema.formaRenkAdlari,
+    });
+    // Öğrenciler sınıf yazıldıktan SONRA: kurallar üst dokümanı get() ile
+    // okuyor, aynı batch'te henüz yokmuş gibi görür.
+    final col = sinif.collection('ogrenciler');
+    final idler = [for (var i = 0; i < 12; i++) col.doc().id];
+    final batch = _db.batch();
+    for (final o in DenemeSinifi.ogrenciler(idler)) {
+      batch.set(col.doc(o.id), o.toMap());
+    }
+    await batch.commit();
+    final dun = DateTime.now().subtract(const Duration(days: 1));
+    final anahtar = '${dun.year}-${dun.month.toString().padLeft(2, '0')}-${dun.day.toString().padLeft(2, '0')}';
+    await yoklamaKaydet(sinif.id, anahtar, DenemeSinifi.dunkuYoklama(idler));
+    return true;
   }
 
   /// Firestore batch sınırı 500 — güvenli tarafta 450'lik parçalar.
