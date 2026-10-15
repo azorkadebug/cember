@@ -315,6 +315,49 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
     );
   }
 
+  /// Etkinliği skor ekranından bitirir. Skor ekranını açan her yer
+  /// 'geridon' dışındaki sonuçta MacDurumu().macBitir() çağırıyor; eskiden
+  /// bitirmenin tek yolu Sınıflarım şeridindeki ⏹ idi.
+  void _bitirOnay() {
+    final t = widget.takimlar;
+    String ad(TakimBilgi k) => k.isim.isNotEmpty ? k.isim : k.renkAdi;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Row(children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(color: ctx.renk.tehlikeZemin, borderRadius: BorderRadius.circular(10)),
+            child: Icon(Icons.stop_rounded, color: ctx.renk.tehlike),
+          ),
+          const SizedBox(width: 12),
+          const Expanded(child: Text("Etkinliği Bitir", style: TextStyle(fontWeight: FontWeight.w700))),
+        ]),
+        content: Text(
+          "${t.map((k) => '${ad(k)} ${k.skor}').join(' – ')}\n\n"
+          "Etkinlik bitecek, skor ve süre sıfırlanacak.",
+          style: TextStyle(color: ctx.renk.metinGovde, height: 1.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text("İptal", style: TextStyle(color: ctx.renk.metinIkincil)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: ctx.renk.silDolgu, foregroundColor: Colors.white,
+            ),
+            onPressed: () {
+              Navigator.pop(ctx);
+              Navigator.pop(context, 'bitir');
+            },
+            child: const Text("Evet, Bitir", style: TextStyle(fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+  }
+
   List<_Ceza> _takimCezalari(int takimIndex) {
     return _cezalar.where((c) => c.takimIndex == takimIndex).toList();
   }
@@ -350,6 +393,11 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
         ),
         title: Text("Skor Tablosu", style: TextStyle(color: context.renk.metin)),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.stop_circle_outlined),
+            tooltip: 'Etkinliği bitir',
+            onPressed: _bitirOnay,
+          ),
           IconButton(
             icon: const Icon(Icons.fullscreen_rounded),
             tooltip: 'Sunum modu',
@@ -389,7 +437,7 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
                 YardimBolumu(
                   ikon: Icons.flag_circle_rounded,
                   baslik: 'Sınıfa dön / etkinliği bitir',
-                  aciklama: 'Sol üstteki ok ile sınıf ekranına dönebilirsin: skor ve süre saklanır, uygulama açık kaldığı sürece süre işlemeye devam eder. Sınıflarım ekranındaki "Etkinlik devam ediyor" şeridine dokununca skor tablosu açılır; ⏹ ile etkinliği bitir.',
+                  aciklama: 'Sol üstteki ok ile sınıf ekranına dönebilirsin: skor ve süre saklanır, uygulama açık kaldığı sürece süre işlemeye devam eder. Sınıflarım ekranındaki "Etkinlik devam ediyor" şeridine dokununca skor tablosu açılır. Etkinliği bitirmek için sağ üstteki ⏹ simgesine (ya da şeritteki ⏹ düğmesine) bas.',
                   renk: Color(0xFF8E24AA),
                 ),
                 YardimBolumu(
