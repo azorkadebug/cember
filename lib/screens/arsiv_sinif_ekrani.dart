@@ -108,7 +108,7 @@ class _ArsivSinifEkraniState extends State<ArsivSinifEkrani> {
         elevation: 0,
         title: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(widget.sinifAd, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
-          Text("Arşiv · ${widget.egitimYili}", style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w400)),
+          Text("Arşiv · ${widget.egitimYili}", style: const TextStyle(fontFamily: AppTema.govdeFontu, fontSize: 12, fontWeight: FontWeight.w600)),
         ]),
         actions: [
           PopupMenuButton<String>(

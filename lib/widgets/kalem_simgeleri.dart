@@ -110,10 +110,10 @@ class KalemCikartmasi extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final Widget sekil = switch (anahtar) {
-      'shirt' => SvgPicture.string(_tisortCikartma, width: boyut, height: boyut),
-      'shoe' => SvgPicture.string(_ayakkabiCikartma, width: boyut * 1.05, height: boyut),
-      'card' => SvgPicture.string(_sariKartCikartma, width: boyut, height: boyut),
-      'saglik' => SvgPicture.string(_saglikCikartma, width: boyut, height: boyut),
+      'shirt' => SvgPicture.string(_temaya(context, _tisortCikartma), width: boyut, height: boyut),
+      'shoe' => SvgPicture.string(_temaya(context, _ayakkabiCikartma), width: boyut * 1.05, height: boyut),
+      'card' => SvgPicture.string(_temaya(context, _sariKartCikartma), width: boyut, height: boyut),
+      'saglik' => SvgPicture.string(_temaya(context, _saglikCikartma), width: boyut, height: boyut),
       // Koyu temada mürekkep kartın zeminiyle aynıydı; tema metin rengi.
       _ => KalemSimgesi(anahtar, size: boyut * 0.85, color: context.renk.metin),
     };
@@ -127,10 +127,11 @@ class KalemCikartmasi extends StatelessWidget {
           constraints: const BoxConstraints(minWidth: 17, minHeight: 17),
           padding: const EdgeInsets.symmetric(horizontal: 3),
           alignment: Alignment.center,
-          decoration: const ShapeDecoration(color: AppTema.ana, shape: StadiumBorder()),
+          // Koyu temada mürekkep rozet kartın zeminine karışıyordu (Gemini K2).
+          decoration: ShapeDecoration(color: context.renk.murekkepDolgu, shape: const StadiumBorder()),
           child: Text('$sayi',
               textScaler: TextScaler.noScaling,
-              style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800, height: 1.1)),
+              style: TextStyle(color: context.renk.murekkepUstu, fontSize: 11, fontWeight: FontWeight.w800, height: 1.1)),
         ),
       ),
     ]);
@@ -144,5 +145,15 @@ class NotCikartmasi extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) =>
-      Transform.rotate(angle: -0.12, child: SvgPicture.string(_notCikartma, width: boyut, height: boyut));
+      Transform.rotate(angle: -0.12, child: SvgPicture.string(_temaya(context, _notCikartma), width: boyut, height: boyut));
+}
+
+/// Çıkartmaların mürekkep çizgileri koyu temada kartın zeminiyle aynı renkti;
+/// sarı kartın hız çizgileri ve çantanın sapı tamamen kayboluyordu (Gemini
+/// K2). Koyu temada mürekkep yerine temanın kenar rengi.
+String _temaya(BuildContext context, String svg) {
+  final r = context.renk;
+  if (!r.koyuMu) return svg;
+  final kenar = r.kenar.toARGB32().toRadixString(16).padLeft(8, '0').substring(2).toUpperCase();
+  return svg.replaceAll('#1F2430', '#$kenar');
 }

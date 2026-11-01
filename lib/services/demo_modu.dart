@@ -52,13 +52,23 @@ class DemoModu {
 
     String sahteIsim;
     if (isMale) {
-      sahteIsim = _erkekIsimleri[_erkekSayac % _erkekIsimleri.length];
+      sahteIsim = _sirali(_erkekIsimleri, _erkekSayac);
       _erkekSayac++;
     } else {
-      sahteIsim = _kizIsimleri[_kizSayac % _kizIsimleri.length];
+      sahteIsim = _sirali(_kizIsimleri, _kizSayac);
       _kizSayac++;
     }
     _esleme[gercekIsim] = sahteIsim;
     return sahteIsim;
+  }
+
+  /// İlk 20 listedeki gibi; sonrası ad ve soyadları kaydırarak eşler.
+  /// 21. öğrenciden itibaren adlar baştan tekrar ediyordu (Gemini Y8).
+  static String _sirali(List<String> liste, int sira) {
+    final n = liste.length;
+    if (sira < n) return liste[sira];
+    final ad = liste[sira % n].split(' ').first;
+    final soyad = liste[(sira % n + sira ~/ n) % n].split(' ').last;
+    return '$ad $soyad';
   }
 }

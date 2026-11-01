@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'utils/metin.dart';
+
 /// Gizlilik politikası ve KVKK aydınlatma metni (web'de yayında).
 const String gizlilikPolitikasiUrl = 'https://cemberapp-2a101.web.app/privacy.html';
 
@@ -115,7 +117,7 @@ class AppTema {
     bodySmall:       TextStyle(fontSize: 13, color: metinIkincil),
     labelLarge:      TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
     labelMedium:     TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-    labelSmall:      TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: metinUcuncul),
+    labelSmall:      TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: metinUcuncul), // Nunito 500 paketlenmedi
   );
 
 
@@ -129,7 +131,8 @@ class AppTema {
   ];
 
   static Color formaRengi(String renkAdi) {
-    switch (renkAdi.toLowerCase().trim()) {
+    // toLowerCase "KIRMIZI"yı "kirmizi" yapıyor, eşleşmiyordu (Gemini Y4).
+    switch (trKucult(renkAdi).trim()) {
       // E53935 üstünde beyaz küçük yazı 4,2:1'di (denetim #4); D32F2F 5:1.
       case 'kırmızı': return const Color(0xFFD32F2F);
       case 'mavi': return const Color(0xFF1E88E5);

@@ -1108,9 +1108,10 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
               child: Icon(Icons.sports_rounded, color: ctx.renk.ikonAna),
             ),
             const SizedBox(width: 12),
-            const Text("Sınıflar Arası Yarışma", style: TextStyle(fontWeight: FontWeight.w700)),
+            const Flexible(child: Text("Sınıflar Arası Yarışma", style: TextStyle(fontWeight: FontWeight.w700))),
           ]),
-          content: Column(mainAxisSize: MainAxisSize.min, children: [
+          // Yatay telefonda iki seçici sığmıyordu (Gemini orta #2).
+          content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
             // Sınıf 1
             _macSinifSecici("Ev Sahibi", siniflar, sinif1Id!, renk1, (id) => setDialogState(() => sinif1Id = id), (r) => setDialogState(() => renk1 = r)),
             const SizedBox(height: 8),
@@ -1118,7 +1119,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
             const SizedBox(height: 8),
             // Sınıf 2
             _macSinifSecici("Deplasman", siniflar, sinif2Id!, renk2, (id) => setDialogState(() => sinif2Id = id), (r) => setDialogState(() => renk2 = r)),
-          ]),
+          ])),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
@@ -1229,10 +1230,12 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
                       decoration: BoxDecoration(
                         color: _renkBul(r),
                         shape: BoxShape.circle,
-                        border: Border.all(color: secili ? Colors.white : Colors.transparent, width: 2),
+                        // Beyaz kenar beyaz diyalogda, beyaz tik sarı formada
+                        // görünmüyordu (Gemini K3).
+                        border: Border.all(color: secili ? context.renk.kenar : Colors.transparent, width: 2),
                         boxShadow: secili ? [BoxShadow(color: _renkBul(r).withAlpha(120), blurRadius: 6)] : null,
                       ),
-                      child: secili ? const Icon(Icons.check_rounded, color: Colors.white, size: 14) : null,
+                      child: secili ? Icon(Icons.check_rounded, color: AppTema.ustMetin(_renkBul(r)), size: 14) : null,
                     ),
                   ),
                 ),
