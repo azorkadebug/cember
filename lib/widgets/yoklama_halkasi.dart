@@ -58,7 +58,7 @@ class YoklamaHalkasi extends StatelessWidget {
               oran: deger,
               bos: bos,
               izRengi: secili ? r.kart : r.yuzeyAna,
-              kesikRengi: r.cizgi,
+              kesikRengi: r.metinUcuncul, // beyaz dairede 1,2:1 seçilmiyordu (Gemini orta #4)
               yayRengi: r.vurgu,
             ),
             child: child,

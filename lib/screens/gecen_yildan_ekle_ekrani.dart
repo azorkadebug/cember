@@ -123,7 +123,7 @@ class _GecenYildanEkleEkraniState extends State<GecenYildanEkleEkrani> {
         elevation: 0,
         title: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           const Text("Geçen Yıldan Ekle", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
-          Text("Hedef: ${widget.hedefSinifAd}", style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w400)),
+          Text("Hedef: ${widget.hedefSinifAd}", style: const TextStyle(fontFamily: AppTema.govdeFontu, fontSize: 12, fontWeight: FontWeight.w600)),
         ]),
       ),
       body: Align(
@@ -159,7 +159,7 @@ class _GecenYildanEkleEkraniState extends State<GecenYildanEkleEkrani> {
             Text("Geçmiş yıllarda öğrencili sınıf yok",
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: r.metinIkincil)),
             const SizedBox(height: 6),
-            Text("Geçen yılın sınıfları burada görünür. Bir sınıfı geçmiş yıla taşımak için Sınıflarım'da karta sola kaydır.",
+            Text("Geçen yılın sınıfları burada görünür. Bir sınıfı geçmiş yıla taşımak için Sınıflarım'da kartın ⋯ menüsünden 'Geçmiş Yıla Taşı'nı seç.",
                 textAlign: TextAlign.center, style: TextStyle(fontSize: 13, color: r.metinUcuncul)),
           ]),
         ),

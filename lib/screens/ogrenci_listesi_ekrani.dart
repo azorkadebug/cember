@@ -354,7 +354,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                     YardimBolumu(
                       ikon: Icons.visibility_off_rounded,
                       baslik: 'Demo modu',
-                      aciklama: 'Sınıflarım ekranındaki göz simgesi: AÇIK iken öğrenci adları rastgele sahte isimlerle gösterilir. Sunum, ekran görüntüsü veya gösterimler için ideal — gerçek öğrenci adları sızmaz.',
+                      aciklama: 'Profil ekranındaki Demo modu anahtarı: AÇIK iken öğrenci adları rastgele sahte isimlerle gösterilir. Sunum, ekran görüntüsü veya gösterimler için ideal — gerçek öğrenci adları sızmaz.',
                       renk: Color(0xFFFB8C00),
                     ),
                     YardimBolumu(
@@ -1005,14 +1005,15 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
         Container(
           width: 30, height: 30,
           alignment: Alignment.center,
+          // Mor üstünde beyaz sayı 3,6:1'di (Gemini Y5); lila + mürekkep 7:1.
           decoration: const ShapeDecoration(
-            color: Color(0xFF9B6BF2),
+            color: Color(0xFFB794F6),
             shape: CircleBorder(side: BorderSide(color: AppTema.ana, width: 2)),
           ),
           child: o.rozetler.length > 1
               ? Text('${o.rozetler.length}',
-                  style: const TextStyle(fontFamily: AppTema.baslikFontu, fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white))
-              : const Icon(Icons.star_rounded, color: Colors.white, size: 18),
+                  style: const TextStyle(fontFamily: AppTema.baslikFontu, fontSize: 14, fontWeight: FontWeight.w700, color: AppTema.ana))
+              : const Icon(Icons.star_rounded, color: AppTema.ana, size: 18),
         ),
     ];
     final etiket = [
@@ -1139,7 +1140,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: Row(children: [
-          const OzelSimgeWidget(OzelSimge.saglik, color: Colors.teal, size: 22),
+          OzelSimgeWidget(OzelSimge.saglik, color: ctx.renk.vurgu, size: 22),
           const SizedBox(width: 8),
           const Text("Sağlık Notu", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
         ]),
@@ -1165,8 +1166,9 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.teal,
-              foregroundColor: Colors.white,
+              // Sabit teal koyu temada 3,6:1'di (Gemini Y5); tema vurgusu.
+              backgroundColor: ctx.renk.vurgu,
+              foregroundColor: ctx.renk.vurguMetin,
             ),
             onPressed: () {
               final now = DateTime.now();
@@ -1187,7 +1189,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
       context: context,
       builder: (ctx) => StatefulBuilder(builder: (ctx, setD) => AlertDialog(
         title: Row(children: [
-          const Icon(Icons.history_rounded, color: Colors.teal, size: 22),
+          Icon(Icons.history_rounded, color: ctx.renk.vurgu, size: 22),
           const SizedBox(width: 8),
           Flexible(child: Text("${o.gorunenAd} - Sağlık Geçmişi", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700))),
         ]),
@@ -1204,8 +1206,8 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                 contentPadding: EdgeInsets.zero,
                 leading: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(color: Colors.teal.withAlpha(25), borderRadius: BorderRadius.circular(8)),
-                  child: Text(kayit['tarih'] ?? '', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.teal)),
+                  decoration: BoxDecoration(color: ctx.renk.vurguZemin, borderRadius: BorderRadius.circular(8)),
+                  child: Text(kayit['tarih'] ?? '', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: ctx.renk.vurgu)),
                 ),
                 title: Text(DemoModu.aktif ? 'Demo modunda gizli' : (kayit['not'] ?? '-'), style: const TextStyle(fontSize: 14)),
                 // Sağlık notu hiçbir yerden silinemiyordu (denetim #4 O2).
@@ -1242,7 +1244,9 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
           const SizedBox(width: 8),
           Flexible(child: Text("${o.gorunenAd} - Rozet Ver", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700))),
         ]),
-        content: SizedBox(
+        // Yatay telefonda rozet listesi taşıyordu (Gemini orta #2).
+        content: SingleChildScrollView(
+          child: SizedBox(
           width: double.maxFinite,
           child: Column(mainAxisSize: MainAxisSize.min, children: [
             if (o.rozetler.isNotEmpty) ...[
@@ -1259,9 +1263,8 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                       spacing: 4, runSpacing: 4,
                       children: o.rozetler.reversed.map((r) {
                         final tanim = Ogrenci.rozetTanimlari[r['rozet']] ?? r['rozet'];
+                        // Sıkıştırılmış çipte silme hedefi ~28 px'ti (Gemini Y7).
                         return Chip(
-                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          visualDensity: VisualDensity.compact,
                           label: Text("$tanim  ${r['tarih']}", style: const TextStyle(fontSize: 12)),
                           deleteIcon: Icon(Icons.close_rounded, size: 16, color: Colors.red.shade400),
                           onDeleted: () {
@@ -1305,6 +1308,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
               );
             }),
           ]),
+          ),
         ),
         actions: [
           TextButton(
@@ -1541,6 +1545,11 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: Colors.transparent,
+      // Kart kendi kenarını çiziyor; temanın kenarı şeffaf sayfanın
+      // çevresinde ekran tepesine uzanan ikinci bir çerçeve oluyordu ve
+      // iPad'de kartın üstüne dokununca kapanmıyordu (Gemini denetimi K1).
+      shape: const RoundedRectangleBorder(),
+      constraints: const BoxConstraints(maxWidth: 560),
       builder: (sheetCtx) => StatefulBuilder(
         builder: (sheetCtx, setSheetState) {
           final r = sheetCtx.renk;
@@ -1556,284 +1565,295 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
           return Padding(
             // Klavye açılınca alt çubuk ve alan görünür kalsın.
             padding: EdgeInsets.only(bottom: MediaQuery.of(sheetCtx).viewInsets.bottom),
-            child: Align(
-              alignment: Alignment.bottomCenter,
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxWidth: 560,
-                  maxHeight: MediaQuery.of(sheetCtx).size.height * 0.92,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(sheetCtx).size.height * 0.92,
+              ),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: r.sayfa,
+                  borderRadius: const BorderRadius.only(topLeft: Radius.circular(28), topRight: Radius.circular(28)),
+                  border: Border.all(color: r.kenar, width: 2.5),
                 ),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: r.sayfa,
-                    borderRadius: const BorderRadius.only(topLeft: Radius.circular(28), topRight: Radius.circular(28)),
-                    border: Border.all(color: r.kenar, width: 2.5),
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  Container(
+                    margin: const EdgeInsets.only(top: 10),
+                    width: 40, height: 4,
+                    decoration: BoxDecoration(color: r.cizgi, borderRadius: BorderRadius.circular(2)),
                   ),
-                  child: Column(mainAxisSize: MainAxisSize.min, children: [
-                    Container(
-                      margin: const EdgeInsets.only(top: 10),
-                      width: 40, height: 4,
-                      decoration: BoxDecoration(color: r.cizgi, borderRadius: BorderRadius.circular(2)),
-                    ),
-                    // Başlık
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 12, 8, 4),
-                      child: Row(children: [
-                        // Listedeki renkli baş harf yuvarlağı, büyük.
-                        Container(
-                          width: 58, height: 58,
-                          alignment: Alignment.center,
-                          decoration: ShapeDecoration(
-                            color: AppTema.ogrenciRengi(o.id, _renkler),
-                            shape: const CircleBorder(side: BorderSide(color: AppTema.ana, width: 2.5)),
-                            shadows: const [BoxShadow(color: AppTema.ana, offset: Offset(3, 3))],
-                          ),
-                          child: Text(basHarfler(o.gorunenAd),
-                              textScaler: TextScaler.noScaling,
-                              style: const TextStyle(fontFamily: AppTema.baslikFontu, fontSize: 21, fontWeight: FontWeight.w600, color: AppTema.ana)),
+                  // Başlık
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 12, 8, 4),
+                    child: Row(children: [
+                      // Listedeki renkli baş harf yuvarlağı, büyük.
+                      Container(
+                        width: 58, height: 58,
+                        alignment: Alignment.center,
+                        decoration: ShapeDecoration(
+                          color: AppTema.ogrenciRengi(o.id, _renkler),
+                          shape: const CircleBorder(side: BorderSide(color: AppTema.ana, width: 2.5)),
+                          shadows: const [BoxShadow(color: AppTema.ana, offset: Offset(3, 3))],
                         ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                            Row(children: [
-                              Semantics(
-                                label: o.isMale ? 'Erkek öğrenci' : 'Kız öğrenci',
-                                child: CinsiyetSimgesi(o.isMale, boyut: 20),
-                              ),
-                              const SizedBox(width: 4),
-                              Flexible(
-                                child: Text(o.gorunenAd, maxLines: 1, overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(fontFamily: AppTema.baslikFontu, fontSize: 24, fontWeight: FontWeight.w600, color: r.metin)),
-                              ),
-                            ]),
-                            Text(ozet, maxLines: 2, overflow: TextOverflow.ellipsis,
-                                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: r.metinIkincil)),
-                          ]),
-                        ),
-                        IconButton(
-                          tooltip: 'Kapat',
-                          icon: Icon(Icons.close_rounded, color: r.metin),
-                          style: IconButton.styleFrom(
-                            backgroundColor: r.kart,
-                            side: BorderSide(color: r.kenar, width: 2),
-                          ),
-                          onPressed: () => Navigator.pop(sheetCtx),
-                        ),
-                      ]),
-                    ),
-                    // Gövde
-                    Flexible(
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-                        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                          // 1. Kontrol kalemleri — derste en sık dokunulan yer, en üstte.
-                          bolumBasligi('KONTROL KALEMLERİ', ikon: Icons.fact_check_rounded),
-                          if (_kontrolKalemleri.isEmpty)
-                            Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 4),
-                              child: Text('Bu sınıfta kontrol kalemi yok. ⋮ menüsünden ekleyebilirsin.',
-                                  style: TextStyle(color: r.metinIkincil, fontSize: 13)),
-                            ),
-                          Cikartma(
-                            kayma: 3,
-                            yaricap: 20,
-                            dolgu: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                            child: Column(children: [
-                              for (final k in _kontrolKalemleri) ...[
-                                _artieksi(
-                                  k.ikon,
-                                  _kalemRengi(k),
-                                  k.tip == KalemTipi.sayac ? k.ad : '${k.ad} (eksik)',
-                                  o.kalemDeger(k.id),
-                                  (v) => setSheetState(() => o.kalemArti(k.id, v)),
-                                ),
-                                Divider(height: 1, color: r.cizgi),
-                              ],
-                              _saglikSatiri(o, setSheetState),
-                            ]),
-                          ),
-
-                          // 2. Not
-                          bolumBasligi('NOT', ikon: Icons.sticky_note_2_rounded),
-                          TextField(
-                            controller: nC,
-                            readOnly: demo,
-                            maxLength: GirdiSiniri.ogrenciNotu,
-                            buildCounter: gizliSayac,
-                            minLines: 3,
-                            maxLines: 3,
-                            decoration: alanDeko('Özel Not').copyWith(
-                              hintText: demo ? 'Demo modunda notlar gizli' : 'Yalnız sen görürsün',
-                              hintStyle: TextStyle(color: r.metinUcuncul),
-                            ),
-                          ),
-
-                          // 3. Rozetler — anında yazılır
-                          bolumBasligi('ROZETLER', ikon: Icons.emoji_events_rounded),
-                          Wrap(spacing: 6, runSpacing: 6, children: [
-                            ...o.rozetler.reversed.map((rz) => Chip(
-                                  label: Text(Ogrenci.rozetTanimlari[rz['rozet']] ?? rz['rozet'].toString(),
-                                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
-                                  backgroundColor: r.kart,
-                                  deleteButtonTooltipMessage: 'Rozeti kaldır',
-                                  onDeleted: () => _rozetSilOnay(o, rz, setSheetState),
-                                )),
-                            ActionChip(
-                              avatar: const Icon(Icons.add, size: 18, color: AppTema.ana),
-                              label: const Text('Rozet Ver',
-                                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: AppTema.ana)),
-                              backgroundColor: const Color(0xFFFFD84D),
-                              onPressed: () => _rozetVerDialog(o, setSheetState),
-                            ),
-                          ]),
-
-                          // 4. Takım kurma
-                          bolumBasligi('TAKIM KURMA', ikon: Icons.groups_rounded),
+                        child: Text(basHarfler(o.gorunenAd),
+                            textScaler: TextScaler.noScaling,
+                            style: const TextStyle(fontFamily: AppTema.baslikFontu, fontSize: 21, fontWeight: FontWeight.w600, color: AppTema.ana)),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                           Row(children: [
-                            SizedBox(width: 56, child: Text('Element', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: r.metinIkincil))),
-                            ...ElementSistemi.ikonlar.entries.map((e) {
-                              final secili = o.element == e.key;
-                              final renk = ElementSistemi.renkler[e.key]!;
-                              return Padding(
-                                padding: const EdgeInsets.only(right: 6),
-                                child: Semantics(
-                                  button: true,
-                                  selected: secili,
-                                  label: 'Element: ${ElementSistemi.etiketler[e.key] ?? e.key}',
-                                  excludeSemantics: true,
-                                  child: InkWell(
-                                    customBorder: const CircleBorder(),
-                                    onTap: () => setSheetState(() => o.element = secili ? null : e.key),
-                                    child: AnimatedContainer(
-                                      duration: const Duration(milliseconds: 200),
-                                      width: 48, height: 48,
-                                      decoration: ShapeDecoration(
-                                        color: secili ? renk : r.kart,
-                                        shape: CircleBorder(side: BorderSide(color: secili ? AppTema.ana : r.kenar, width: secili ? 2.5 : 2)),
-                                        shadows: secili ? const [BoxShadow(color: AppTema.ana, offset: Offset(2, 2))] : null,
-                                      ),
-                                      child: Center(child: Icon(e.value, size: 24, color: secili ? Colors.white : renk)),
-                                    ),
-                                  ),
-                                ),
-                              );
-                            }),
-                          ]),
-                          const SizedBox(height: 10),
-                          Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                            SizedBox(width: 56, child: Padding(
-                              padding: const EdgeInsets.only(top: 10),
-                              child: Text('Eşleş', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: r.metinIkincil)),
-                            )),
-                            Expanded(
-                              child: Wrap(spacing: 6, runSpacing: 6, children: [
-                                ...o.eslesenIdler.map((eid) {
-                                  final eslerAday = tumOgrenciler.where((p) => p.id == eid);
-                                  final ad = eslerAday.isNotEmpty ? eslerAday.first.gorunenAd : "?";
-                                  return Chip(
-                                    avatar: const Icon(Icons.link_rounded, size: 16),
-                                    label: Text(ad, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
-                                    backgroundColor: r.vurguZemin,
-                                    deleteButtonTooltipMessage: '$ad ile eşleşmeyi kaldır',
-                                    onDeleted: () => setSheetState(() {
-                                      o.eslesenIdler.remove(eid);
-                                      if (eslerAday.isNotEmpty) eslerAday.first.eslesenIdler.remove(o.id);
-                                      dokunulanEslerinIdleri.add(eid);
-                                    }),
-                                  );
-                                }),
-                                ActionChip(
-                                  avatar: const Icon(Icons.add, size: 16),
-                                  label: const Text("Ekle", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800)),
-                                  onPressed: () => _eslesenSecDialog(
-                                    sheetCtx, o, tumOgrenciler, setSheetState, dokunulanEslerinIdleri,
-                                  ),
-                                ),
-                              ]),
+                            Semantics(
+                              label: o.isMale ? 'Erkek öğrenci' : 'Kız öğrenci',
+                              child: CinsiyetSimgesi(o.isMale, boyut: 20),
+                            ),
+                            const SizedBox(width: 4),
+                            Flexible(
+                              child: Text(o.gorunenAd, maxLines: 1, overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(fontFamily: AppTema.baslikFontu, fontSize: 24, fontWeight: FontWeight.w600, color: r.metin)),
                             ),
                           ]),
+                          Text(ozet, maxLines: 2, overflow: TextOverflow.ellipsis,
+                              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: r.metinIkincil)),
+                        ]),
+                      ),
+                      IconButton(
+                        tooltip: 'Kapat',
+                        icon: Icon(Icons.close_rounded, color: r.metin),
+                        style: IconButton.styleFrom(
+                          backgroundColor: r.kart,
+                          side: BorderSide(color: r.kenar, width: 2),
+                        ),
+                        onPressed: () => Navigator.pop(sheetCtx),
+                      ),
+                    ]),
+                  ),
+                  // Gövde
+                  Flexible(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                        // 1. Kontrol kalemleri — derste en sık dokunulan yer, en üstte.
+                        bolumBasligi('KONTROL KALEMLERİ', ikon: Icons.fact_check_rounded),
+                        if (_kontrolKalemleri.isEmpty)
                           Padding(
-                            padding: const EdgeInsets.only(top: 6),
-                            child: Text('Çatışan elementler ayrı takıma, eşleşenler aynı takıma düşer.',
-                                style: TextStyle(fontSize: 12, color: r.metinUcuncul)),
+                            padding: const EdgeInsets.symmetric(vertical: 4),
+                            child: Text('Bu sınıfta kontrol kalemi yok. ⋮ menüsünden ekleyebilirsin.',
+                                style: TextStyle(color: r.metinIkincil, fontSize: 13)),
                           ),
-
-                          // 5. Kimlik — en nadir değişen alanlar en altta.
-                          bolumBasligi('BİLGİLER', ikon: Icons.badge_rounded),
-                          if (o.oncekiKayit != null)
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 12),
-                              child: Row(children: [
-                                Icon(Icons.history_rounded, size: 16, color: r.metinUcuncul),
-                                const SizedBox(width: 6),
-                                Text("Geçen yıl: ${o.oncekiKayit!['sinifAd']}"
-                                    "${o.oncekiKayit!['egitimYili'] != null ? ' (${o.oncekiKayit!['egitimYili']})' : ''}",
-                                    style: TextStyle(fontSize: 13, color: r.metinIkincil)),
-                              ]),
-                            ),
-                          TextField(
-                            controller: adC,
-                            readOnly: demo,
-                            maxLength: GirdiSiniri.ogrenciAdi,
-                            buildCounter: gizliSayac,
-                            textCapitalization: TextCapitalization.words,
-                            decoration: alanDeko('İsim').copyWith(
-                              helperText: demo ? 'Demo modunda ad düzenlenemez' : null,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          Row(children: [
-                            Expanded(
-                              child: TextField(
-                                controller: pC,
-                                maxLength: GirdiSiniri.puanBasamak,
-                                buildCounter: gizliSayac,
-                                keyboardType: TextInputType.number,
-                                decoration: alanDeko('Yetenek Puanı'),
+                        Cikartma(
+                          kayma: 3,
+                          yaricap: 20,
+                          dolgu: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                          child: Column(children: [
+                            for (final k in _kontrolKalemleri) ...[
+                              _artieksi(
+                                k.ikon,
+                                _kalemRengi(k),
+                                k.tip == KalemTipi.sayac ? k.ad : '${k.ad} (eksik)',
+                                o.kalemDeger(k.id),
+                                (v) => setSheetState(() => o.kalemArti(k.id, v)),
                               ),
-                            ),
-                            const SizedBox(width: 12),
+                              Divider(height: 1, color: r.cizgi),
+                            ],
+                            _saglikSatiri(o, setSheetState),
+                          ]),
+                        ),
+
+                        // 2. Not
+                        bolumBasligi('NOT', ikon: Icons.sticky_note_2_rounded),
+                        TextField(
+                          controller: nC,
+                          readOnly: demo,
+                          maxLength: GirdiSiniri.ogrenciNotu,
+                          buildCounter: gizliSayac,
+                          minLines: 3,
+                          maxLines: 3,
+                          decoration: alanDeko('Özel Not').copyWith(
+                            hintText: demo ? 'Demo modunda notlar gizli' : 'Yalnız sen görürsün',
+                            hintStyle: TextStyle(color: r.metinUcuncul),
+                          ),
+                        ),
+
+                        // 3. Rozetler — anında yazılır
+                        bolumBasligi('ROZETLER', ikon: Icons.emoji_events_rounded),
+                        Wrap(spacing: 6, runSpacing: 6, children: [
+                          ...o.rozetler.reversed.map((rz) => Chip(
+                                label: Text(Ogrenci.rozetTanimlari[rz['rozet']] ?? rz['rozet'].toString(),
+                                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
+                                backgroundColor: r.kart,
+                                deleteButtonTooltipMessage: 'Rozeti kaldır',
+                                onDeleted: () => _rozetSilOnay(o, rz, setSheetState),
+                              )),
+                          ActionChip(
+                            avatar: const Icon(Icons.add, size: 18, color: AppTema.ana),
+                            label: const Text('Rozet Ver',
+                                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: AppTema.ana)),
+                            backgroundColor: const Color(0xFFFFD84D),
+                            onPressed: () => _rozetVerDialog(o, setSheetState),
+                          ),
+                        ]),
+
+                        // 4. Takım kurma
+                        bolumBasligi('TAKIM KURMA', ikon: Icons.groups_rounded),
+                        Row(children: [
+                          // Büyük yazıda "Elemen/t" diye kırılıyordu (Gemini orta #1).
+                          ConstrainedBox(constraints: const BoxConstraints(minWidth: 56), child: Text('Element', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: r.metinIkincil))),
+                          ...ElementSistemi.ikonlar.entries.map((e) {
+                            final secili = o.element == e.key;
+                            final renk = ElementSistemi.renkler[e.key]!;
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 6),
+                              child: Semantics(
+                                button: true,
+                                selected: secili,
+                                label: 'Element: ${ElementSistemi.etiketler[e.key] ?? e.key}',
+                                excludeSemantics: true,
+                                child: InkWell(
+                                  customBorder: const CircleBorder(),
+                                  onTap: () => setSheetState(() => o.element = secili ? null : e.key),
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 200),
+                                    width: 48, height: 48,
+                                    decoration: ShapeDecoration(
+                                      color: secili ? renk : r.kart,
+                                      shape: CircleBorder(side: BorderSide(color: r.kenar, width: secili ? 2.5 : 2)),
+                                      shadows: secili ? [BoxShadow(color: r.sertGolge, offset: const Offset(2, 2))] : null,
+                                    ),
+                                    // Seçilide beyaz simge yeşil/gri/mavide 3,3:1'di (Gemini Y5).
+                                    child: Center(child: Icon(e.value, size: 24, color: secili ? AppTema.ustMetin(renk) : renk)),
+                                  ),
+                                ),
+                              ),
+                            );
+                          }),
+                        ]),
+                        const SizedBox(height: 10),
+                        Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          SizedBox(width: 56, child: Padding(
+                            padding: const EdgeInsets.only(top: 10),
+                            child: Text('Eşleş', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: r.metinIkincil)),
+                          )),
+                          Expanded(
+                            child: Wrap(spacing: 6, runSpacing: 6, children: [
+                              ...o.eslesenIdler.map((eid) {
+                                final eslerAday = tumOgrenciler.where((p) => p.id == eid);
+                                final ad = eslerAday.isNotEmpty ? eslerAday.first.gorunenAd : "?";
+                                return Chip(
+                                  avatar: const Icon(Icons.link_rounded, size: 16),
+                                  label: Text(ad, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
+                                  backgroundColor: r.vurguZemin,
+                                  deleteButtonTooltipMessage: '$ad ile eşleşmeyi kaldır',
+                                  onDeleted: () => setSheetState(() {
+                                    o.eslesenIdler.remove(eid);
+                                    if (eslerAday.isNotEmpty) eslerAday.first.eslesenIdler.remove(o.id);
+                                    dokunulanEslerinIdleri.add(eid);
+                                  }),
+                                );
+                              }),
+                              ActionChip(
+                                avatar: const Icon(Icons.add, size: 16),
+                                label: const Text("Ekle", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800)),
+                                onPressed: () => _eslesenSecDialog(
+                                  sheetCtx, o, tumOgrenciler, setSheetState, dokunulanEslerinIdleri,
+                                ),
+                              ),
+                            ]),
+                          ),
+                        ]),
+                        Padding(
+                          padding: const EdgeInsets.only(top: 6),
+                          child: Text('Çatışan elementler ayrı takıma, eşleşenler aynı takıma düşer.',
+                              style: TextStyle(fontSize: 12, color: r.metinUcuncul)),
+                        ),
+
+                        // 5. Kimlik — en nadir değişen alanlar en altta.
+                        bolumBasligi('BİLGİLER', ikon: Icons.badge_rounded),
+                        if (o.oncekiKayit != null)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: Row(children: [
+                              Icon(Icons.history_rounded, size: 16, color: r.metinUcuncul),
+                              const SizedBox(width: 6),
+                              Text("Geçen yıl: ${o.oncekiKayit!['sinifAd']}"
+                                  "${o.oncekiKayit!['egitimYili'] != null ? ' (${o.oncekiKayit!['egitimYili']})' : ''}",
+                                  style: TextStyle(fontSize: 13, color: r.metinIkincil)),
+                            ]),
+                          ),
+                        TextField(
+                          controller: adC,
+                          readOnly: demo,
+                          maxLength: GirdiSiniri.ogrenciAdi,
+                          buildCounter: gizliSayac,
+                          textCapitalization: TextCapitalization.words,
+                          decoration: alanDeko('İsim').copyWith(
+                            helperText: demo ? 'Demo modunda ad düzenlenemez' : null,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        // Büyük yazıda puan alanı çiplerin yanında sıkışıyordu
+                        // (Gemini orta #1); çipler alta iner.
+                        Builder(builder: (context) {
+                          final puanAlani = TextField(
+                            controller: pC,
+                            maxLength: GirdiSiniri.puanBasamak,
+                            buildCounter: gizliSayac,
+                            keyboardType: TextInputType.number,
+                            decoration: alanDeko('Yetenek Puanı'),
+                          );
+                          final cipler = [
                             _genderChip("Erkek", true, o.isMale, () => setSheetState(() => o.isMale = true)),
                             const SizedBox(width: 6),
                             _genderChip("Kız", false, !o.isMale, () => setSheetState(() => o.isMale = false)),
-                          ]),
-                        ]),
-                      ),
-                    ),
-                    // Alt eylem çubuğu
-                    Container(
-                      padding: const EdgeInsets.fromLTRB(12, 10, 16, 10),
-                      decoration: BoxDecoration(
-                        color: r.sayfa,
-                        border: Border(top: BorderSide(color: r.cizgi, width: 1.5)),
-                      ),
-                      child: Row(children: [
-                        TextButton.icon(
-                          onPressed: () => _ogrenciSilOnay(sheetCtx, o),
-                          icon: Icon(Icons.delete_rounded, color: r.tehlike),
-                          label: Text("Sil", style: TextStyle(color: r.tehlike, fontWeight: FontWeight.w600)),
-                        ),
-                        const Spacer(),
-                        OutlinedButton(
-                          onPressed: () => Navigator.pop(sheetCtx),
-                          child: const Text("İptal"),
-                        ),
-                        // 3,5 px'ti (denetim #3).
-                        const SizedBox(width: 10),
-                        SertGolgeli(
-                          kayma: 3,
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 12),
-                            ),
-                            onPressed: () => kaydet(sheetCtx),
-                            child: const Text("Kaydet"),
-                          ),
-                        ),
+                          ];
+                          if (MediaQuery.textScalerOf(context).scale(10) > 12) {
+                            return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                              puanAlani,
+                              const SizedBox(height: 10),
+                              Row(children: cipler),
+                            ]);
+                          }
+                          return Row(children: [
+                            Expanded(child: puanAlani),
+                            const SizedBox(width: 12),
+                            ...cipler,
+                          ]);
+                        }),
                       ]),
                     ),
-                  ]),
-                ),
+                  ),
+                  // Alt eylem çubuğu
+                  Container(
+                    padding: const EdgeInsets.fromLTRB(12, 10, 16, 10),
+                    decoration: BoxDecoration(
+                      color: r.sayfa,
+                      border: Border(top: BorderSide(color: r.cizgi, width: 1.5)),
+                    ),
+                    child: Row(children: [
+                      TextButton.icon(
+                        onPressed: () => _ogrenciSilOnay(sheetCtx, o),
+                        icon: Icon(Icons.delete_rounded, color: r.tehlike),
+                        label: Text("Sil", style: TextStyle(color: r.tehlike, fontWeight: FontWeight.w600)),
+                      ),
+                      const Spacer(),
+                      OutlinedButton(
+                        onPressed: () => Navigator.pop(sheetCtx),
+                        child: const Text("İptal"),
+                      ),
+                      // 3,5 px'ti (denetim #3).
+                      const SizedBox(width: 10),
+                      SertGolgeli(
+                        kayma: 3,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 12),
+                          ),
+                          onPressed: () => kaydet(sheetCtx),
+                          child: const Text("Kaydet"),
+                        ),
+                      ),
+                    ]),
+                  ),
+                ]),
               ),
             ),
           );
@@ -1928,7 +1948,8 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
   }
 
   Widget _genderChip(String label, bool erkek, bool selected, VoidCallback onTap) {
-    final color = CinsiyetSimgesi.rengi(erkek);
+    // Koyu temada açık tema pembesi kartta 3:1'e düşüyordu (Gemini Y5).
+    final color = context.renk.koyuMu ? CinsiyetSimgesi.koyuRengi(erkek) : CinsiyetSimgesi.rengi(erkek);
     return GestureDetector(
       onTap: onTap,
       // Seçili hap limon sarısı + mürekkep kenar; kenar kalınlığı sabit
@@ -1994,6 +2015,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      shape: const RoundedRectangleBorder(), // kenarı içerik çiziyor
       builder: (sheetContext) => StatefulBuilder(
         builder: (sheetContext, setSheetState) {
           final r = sheetContext.renk;
@@ -2617,6 +2639,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      shape: const RoundedRectangleBorder(), // kenarı içerik çiziyor
       builder: (sheetCtx) => Container(
         height: MediaQuery.of(context).size.height * 0.88,
         decoration: BoxDecoration(
@@ -2673,9 +2696,9 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
           Container(
             padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
             child: SertGolgeli(
-              child: SizedBox(
-              width: double.infinity,
-              height: 56,
+              // Sabit 56 px büyük yazıda yazıyı kesiyordu (Gemini orta #1).
+              child: ConstrainedBox(
+              constraints: const BoxConstraints(minWidth: double.infinity, minHeight: 56),
               child: ElevatedButton.icon(
                 icon: const Icon(Icons.sports_rounded, size: 26),
                 label: const Text("Oyunu Başlat", style: TextStyle(fontSize: 20)),

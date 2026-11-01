@@ -292,16 +292,21 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
               excludeSemantics: true,
               child: GestureDetector(
               onTap: _tarihSec,
+              // Yalnız yazının üstü dokunuyordu (~18 px, Gemini Y7).
+              behavior: HitTestBehavior.opaque,
+              child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
               child: Row(mainAxisSize: MainAxisSize.min, children: [
                 Flexible(
                   child: Text(buGun ? 'Bugün — $_tarihEtiketi' : _tarihEtiketi,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: r.metinIkincil)),
+                      style: TextStyle(fontFamily: AppTema.govdeFontu, fontSize: 13, fontWeight: FontWeight.w700, color: r.metinIkincil)),
                 ),
                 const SizedBox(width: 4),
                 const Icon(Icons.expand_more_rounded, size: 16),
               ]),
+              ),
               ),
             ),
           ],

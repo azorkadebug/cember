@@ -499,6 +499,31 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
   // ------------------------------------------------------------------
   static const _tabular = [FontFeature.tabularFigures()];
 
+  /// Fredoka'da sabit genişlikli rakam (tnum) yok; "1" "0"dan %33 dar, süre
+  /// her saniye sağa sola kayıyordu (Gemini Y3). Her rakam en geniş rakam
+  /// kadar kutuda.
+  Widget _sabitRakamli(String metin, TextStyle stil) => Builder(builder: (context) {
+        final olcek = MediaQuery.textScalerOf(context);
+        var genislik = 0.0;
+        for (var i = 0; i < 10; i++) {
+          final tp = TextPainter(text: TextSpan(text: '$i', style: stil), textDirection: TextDirection.ltr, textScaler: olcek)
+            ..layout();
+          if (tp.width > genislik) genislik = tp.width;
+          tp.dispose();
+        }
+        return Semantics(
+          label: metin,
+          child: ExcludeSemantics(
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              for (final h in metin.split(''))
+                RegExp(r'\d').hasMatch(h)
+                    ? SizedBox(width: genislik, child: Text(h, textAlign: TextAlign.center, style: stil))
+                    : Text(h, style: stil),
+            ]),
+          ),
+        );
+      });
+
   String _takimAdi(TakimBilgi t) => t.isim.isNotEmpty ? t.isim : t.renkAdi;
 
   Widget _skorPaneli() {
@@ -770,14 +795,13 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
                 final scale = _timerCalisiyor && _kalanSaniye <= 10 ? 1.0 + _pulseCtrl.value * 0.05 : 1.0;
                 return Transform.scale(
                   scale: scale,
-                  child: Text(_sureFmt(_kalanSaniye),
-                      style: TextStyle(
+                  child: _sabitRakamli(_sureFmt(_kalanSaniye),
+                      TextStyle(
                           fontFamily: AppTema.baslikFontu,
                           color: sureRengi,
                           fontSize: 56,
                           fontWeight: FontWeight.w700,
-                          height: 1.05,
-                          fontFeatures: _tabular)),
+                          height: 1.05)),
                 );
               },
             ),
@@ -896,11 +920,11 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text("İptal", style: TextStyle(color: Colors.grey.shade600)),
+            child: Text("İptal", style: TextStyle(color: ctx.renk.metinIkincil)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppTema.vurgu, foregroundColor: Colors.white,
+              backgroundColor: ctx.renk.vurgu, foregroundColor: ctx.renk.vurguMetin,
             ),
             onPressed: () {
               final yeniAd = c.text.trim();
@@ -1046,15 +1070,30 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
                 return Padding(
                 padding: kompakt ? const EdgeInsets.fromLTRB(12, 8, 12, 6) : const EdgeInsets.fromLTRB(16, 16, 16, 12),
                 child: Column(children: [
-                  SizedBox(
-                    // Çok alçak panelde ad da küçülür (FittedBox), taşmaz.
-                    height: kompakt ? (kutu.maxHeight * 0.28).clamp(14.0, 36.0) : null,
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text(_takimAdi(t),
-                          style: TextStyle(fontFamily: AppTema.baslikFontu, color: metin, fontWeight: FontWeight.w600, fontSize: 30)),
+                  if (kompakt)
+                    SizedBox(
+                      // Çok alçak panelde ad da küçülür (FittedBox), taşmaz.
+                      height: (kutu.maxHeight * 0.28).clamp(14.0, 36.0),
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(_takimAdi(t),
+                            style: TextStyle(fontFamily: AppTema.baslikFontu, color: metin, fontWeight: FontWeight.w600, fontSize: 30)),
+                      ),
+                    )
+                  else
+                    // Tek satıra sığdırılınca uzun ad yandakinden küçük
+                    // kalıyor, renk adları farklı hizaya düşüyordu (Gemini
+                    // Y2). Hep aynı puntoda, iki satırlık sabit yükseklikte.
+                    SizedBox(
+                      height: MediaQuery.textScalerOf(context).scale(26) * 1.15 * 2,
+                      child: Center(
+                        child: Text(_takimAdi(t),
+                            textAlign: TextAlign.center,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(fontFamily: AppTema.baslikFontu, color: metin, fontWeight: FontWeight.w600, fontSize: 26, height: 1.15)),
+                      ),
                     ),
-                  ),
                   if (!kompakt) Text(t.renkAdi, style: TextStyle(color: metin, fontSize: 15, fontWeight: FontWeight.w700)),
                   Expanded(
                     child: Center(
@@ -1120,14 +1159,13 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
         final sure = FittedBox(
                 fit: BoxFit.scaleDown,
                 alignment: Alignment.centerLeft,
-                child: Text(_sureFmt(_kalanSaniye),
-                    style: TextStyle(
+                child: _sabitRakamli(_sureFmt(_kalanSaniye),
+                    TextStyle(
                         fontFamily: AppTema.baslikFontu,
                         color: sureRengi,
                         fontSize: 72,
                         fontWeight: FontWeight.w700,
-                        height: 1,
-                        fontFeatures: _tabular)),
+                        height: 1)),
               );
         // Takım adının üstüne biniyordu (denetim #3); şeritte.
         final cik = _yuvarlakDugme(Icons.fullscreen_exit_rounded, 'Sunum modundan çık', _sunumuAcKapa);
@@ -1255,13 +1293,22 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
                   color: t.renk,
                   border: Border(bottom: BorderSide(color: r.kenar, width: 2)),
                 ),
-                child: Text(
-                  "${_takimAdi(t)} (${t.oyuncular.length})",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontFamily: AppTema.baslikFontu, color: ustMetin, fontWeight: FontWeight.w600, fontSize: 16),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
+                // Uzun takım adında sondaki oyuncu sayısı da kesiliyordu
+                // (Gemini Y1); yalnız ad kısalır, sayı hep görünür.
+                child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  Flexible(
+                    child: Text(
+                      _takimAdi(t),
+                      style: TextStyle(fontFamily: AppTema.baslikFontu, color: ustMetin, fontWeight: FontWeight.w600, fontSize: 16),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  Text(
+                    " (${t.oyuncular.length})",
+                    style: TextStyle(fontFamily: AppTema.baslikFontu, color: ustMetin, fontWeight: FontWeight.w600, fontSize: 16),
+                  ),
+                ]),
               ),
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 4),

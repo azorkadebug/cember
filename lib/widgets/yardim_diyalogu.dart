@@ -90,6 +90,7 @@ class YardimDiyalogu extends StatelessWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      shape: const RoundedRectangleBorder(), // kenarı içerik çiziyor
       builder: (_) => YardimDiyalogu(baslik: baslik, bolumler: bolumler),
     );
   }

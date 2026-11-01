@@ -243,10 +243,9 @@ void main() {
       expect(AppTema.formaRengi('turuncu'), const Color(0xFFF57C00));
       expect(AppTema.formaRengi('turuncu'), isNot(AppTema.ana));
       expect(AppTema.formaRengi(' Kırmızı '), const Color(0xFFD32F2F));
-      expect(AppTema.formaRengi('KIRMIZI'), AppTema.ana,
-          reason: 'toLowerCase() Türkçe İ/I bilmez: "KIRMIZI" → "kirmizi" '
-              '≠ "kırmızı" (tema.dart:96) — formaRenkAdlari sabiti '
-              'kullanıldığı sürece görünmez, elle giriş olursa charcoal');
+      // Elle büyük harfle girilen renk de tanınır (trKucult, Gemini Y4).
+      expect(AppTema.formaRengi('KIRMIZI'), const Color(0xFFD32F2F));
+      expect(AppTema.formaRengi('LACİVERT'), const Color(0xFF283593));
       expect(AppTema.formaRengi('neon'), AppTema.ana);
     });
 
@@ -283,17 +282,19 @@ void main() {
   });
 
   group('DemoModu.isimGetir', () {
-    test('cinsiyete göre ayrı havuz, sıra korunur, 21. isim başa sarar', () {
+    test('cinsiyete göre ayrı havuz, sıra korunur, 21. isimden sonra tekrar yok', () {
       DemoModu.aktif = true;
       final ilkKiz = DemoModu.isimGetir('K0', false);
       final ilkErkek = DemoModu.isimGetir('E0', true);
       expect(ilkKiz, isNot(ilkErkek));
 
-      for (var i = 1; i < 20; i++) {
-        DemoModu.isimGetir('K$i', false);
+      final adlar = {ilkKiz};
+      for (var i = 1; i < 60; i++) {
+        adlar.add(DemoModu.isimGetir('K$i', false));
       }
-      // 20 kız ismi tükendi; 21. kız ilk isme geri döner.
-      expect(DemoModu.isimGetir('K20', false), ilkKiz);
+      // 20 kız ismi tükenince ad-soyad kaydırılarak eşlenir; 60 öğrencide
+      // tekrar yok (Gemini Y8).
+      expect(adlar.length, 60);
     });
 
     test('aynı gerçek isim farklı cinsiyetle bile aynı sahte isme gider', () {

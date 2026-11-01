@@ -162,6 +162,9 @@ class _KontrolKalemleriEkraniState extends State<KontrolKalemleriEkrani> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
+        // ~34 px'ti; dokunma hedefi en az 44 (Gemini Y7).
+        constraints: const BoxConstraints(minHeight: 44),
+        alignment: Alignment.center,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
           color: secili ? r.vurgu : r.yuzeyGri,
