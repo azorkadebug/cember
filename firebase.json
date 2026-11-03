@@ -90,6 +90,15 @@
             "value": "public, max-age=31536000, immutable"
           }
         ]
+      },
+      {
+        "source": "/cakabey/**",
+        "headers": [
+          {
+            "key": "X-Robots-Tag",
+            "value": "noindex, nofollow"
+          }
+        ]
       }
     ]
   },

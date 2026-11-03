@@ -6,21 +6,20 @@
 <meta name="robots" content="noindex, nofollow">
 <title>Çakabey Basketbol</title>
 <link rel="icon" href="logo.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="stil.css?v=mw15ggvq">
+<link rel="stylesheet" href="yazi.css?v=mw16dwmy">
+<link rel="stylesheet" href="stil.css?v=mw16dwmy">
 </head>
 <body>
 <!-- Giriş -->
 <main id="kapi" class="kapi">
+  <p class="aciliyor" aria-live="polite">Set defteri açılıyor…</p>
   <form id="girisForm" class="kart" autocomplete="off">
     <img src="logo.png" alt="Çakabey Okulları logosu" width="72" height="72">
     <h1>Çakabey <span>Basketbol</span></h1>
     <p class="alt">Set defterini görmek için sana verilen kodu yaz.</p>
     <label for="kod">Giriş kodu</label>
-    <input id="kod" name="kod" inputmode="text" autocapitalize="characters" spellcheck="false" placeholder="ABCD-1234" maxlength="12" required>
-    <label class="hatirla"><input type="checkbox" id="hatirla" checked> Bu cihazda beni hatırla</label>
+    <input id="kod" name="kod" inputmode="text" autocapitalize="characters" autocorrect="off" autocomplete="off" spellcheck="false" enterkeyhint="go" placeholder="Örn. K7PM-3XQD" aria-describedby="hata">
+    <label class="hatirla"><input type="checkbox" id="hatirla"> Bu benim kendi cihazım, kodumu hatırla</label>
     <button type="submit" id="girBtn">Gir</button>
     <p id="hata" class="hata" role="alert"></p>
   </form>
@@ -30,32 +29,35 @@
 <div id="uygulama" hidden>
 <header>
   <img class="logo" src="logo.png" alt="Çakabey Okulları logosu" width="48" height="48">
-  <h1>Set Defteri <span>·</span> Çakabey Basketbol</h1>
-  <div class="tabs" role="tablist" aria-label="Takım">
-    <button class="tab" role="tab" data-g="yildiz">Yıldız Erkek</button>
-    <button class="tab" role="tab" data-g="kucuk">Küçük Erkek</button>
+  <h1>Set Defteri<span class="uzun"> <span>·</span> Çakabey Basketbol</span></h1>
+  <div class="tabs" role="group" aria-label="Takım">
+    <button class="tab" data-g="yildiz" aria-pressed="false">Yıldız Erkek</button>
+    <button class="tab" data-g="kucuk" aria-pressed="false">Küçük Erkek</button>
   </div>
   <div class="kim"><span id="selam"></span> <button id="cikis" class="cikis">Çıkış</button></div>
 </header>
 <div class="wrap">
-  <aside id="list" aria-label="Setler"></aside>
+  <nav id="list" aria-label="Setler"></nav>
   <div class="courtcol">
-    <svg id="court" viewBox="-1.8 -1.6 18.6 15.7" role="img" aria-label="Yarım saha, üstten görünüm">
+    <svg id="court" viewBox="-0.6 -1.3 17 15.5" role="img" aria-label="Yarım saha, üstten görünüm">
       <defs>
-        <marker id="ah" viewBox="0 0 10 10" refX="7" refY="5" markerUnits="userSpaceOnUse" markerWidth=".42" markerHeight=".42" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#E9EDF5"/></marker>
-        <marker id="ahg" viewBox="0 0 10 10" refX="7" refY="5" markerUnits="userSpaceOnUse" markerWidth=".42" markerHeight=".42" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#F5C518"/></marker>
+        <marker id="ah" viewBox="0 0 10 10" refX="7" refY="5" markerUnits="userSpaceOnUse" markerWidth=".42" markerHeight=".42" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#E9EDF5"/></marker>
+        <marker id="ahg" viewBox="0 0 10 10" refX="7" refY="5" markerUnits="userSpaceOnUse" markerWidth=".42" markerHeight=".42" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#F5C518"/></marker>
       </defs>
       <g id="courtLines"></g>
       <g id="diag" class="diag"></g>
       <g id="players"></g>
       <g id="ball"><circle r=".2"/></g>
-      <text id="flash" class="flash" x="7.5" y="12.4"></text>
+      <text id="flash" class="flash" x="7.5" y="12.2"></text>
     </svg>
+    <p id="adimMetni" class="adim-metni"></p>
     <div class="controls">
-      <button id="bReset" title="Başa dön (Home)">⟲ Baş</button>
-      <button id="bPrev" title="Önceki adım (←)">◀ Adım</button>
-      <button id="bPlay" class="primary" title="Oynat / durdur (boşluk)">▶ Oynat</button>
-      <button id="bNext" title="Sonraki adım (→)">Adım ▶</button>
+      <div class="dugmeler">
+        <button id="bReset" title="Başa dön">⟲ Baş</button>
+        <button id="bPrev" title="Önceki adım">◀ Adım</button>
+        <button id="bPlay" class="primary" title="Oynat / durdur">▶ Oynat</button>
+        <button id="bNext" title="Sonraki adım">Adım ▶</button>
+      </div>
       <select id="speed" aria-label="Hız">
         <option value="0.6">Yavaş</option>
         <option value="1" selected>Normal</option>
@@ -65,24 +67,48 @@
       <label for="all"><input type="checkbox" id="all"> Tüm şema</label>
     </div>
     <div class="legend" aria-label="Çizim anahtarı">
-      <span><svg width="34" height="10" viewBox="0 0 3.4 1"><path d="M.1 .5H3" class="d-cut" marker-end="url(#ah)"/></svg>Koşu / kesiş</span>
-      <span><svg width="34" height="10" viewBox="0 0 3.4 1"><path d="M.1 .5 L.35 .3 L.6 .7 L.85 .3 L1.1 .7 L1.35 .3 L1.6 .7 L1.85 .3 L2.1 .5 H3" class="d-cut" marker-end="url(#ah)"/></svg>Top sürme</span>
-      <span><svg width="34" height="10" viewBox="0 0 3.4 1"><path d="M.1 .5H3" class="d-pass" marker-end="url(#ahg)"/></svg>Pas</span>
-      <span><svg width="34" height="10" viewBox="0 0 3.4 1"><path d="M.1 .5H2.9" class="d-cut"/><path d="M2.9 .1V.9" class="d-bar"/></svg>Perde</span>
-      <span><svg width="34" height="10" viewBox="0 0 3.4 1"><path d="M.1 .5H3" class="d-shot"/></svg>Şut / turnike</span>
+      <span><svg width="34" height="12" viewBox="0 0 3.4 1"><path d="M.1 .5H3" class="d-cut" marker-end="url(#ah)"/></svg>Koşu / kesiş</span>
+      <span><svg width="34" height="12" viewBox="0 0 3.4 1"><path d="M.1 .5 L.35 .3 L.6 .7 L.85 .3 L1.1 .7 L1.35 .3 L1.6 .7 L1.85 .3 L2.1 .5 H3" class="d-cut" marker-end="url(#ah)"/></svg>Top sürme</span>
+      <span><svg width="34" height="12" viewBox="0 0 3.4 1"><path d="M.1 .5H3" class="d-pass" marker-end="url(#ahg)"/></svg>Pas</span>
+      <span><svg width="34" height="12" viewBox="0 0 3.4 1"><path d="M.1 .5H2.9" class="d-cut"/><path d="M2.9 .1V.9" class="d-bar"/></svg>Perde</span>
+      <span><svg width="34" height="12" viewBox="0 0 3.4 1"><path d="M.1 .5H3" class="d-shot"/></svg>Şut / turnike</span>
+      <span><svg width="14" height="14" viewBox="-.6 -.6 1.2 1.2"><circle r=".45" class="lg-inb"/></svg>Topu oyuna sokan</span>
+      <span><svg width="14" height="14" viewBox="-.6 -.6 1.2 1.2"><circle r=".45" class="lg-top"/></svg>Top onda</span>
     </div>
   </div>
-  <section class="info" aria-live="polite">
+  <section class="info">
     <h3 id="pName"></h3>
+    <p id="duyuru" class="sr-only" aria-live="polite"></p>
     <div class="meta" id="pMeta"></div>
     <p class="goal" id="pGoal"></p>
     <ol class="steps" id="pSteps"></ol>
     <h4>Öğretim noktaları</h4>
     <ul class="keys" id="pKeys"></ul>
-    <p class="note">Şemada üst kenar dip çizgi (pota), alt kenar orta saha çizgisi. Açık sarı nokta, oyunu dışarıdan başlatan (inbounder) oyuncu. Kısayollar: boşluk oynat, ← → adım.</p>
+    <p class="note">Şemada üst kenar dip çizgi (pota tarafı), alt kenar orta saha çizgisi. “3 → 5”: 3, 5'e pas verir. <span class="klavye">Bilgisayarda: boşluk tuşu oynatır, ← → tuşları adım geçer.</span></p>
+    <details class="terimler">
+      <summary>Terimler</summary>
+      <dl>
+        <dt>Tepe</dt><dd>Üçlük çizgisinin ortası.</dd>
+        <dt>Kanat</dt><dd>Üçlük çizgisinin yan tarafı.</dd>
+        <dt>Köşe</dt><dd>Dip çizgiyle üçlük çizgisinin birleştiği yer.</dd>
+        <dt>Dirsek</dt><dd>Serbest atış çizgisinin iki ucu.</dd>
+        <dt>Blok (alçak post)</dt><dd>Boyalı alanın yanında, potaya en yakın yer.</dd>
+        <dt>Kısa köşe</dt><dd>Dip çizgide, boyalı alanla köşe arası.</dd>
+        <dt>Zayıf taraf</dt><dd>Topun olmadığı taraf.</dd>
+        <dt>Topu oyuna sokan</dt><dd>Topu çizginin dışından içeri atan oyuncu (inbounder).</dd>
+        <dt>Perde</dt><dd>Duran gövdenle takım arkadaşının savunmacısının yolunu kesmek.</dd>
+        <dt>Perde-dön (pick and roll)</dt><dd>Perde koyan, perdeden sonra sepete koşar.</dd>
+        <dt>Pop</dt><dd>Perde koyan, perdeden sonra şut için dışarı açılır.</dd>
+        <dt>Arka kapı</dt><dd>Savunmacın önüne geçince arkasından sepete kesmek.</dd>
+        <dt>Mühürlemek</dt><dd>Savunmacıyı kalçanla arkanda tutmak.</dd>
+        <dt>Lob</dt><dd>Savunmacının üstünden atılan yüksek pas.</dd>
+        <dt>Switch</dt><dd>Savunmacıların adam değiştirmesi.</dd>
+        <dt>Güvenlik</dt><dd>Her şey kapanırsa topun atılacağı, geride duran oyuncu.</dd>
+      </dl>
+    </details>
   </section>
 </div>
 </div>
-<script src="app.js?v=mw15ggvq"></script>
+<script src="app.js?v=mw16dwmy"></script>
 </body>
 </html>
