@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Öğretmen · Çakabey Basketbol</title>
+<link rel="icon" href="../logo.png">
+<link rel="stylesheet" href="../yazi.css?v=mw2d64wn">
+<link rel="stylesheet" href="../stil.css?v=mw2d64wn">
+<style>
+.ogr{max-width:1100px;margin:0 auto;padding:20px;display:flex;flex-direction:column;gap:22px}
+.ogr h2{font:700 24px var(--display);letter-spacing:.03em;text-transform:uppercase;margin:0 0 10px}
+.ogr h2 small{font:600 14px var(--body);text-transform:none;letter-spacing:0;color:var(--muted);margin-left:8px}
+.ogr h3{font:700 19px var(--display);letter-spacing:.03em;text-transform:uppercase;margin:14px 0 8px;color:var(--gold)}
+.kutu{background:var(--board);border:1px solid var(--line);border-radius:12px;padding:16px}
+.iki{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.iki label{font-weight:600;display:block;margin-bottom:6px}
+.ogr textarea,.ogr input[type=text],.ogr input[type=date],.ogr input[type=time]{font:16px/1.4 var(--body);color:var(--chalk);background:var(--field);border:1px solid #5A6A96;border-radius:8px;padding:8px 10px;color-scheme:dark}
+.ogr textarea{width:100%;min-height:120px;resize:vertical}
+.satir{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:8px}
+.btn{font:600 15px var(--body);color:var(--chalk);background:var(--court);border:1px solid var(--line);border-radius:6px;padding:8px 14px;min-height:44px;cursor:pointer}
+.btn.ana{background:var(--gold);color:var(--board);border-color:var(--gold)}
+.btn.tehlike{border-color:#8A3A3A;color:var(--err)}
+.btn:disabled{opacity:.55;cursor:wait}
+.durum{color:var(--muted);font-size:14px}
+.ozet{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px}
+.ozet div{background:var(--court);border:1px solid var(--line);border-radius:8px;padding:8px 14px}
+.ozet b{font:700 26px var(--display);display:block;color:var(--gold)}
+.ozet span{font-size:13px;color:var(--muted)}
+table{width:100%;border-collapse:collapse;font-size:15px}
+th{text-align:left;font:600 12px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:6px 8px;border-bottom:1px solid var(--line)}
+td{padding:8px;border-bottom:1px solid var(--line);vertical-align:top}
+td.sayi{font-variant-numeric:tabular-nums;white-space:nowrap}
+.yok{color:var(--err);font-size:13px;display:block}
+.setler{display:flex;flex-wrap:wrap;gap:4px;margin-top:2px}
+.setler span{font:600 12px var(--body);padding:2px 7px;border-radius:999px;background:var(--gold);color:var(--board)}
+.donem{display:flex;gap:6px;flex-wrap:wrap}
+.donem button[aria-pressed="true"]{background:var(--gold);color:var(--board);border-color:var(--gold)}
+.tablo{overflow-x:auto}
+.girmeyen{margin:8px 0 0;font-size:14px;color:var(--muted)}
+.bos{color:var(--muted);font-size:15px;margin:6px 0 12px}
+.solgun{opacity:.4}
+.fikstur-tablo td{padding:4px}
+.fikstur-tablo input[type=text]{width:100%;min-width:90px}
+.fikstur-tablo input.skor{width:80px;min-width:0}
+.fikstur-tablo label{display:flex;align-items:center;gap:6px;white-space:nowrap;min-height:44px}
+.fikstur-tablo input[type=checkbox]{width:20px;height:20px}
+.uyari{font-size:13px;color:var(--muted);margin:6px 0 0}
+@media (max-width:720px){.iki{grid-template-columns:1fr}.ogr{padding:12px}#panel header h1{display:block;font-size:20px}
+  .fikstur-tablo thead{display:none}.fikstur-tablo tr{display:grid;grid-template-columns:1fr 1fr;gap:4px;border-bottom:1px solid var(--line);padding:6px 0}
+  .fikstur-tablo td{border:0}.fikstur-tablo td.genis{grid-column:1/-1}}
+</style>
+</head>
+<body>
+<main id="kapi" class="kapi">
+  <form id="girisForm" class="kart">
+    <img src="../logo.png" alt="Çakabey Okulları logosu" width="72" height="72">
+    <h1>Öğretmen <span>Paneli</span></h1>
+    <p class="alt">Set defteri kullanım bilgileri, maç notları ve fikstür.</p>
+    <input type="text" name="username" autocomplete="username" value="ogretmen@cember.org" hidden>
+    <label for="sifre">Öğretmen şifresi</label>
+    <input id="sifre" name="password" type="password" autocomplete="current-password" spellcheck="false" autofocus aria-describedby="hata" style="font:600 18px var(--body);padding:10px 12px;border-radius:8px;border:1px solid #5A6A96;background:var(--field);color:var(--chalk);width:100%">
+    <button type="submit" id="girBtn">Gir</button>
+    <p id="hata" class="hata" role="alert"></p>
+  </form>
+</main>
+
+<div id="panel" hidden>
+<header>
+  <img class="logo" src="../logo.png" alt="" width="48" height="48">
+  <h1>Öğretmen Paneli<span class="uzun"> <span>·</span> Çakabey Basketbol</span></h1>
+  <div class="kim" style="margin-left:auto"><a class="cikis" href="../" style="display:inline-flex;align-items:center;text-decoration:none">Set defteri</a> <button id="cikis" class="cikis">Çıkış</button></div>
+</header>
+<div class="ogr">
+  <section class="kutu">
+    <h2>Maç notları <small>Her takım yalnız kendi notunu, set defterinin en üstünde görür</small></h2>
+    <div class="iki">
+      <div><label for="not-yildiz">Yıldız Erkek</label><textarea id="not-yildiz" maxlength="3000" placeholder="Örn. Cuma 15:00, deplasman. Rakip alan savunması oynuyor: KAPI ve UCLA'ya çalışın."></textarea>
+        <div class="satir"><button class="btn ana" data-kaydet="yildiz">Kaydet</button><button class="btn" data-sil="yildiz">Notu kaldır</button><span class="durum" id="d-yildiz" role="status"></span></div></div>
+      <div><label for="not-kucuk">Küçük Erkek</label><textarea id="not-kucuk" maxlength="3000"></textarea>
+        <div class="satir"><button class="btn ana" data-kaydet="kucuk">Kaydet</button><button class="btn" data-sil="kucuk">Notu kaldır</button><span class="durum" id="d-kucuk" role="status"></span></div></div>
+    </div>
+    <p class="uyari">Notlar şifreli saklanır ama sağlık ya da disiplin gibi kişisel bilgi yazma.</p>
+  </section>
+
+  <section class="kutu">
+    <h2>Fikstür <small>Öğrenciler sıradaki maçı en üstte, tüm listeyi açılır kutuda görür</small></h2>
+    <div id="fiksturler"></div>
+  </section>
+
+  <section class="kutu">
+    <h2>Kullanım</h2>
+    <div class="satir" style="margin:0 0 12px">
+      <div class="donem" role="group" aria-label="Dönem">
+        <button class="btn" data-gun="7" aria-pressed="true">Son 7 gün</button>
+        <button class="btn" data-gun="30" aria-pressed="false">Son 30 gün</button>
+        <button class="btn" data-gun="sezon" aria-pressed="false">Bu sezon</button>
+      </div>
+      <button class="btn" id="yenile">↻ Yenile</button>
+      <span class="durum" id="kDurum" role="status"></span>
+    </div>
+    <p class="uyari">Giriş günü: öğrencinin set defterini açtığı farklı gün sayısı. İzlediği setler: baştan sona oynatarak izlediği setler.</p>
+    <div id="takimlar"></div>
+    <div class="satir" style="margin-top:18px"><button class="btn tehlike" id="temizle">Tüm kullanım kayıtlarını sil (sezon sonu)</button><span class="durum" id="tDurum" role="status"></span></div>
+  </section>
+</div>
+</div>
+<script src="ogretmen.js?v=mw2d64wn"></script>
+</body>
+</html>

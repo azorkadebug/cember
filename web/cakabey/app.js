@@ -5,6 +5,9 @@
 (function(){
 const $=id=>document.getElementById(id);
 const KAYIT="cakabey-kod";
+// Ayrı Firebase projesi (Çember'den bağımsız): yalnız kullanım kaydı + maç notu. Anahtar herkese açık bir istemci anahtarıdır.
+const FB={p:"cakabey-basketbol",k:"AIzaSyDrEf8fQ94EF0Y9MTEiBIxTBRsOjD7eofE"};
+const FS="https://firestore.googleapis.com/v1/projects/"+FB.p+"/databases/(default)/documents";
 const depo={al(k){try{return localStorage.getItem(k);}catch(e){return null;}},
   yaz(k,v){try{localStorage.setItem(k,v);}catch(e){}},sil(k){try{localStorage.removeItem(k);}catch(e){}}};
 
@@ -33,8 +36,9 @@ async function ac(kod){
   const kilit=await crypto.subtle.importKey("raw",await ozet("kilit",ana),"AES-GCM",false,["decrypt"]);
   const z=JSON.parse(new TextDecoder().decode(await coz(kilit,zarf)));
   const veriAnahtari=await crypto.subtle.importKey("raw",b64(z.k),"AES-GCM",false,["decrypt"]);
-  const setler=JSON.parse(new TextDecoder().decode(await coz(veriAnahtari,v.veri)));
-  return {ad:(z.ad||"").trim(),takim:{y:"yildiz",k:"kucuk"}[z.t]||null,setler};
+  const ogretmen=z.r===1&&v.tam;
+  const setler=JSON.parse(new TextDecoder().decode(await coz(veriAnahtari,ogretmen?v.tam:v.veri)));
+  return {ad:(z.ad||"").trim(),takim:{y:"yildiz",k:"kucuk"}[z.t]||null,setler,id:ogretmen?null:(z.i||null),not:z.n||null,ogretmen};
 }
 
 // ---------- Giriş ----------
@@ -58,24 +62,77 @@ async function gir(kod,hatirla){
 $("girisForm").addEventListener("submit",e=>{e.preventDefault();gir($("kod").value,$("hatirla").checked);});
 $("kod").addEventListener("input",e=>{
   if(e.isComposing)return;const el=e.target;
+  if(e.inputType&&e.inputType.startsWith("insert")&&e.inputType!=="insertFromPaste"&&normal(el.value).length>8&&el.dataset.onceki!=null){
+    const p=el.selectionStart-1;el.value=el.dataset.onceki;try{el.setSelectionRange(p,p);}catch(_){}return;}
   let n=normal(el.value);const m=el.value.toUpperCase().match(/[A-Z0-9]{4}[\s-]?[A-Z0-9]{4}/);
   if(n.length>8&&m)n=normal(m[0]);
   const once=Math.min(8,normal(el.value.slice(0,el.selectionStart||0)).length);n=n.slice(0,8);
   el.value=n.length>4?n.slice(0,4)+"-"+n.slice(4):n;
   const pos=once>4?once+1:once;try{el.setSelectionRange(pos,pos);}catch(_){}
-  $("hata").textContent="";el.removeAttribute("aria-invalid");
+  el.dataset.onceki=el.value;$("hata").textContent="";el.removeAttribute("aria-invalid");
 });
 $("cikis").addEventListener("click",()=>{depo.sil(KAYIT);location.replace(location.pathname);});
 const kayitli=depo.al(KAYIT);
 if(kayitli){$("kapi").classList.add("yukleniyor");$("hatirla").checked=true;gir(kayitli,true);}
 else $("kod").focus();
 
+// ---------- Kullanım kaydı ve maç notu ----------
+let OGR=null,NOT_ANAHTARI=null;const izlendi=new Set();
+function kayit(t,setId){
+  if(!OGR)return;
+  const ad=Array.from(crypto.getRandomValues(new Uint8Array(10)),x=>x.toString(16).padStart(2,"0")).join("");
+  const body={writes:[{update:{name:"projects/"+FB.p+"/databases/(default)/documents/kayitlar/"+ad,
+    fields:{o:{stringValue:OGR},t:{stringValue:t},s:{stringValue:setId||""}}},
+    updateTransforms:[{fieldPath:"z",setToServerValue:"REQUEST_TIME"}],currentDocument:{exists:false}}]};
+  fetch(FS+":commit?key="+FB.k,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body),keepalive:true}).catch(()=>{});
+}
+function izlediKaydet(){const p=state.play;if(!p||state.g!==varsayilanTakim)return;
+  if(state.goruldu.size<p.S.length||performance.now()-state.t0<p.S.length*1200)return;const k=state.g+"/"+p.id;if(izlendi.has(k))return;izlendi.add(k);kayit("izle",p.id);}
+const NOTLAR={},FIKSTUR={};
+const AYLAR=d=>new Date(d+"T12:00:00").toLocaleDateString("tr-TR",{day:"numeric",month:"long",weekday:"long"});
+async function notlariYukle(){
+  if(!NOT_ANAHTARI)return;
+  const anahtar={};
+  for(const g in NOT_ANAHTARI){try{anahtar[g]=await crypto.subtle.importKey("raw",b64(NOT_ANAHTARI[g]),"AES-GCM",false,["decrypt"]);}catch(e){}}
+  const yollar=[];for(const g in anahtar)for(const k of ["notlar","fikstur"])yollar.push("projects/"+FB.p+"/databases/(default)/documents/"+k+"/"+g);
+  if(!yollar.length)return;
+  let sonuc;try{const r=await fetch(FS+":batchGet?key="+FB.k,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({documents:yollar})});
+    if(!r.ok)return;sonuc=await r.json();}catch(e){return;}
+  for(const x of sonuc){
+    if(!x.found)continue;const parca=x.found.name.split("/"),g=parca.pop(),tur=parca.pop(),d=x.found.fields||{};
+    try{const m=JSON.parse(new TextDecoder().decode(await coz(anahtar[g],{iv:d.iv.stringValue,ct:d.ct.stringValue})));
+      if(tur==="notlar"&&m.metin)NOTLAR[g]={metin:m.metin,z:d.z&&d.z.timestampValue};
+      if(tur==="fikstur"&&Array.isArray(m.maclar))FIKSTUR[g]=m.maclar;
+    }catch(e){}
+  }
+  notGoster();
+}
+function notGoster(){
+  const g=state.g,n=NOTLAR[g],f=(FIKSTUR[g]||[]).slice().sort((a,b)=>(a.tarih+a.saat).localeCompare(b.tarih+b.saat));
+  const kutu=$("macNotu");
+  const bugun=new Date();bugun.setHours(0,0,0,0);const bugunStr=bugun.getFullYear()+"-"+String(bugun.getMonth()+1).padStart(2,"0")+"-"+String(bugun.getDate()).padStart(2,"0");
+  const sirada=f.find(m=>m.tarih>=bugunStr);
+  if(!n&&!f.length){kutu.hidden=true;return;}
+  kutu.hidden=false;
+  const mac=m=>AYLAR(m.tarih)+(m.saat?" "+m.saat:"")+" · "+(m.rakip||"?")+" ("+(m.ev?"iç saha":"deplasman")+")"+(m.yer?" · "+m.yer:"");
+  $("siradaki").hidden=!sirada;if(sirada)$("siradakiMetin").textContent=mac(sirada);
+  $("notBlok").hidden=!n;
+  if(n){$("macNotuMetin").textContent=n.metin;
+    $("macNotuTarih").textContent=n.z?"yazıldı: "+new Date(n.z).toLocaleDateString("tr-TR",{day:"numeric",month:"long"}):"";}
+  kutu.classList.remove("acik");$("devami").hidden=!n||n.metin.length<140;$("devami").setAttribute("aria-expanded","false");$("devami").textContent="Devamı ▾";
+  const fd=$("fikstur");fd.hidden=!f.length;fd.open=false;
+  if(f.length){$("fiksturSayi").textContent="Fikstür ("+f.length+" maç)";const ul=$("fiksturListe");ul.textContent="";
+    f.forEach(m=>{const li=document.createElement("li");if(m.tarih<bugunStr)li.className="gecmis";if(m===sirada)li.className="sirada";
+      const a=document.createElement("span");a.textContent=mac(m);li.appendChild(a);
+      if(m.skor){const b=document.createElement("b");b.textContent=" "+m.skor;li.appendChild(b);}ul.appendChild(li);});}
+}
+
 // ---------- Saha (metre, FIBA). Orijin: sol dip köşe, y dip çizgiden uzaklaşır ----------
 const RIM=[7.5,1.575];
 const S={T:[7.5,9.0],LW:[2.4,6.7],RW:[12.6,6.7],LC:[0.7,1.1],RC:[14.3,1.1],LS:[4.7,8.6],RS:[10.3,8.6],
   LE:[5.1,5.8],RE:[9.9,5.8],LB:[4.6,2.3],RB:[10.4,2.3],FT:[7.5,5.8],IBR:[9.6,-0.75],IBL:[5.4,-0.75]};
 const pt=v=>typeof v==="string"?S[v].slice():v.slice();
-const TYPE={hucum:"Hücum seti",baseline:"Dip çizgiden başlama",sideline:"Kenar çizgiden başlama"};
+const TYPE={hucum:"Hücum seti",baseline:"Dip çizgiden başlama",sideline:"Kenar çizgiden başlama",pres:"Pres kırma"};
 const GROUPS={yildiz:"Yıldız Erkek",kucuk:"Küçük Erkek"};
 let PLAYS=null;
 
@@ -146,8 +203,8 @@ function drawCourt(){
   el("path",{d:"M5.7 14A1.8 1.8 0 0 1 9.3 14",class:"cl"},g);
   el("line",{x1:6.6,y1:1.2,x2:8.4,y2:1.2,class:"cl","stroke-width":".1","stroke-opacity":".9"},g);
   el("circle",{cx:RIM[0],cy:RIM[1],r:.23,fill:"none",stroke:"#F08A24","stroke-width":".06"},g);
-  el("text",{x:7.5,y:13.6,class:"lbl","text-anchor":"middle"},g).textContent="orta saha";
-  el("text",{x:0,y:-0.4,class:"lbl"},g).textContent="dip çizgi";
+  el("text",{x:7.5,y:13.6,class:"lbl","text-anchor":"middle",id:"lblOrta"},g).textContent="orta saha";
+  el("text",{x:0,y:-0.4,class:"lbl",id:"lblDip"},g).textContent="dip çizgi";
 }
 function trim(pts,a,b){const c=cum(pts),L=c[c.length-1];if(L<a+b+.05)return null;const out=[along(pts,c,a)];
   for(let i=1;i<pts.length-1;i++)if(c[i]>a&&c[i]<L-b)out.push(pts[i]);out.push(along(pts,c,L-b));return out;}
@@ -174,7 +231,7 @@ function drawStep(play,si,g){
 }
 
 // ---------- Durum ----------
-const state={g:"yildiz",play:null,si:0,f:0,playing:false,hold:0,speed:1,trail:true,all:false};
+const state={g:"yildiz",play:null,si:0,f:0,playing:false,hold:0,speed:1,trail:true,all:false,goruldu:new Set(),t0:0};
 const STEP_MS=2300,HOLD_MS=500;
 let dots={};
 const dar=()=>matchMedia("(max-width:720px)").matches;
@@ -182,19 +239,22 @@ const dar=()=>matchMedia("(max-width:720px)").matches;
 function setPlay(g,id,push=true){
   state.g=g;const list=PLAYS[g];const play=list.find(p=>p.id===id)||list[0];
   if(!play.S)build(play);
-  state.play=play;state.si=0;state.f=0;state.playing=false;state.hold=0;
+  state.play=play;state.si=0;state.f=0;state.playing=false;state.hold=0;state.goruldu=new Set([0]);state.t0=performance.now();
   if(push||location.hash!=="#"+g+"-"+play.id){try{history.replaceState(null,"","#"+g+"-"+play.id);}catch(e){}}
-  renderList();renderInfo();buildPlayers();renderDiag();frame();updatePlayBtn();
+  const pres=play.type==="pres";
+  if($("lblDip")){$("lblDip").textContent=pres?"KENDİ POTAMIZ · topu buradan oyuna sokuyoruz":"dip çizgi";$("lblOrta").textContent=pres?"orta saha ↓ hücum yönü":"orta saha";}
+  $("court").setAttribute("aria-label",pres?"Kendi yarı sahamız, üstten görünüm":"Hücum yarı sahası, üstten görünüm");
+  renderList();renderInfo();buildPlayers();renderDiag();frame();updatePlayBtn();notGoster();
 }
 function renderList(){
   document.querySelectorAll(".tab").forEach(t=>t.setAttribute("aria-pressed",t.dataset.g===state.g));
   const box=$("list");box.textContent="";
-  [["hucum","Hücum setleri","Hücum"],["baseline","Dip çizgiden başlama","Dip"],["sideline","Kenar çizgiden başlama","Kenar"]].forEach(([ty,label,kisa])=>{
-    const ps=PLAYS[state.g].filter(p=>p.type===ty);
+  [["hucum","Hücum setleri","Hücum"],["baseline","Dip çizgiden başlama","Dip"],["sideline","Kenar çizgiden başlama","Kenar"],["pres","Pres kırma","Pres"]].forEach(([ty,label,kisa])=>{
+    const ps=PLAYS[state.g].filter(p=>p.type===ty);if(!ps.length)return;
     const h=document.createElement("h2");h.textContent=label+" ("+ps.length+")";box.appendChild(h);
     ps.forEach(p=>{const b=document.createElement("button");b.className="setbtn";
       const tur=document.createElement("i");tur.textContent=kisa;
-      const bb=document.createElement("b");bb.textContent=p.name;const sm=document.createElement("small");sm.textContent=p.call;b.append(tur,bb,sm);
+      const bb=document.createElement("b");bb.textContent=p.name+(p.gizli?" ✎":"");const sm=document.createElement("small");sm.textContent=p.call;b.append(tur,bb,sm);
       b.setAttribute("aria-current",p===state.play);b.onclick=()=>setPlay(state.g,p.id);box.appendChild(b);});
   });
   const sec=box.querySelector('[aria-current="true"]');
@@ -203,7 +263,7 @@ function renderList(){
 function renderInfo(){
   const p=state.play;$("pName").textContent=p.name;
   $("pMeta").textContent="";
-  [[TYPE[p.type],"chip type"],[GROUPS[state.g],"chip"],["İşaret: "+p.call,"chip"]].forEach(([t,c])=>{const s=document.createElement("span");s.className=c;s.textContent=t;$("pMeta").appendChild(s);});
+  [...(p.gizli?[["Taslak · yalnız sen görüyorsun","chip taslak"]]:[]),[TYPE[p.type],"chip type"],[GROUPS[state.g],"chip"],["İşaret: "+p.call,"chip"]].forEach(([t,c])=>{const s=document.createElement("span");s.className=c;s.textContent=t;$("pMeta").appendChild(s);});
   $("pGoal").textContent=p.goal;
   const ol=$("pSteps");ol.textContent="";
   p.steps.forEach((s,i)=>{const li=document.createElement("li");const b=document.createElement("button");b.type="button";b.textContent=s.t;li.appendChild(b);
@@ -237,10 +297,11 @@ function frame(){
   for(const d in dots)dots[d].classList.toggle("top",!state.all&&String(b.h)===d);
   const last=si===p.S.length-1,fl=$("flash");
   const sayi=b.made&&!state.all&&last&&p.S[si].ev.some(e=>e.type==="shot");
-  fl.textContent=state.all?"":sayi?"SAYI!":(state.si===0&&state.f===0&&!state.playing?"Başlangıç dizilişi":"");
-  fl.setAttribute("y",sayi?"4.1":"12.2");
+  const gecti=!state.all&&last&&state.f>=1&&p.type==="pres";
+  fl.textContent=state.all?"":sayi?"SAYI!":gecti?"ORTA SAHA ✓":(state.si===0&&state.f===0&&!state.playing?"Başlangıç dizilişi":"");
+  fl.setAttribute("y",sayi?"4.1":p.type==="pres"?"9.8":"12.2");
 }
-function goStep(i){state.si=Math.max(0,Math.min(state.play.S.length-1,i));state.f=0;state.hold=0;state.all=false;$("all").checked=false;renderDiag();frame();}
+function goStep(i){state.si=Math.max(0,Math.min(state.play.S.length-1,i));state.goruldu.add(state.si);state.f=0;state.hold=0;state.all=false;$("all").checked=false;renderDiag();frame();}
 function updatePlayBtn(){const end=state.si===state.play.S.length-1&&state.f>=1&&!state.playing;
   $("bPlay").textContent=state.playing?"❚❚ Durdur":(end?"⟲ Tekrar":"▶ Oynat");}
 function togglePlay(){
@@ -255,7 +316,7 @@ function kick(){if(!raf){last=performance.now();raf=requestAnimationFrame(loop);
 function loop(now){
   raf=0;const dt=Math.min(64,now-last);last=now;
   if(!state.playing)return;
-  if(state.hold>0){state.hold-=dt;if(state.hold<=0){if(state.si<state.play.S.length-1){state.si++;state.f=0;renderDiag();}else{state.playing=false;updatePlayBtn();}}}
+  if(state.hold>0){state.hold-=dt;if(state.hold<=0){if(state.si<state.play.S.length-1){state.si++;state.goruldu.add(state.si);state.f=0;renderDiag();}else{state.playing=false;updatePlayBtn();izlediKaydet();}}}
   else if(hareketAz()){state.f=1;state.hold=1500;}
   else{state.f+=dt*state.speed/STEP_MS;if(state.f>=1){state.f=1;state.hold=HOLD_MS;}}
   frame();
@@ -269,13 +330,16 @@ function fromHash(){const h=(location.hash||"").slice(1);const m=h.match(/^(yild
 function baslat(s){
   if(basladi)return;basladi=true;
   PLAYS=s.setler;if(s.takim&&PLAYS[s.takim])varsayilanTakim=s.takim;
+  OGR=s.id;NOT_ANAHTARI=s.not;
+  {const gk="cakabey-giris";const bug=new Date().toDateString()+"|"+OGR;if(depo.al(gk)!==bug){depo.yaz(gk,bug);kayit("giris","");}}
   $("selam").textContent=s.ad?"Merhaba, "+s.ad:"";
   $("kapi").hidden=true;$("uygulama").hidden=false;
   document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>setPlay(t.dataset.g,null));
   $("bPlay").onclick=togglePlay;
   $("bReset").onclick=()=>{state.playing=false;goStep(0);updatePlayBtn();};
   $("bPrev").onclick=()=>{state.playing=false;const i=state.f>0.02?state.si:state.si-1;goStep(i);updatePlayBtn();};
-  $("bNext").onclick=()=>{state.playing=false;if(state.f<1){state.f=1;state.hold=0;frame();}else if(state.si<state.play.S.length-1)goStep(state.si+1);updatePlayBtn();};
+  $("bNext").onclick=()=>{state.playing=false;if(state.f<1){state.f=1;state.hold=0;frame();}else if(state.si<state.play.S.length-1)goStep(state.si+1);
+    if(state.si===state.play.S.length-1&&state.f>=1)izlediKaydet();updatePlayBtn();};
   $("speed").onchange=e=>{state.speed=+e.target.value;e.target.blur();};
   $("trail").onchange=e=>{state.trail=e.target.checked;renderDiag();};
   $("all").onchange=e=>{state.all=e.target.checked;state.playing=false;updatePlayBtn();renderDiag();frame();};
@@ -287,7 +351,8 @@ function baslat(s){
     else if(e.key==="Home"){e.preventDefault();$("bReset").click();}});
   window.addEventListener("hashchange",fromHash);
   let genis=dar();window.addEventListener("resize",()=>{if(dar()!==genis){genis=dar();buildPlayers();frame();}});
-  drawCourt();fromHash();
+  drawCourt();fromHash();notlariYukle();
+  $("devami").addEventListener("click",()=>{const k=$("macNotu"),a=k.classList.toggle("acik");$("devami").setAttribute("aria-expanded",a);$("devami").textContent=a?"Kısalt ▴":"Devamı ▾";});
   $("pName").tabIndex=-1;try{$("pName").focus({preventScroll:true});}catch(_){}
 }
 })();

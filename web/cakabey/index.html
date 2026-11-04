@@ -6,8 +6,8 @@
 <meta name="robots" content="noindex, nofollow">
 <title>Çakabey Basketbol</title>
 <link rel="icon" href="logo.png">
-<link rel="stylesheet" href="yazi.css?v=mw16dwmy">
-<link rel="stylesheet" href="stil.css?v=mw16dwmy">
+<link rel="stylesheet" href="yazi.css?v=mw2d64wn">
+<link rel="stylesheet" href="stil.css?v=mw2d64wn">
 </head>
 <body>
 <!-- Giriş -->
@@ -22,6 +22,7 @@
     <label class="hatirla"><input type="checkbox" id="hatirla"> Bu benim kendi cihazım, kodumu hatırla</label>
     <button type="submit" id="girBtn">Gir</button>
     <p id="hata" class="hata" role="alert"></p>
+    <p class="bilgi">Girişlerin ve baştan sona izlediğin setler öğretmenine görünür. Adın kaydedilmez; kayıtlar sezon sonunda silinir.</p>
   </form>
 </main>
 
@@ -37,6 +38,15 @@
   <div class="kim"><span id="selam"></span> <button id="cikis" class="cikis">Çıkış</button></div>
 </header>
 <div class="wrap">
+  <aside id="macNotu" class="mac-notu" hidden aria-label="Takım panosu">
+    <p id="siradaki" class="siradaki" hidden><span aria-hidden="true">📅</span> <b>Sıradaki maç:</b> <span id="siradakiMetin"></span></p>
+    <div id="notBlok" hidden>
+      <h2 id="macNotuBaslik"><span aria-hidden="true">📋</span> Maç notu</h2>
+      <p id="macNotuMetin"></p>
+      <p class="not-alt"><time id="macNotuTarih"></time> <button id="devami" class="devami" type="button" aria-expanded="false" hidden>Devamı ▾</button></p>
+    </div>
+    <details id="fikstur" class="fikstur" hidden><summary id="fiksturSayi">Fikstür</summary><ol id="fiksturListe"></ol></details>
+  </aside>
   <nav id="list" aria-label="Setler"></nav>
   <div class="courtcol">
     <svg id="court" viewBox="-0.6 -1.3 17 15.5" role="img" aria-label="Yarım saha, üstten görünüm">
@@ -109,6 +119,6 @@
   </section>
 </div>
 </div>
-<script src="app.js?v=mw16dwmy"></script>
+<script src="app.js?v=mw2d64wn"></script>
 </body>
 </html>
