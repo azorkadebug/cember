@@ -30,9 +30,23 @@ html,body{margin:0;background:var(--bg);color:var(--chalk);font-family:var(--bod
 .kart .hatirla input{width:20px;height:20px;flex:none}
 .kart button{font:700 17px var(--body);background:var(--gold);color:var(--board);border:0;border-radius:8px;padding:12px;min-height:48px;cursor:pointer;margin-top:4px}
 .kart button:disabled{opacity:.6;cursor:wait}
+.bilgi{margin:0;font-size:12.5px;color:var(--muted);text-align:center}
 .hata{color:var(--err);min-height:1.4em;margin:0;font-size:14px;text-align:center}
 
 /* Set defteri */
+.mac-notu{grid-column:1/-1;background:#2A2410;border:1px solid var(--gold);border-radius:10px;padding:12px 16px;display:flex;flex-direction:column;gap:8px}
+.mac-notu h2{margin:0;font:700 20px var(--display);letter-spacing:.03em;text-transform:uppercase;color:var(--gold)}
+.mac-notu p{margin:0}
+.siradaki{font-size:16px}
+.siradaki b{color:var(--gold)}
+#macNotuMetin{white-space:pre-line;font-size:16px;max-width:80ch}
+.not-alt{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center;font-size:13px;color:var(--muted)}
+.devami{font:600 14px var(--body);color:var(--gold);background:transparent;border:0;padding:6px 0;min-height:32px;cursor:pointer}
+.fikstur summary{cursor:pointer;font-weight:600;min-height:32px;color:var(--chalk)}
+.fikstur ol{margin:6px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:4px;font-size:15px}
+.fikstur li.gecmis{color:var(--muted)}
+.fikstur li.sirada{color:var(--gold);font-weight:600}
+.fikstur li b{color:var(--chalk);font-variant-numeric:tabular-nums}
 header{display:flex;flex-wrap:wrap;align-items:center;gap:12px 24px;padding:14px 20px;border-bottom:1px solid var(--line);background:var(--board)}
 .logo{width:48px;height:48px;border-radius:8px;display:block;flex:none}
 header h1{font-family:var(--display);font-weight:700;font-size:28px;letter-spacing:.02em;margin:0;text-transform:uppercase;text-wrap:balance}
@@ -70,6 +84,7 @@ svg#court{width:100%;height:auto;max-height:76vh;background:var(--board);border-
 .info h3:focus{outline:none}
 .meta{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 12px}
 .chip{font-size:13px;font-weight:600;padding:3px 9px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+.chip.taslak{background:#3A2A10;color:#FFD27A;border-color:#B8862A}
 .chip.type{background:var(--gold);color:var(--board);border-color:var(--gold)}
 .goal{margin:0 0 14px;max-width:65ch}
 ol.steps{list-style:none;margin:0 0 16px;padding:0;display:flex;flex-direction:column;gap:6px;counter-reset:s}
@@ -111,6 +126,12 @@ ul.keys{margin:0;padding-left:18px;font-size:15px;display:flex;flex-direction:co
   .dugmeler button{padding:8px 4px}
   .controls button.primary{min-width:0}
 }
+@media (max-width:720px),(orientation:landscape) and (max-height:500px){
+  #macNotuMetin{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+  .mac-notu.acik #macNotuMetin{display:block}
+  #list::after{content:"";flex:0 0 48px}
+}
+@media (min-width:721px) and (min-height:501px){.devami{display:none}}
 @media (max-width:440px){header h1{display:none}.tabs{margin-left:0}.kim{margin-left:auto}.tab{padding:6px 8px}}
 @media (orientation:landscape) and (max-height:500px){
   header{padding:6px 16px}
