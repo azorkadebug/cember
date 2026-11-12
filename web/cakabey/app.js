@@ -114,7 +114,7 @@ function notGoster(){
   const sirada=f.find(m=>m.tarih>=bugunStr);
   if(!n&&!f.length){kutu.hidden=true;return;}
   kutu.hidden=false;
-  const mac=m=>AYLAR(m.tarih)+(m.saat?" "+m.saat:"")+" · "+(m.rakip||"?")+" ("+(m.ev?"iç saha":"deplasman")+")"+(m.yer?" · "+m.yer:"");
+  const mac=m=>AYLAR(m.tarih)+(m.saat?" "+m.saat:"")+" · "+(m.rakip||"?")+(m.yer?" · "+m.yer:"");
   $("siradaki").hidden=!sirada;if(sirada)$("siradakiMetin").textContent=mac(sirada);
   $("notBlok").hidden=!n;
   if(n){$("macNotuMetin").textContent=n.metin;
