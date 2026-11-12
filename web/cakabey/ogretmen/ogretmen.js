@@ -119,7 +119,7 @@ function fiksturCiz(g,maclar,durumMetni){
   bolum.textContent="";
   const h=document.createElement("h3");h.textContent=GRUP[g];bolum.appendChild(h);
   const tw=document.createElement("div");tw.className="tablo";const t=document.createElement("table");t.className="fikstur-tablo";
-  t.innerHTML="<thead><tr><th>Tarih</th><th>Saat</th><th>Rakip</th><th>Yer</th><th>İç saha</th><th>Skor</th><th></th></tr></thead>";
+  t.innerHTML="<thead><tr><th>Tarih</th><th>Saat</th><th>Rakip</th><th>Yer</th><th>Skor</th><th></th></tr></thead>";
   const tb=document.createElement("tbody");t.appendChild(tb);tw.appendChild(t);bolum.appendChild(tw);
   const satirEkle=m=>{
     const tr=document.createElement("tr");
@@ -127,7 +127,6 @@ function fiksturCiz(g,maclar,durumMetni){
     const inp=(type,val,ph,ad,cls)=>{const i=document.createElement("input");i.type=type;i.value=val||"";if(ph)i.placeholder=ph;i.setAttribute("aria-label",ad);if(cls)i.className=cls;i.addEventListener("input",()=>kirli.add("fx-"+g));return i;};
     hucre(inp("date",m.tarih,"","Tarih"));hucre(inp("time",m.saat,"","Saat"));
     hucre(inp("text",m.rakip,"Rakip okul","Rakip"),"genis");hucre(inp("text",m.yer,"Salon / yer","Yer"),"genis");
-    const lb=document.createElement("label");const cb=document.createElement("input");cb.type="checkbox";cb.checked=!!m.ev;cb.addEventListener("change",()=>kirli.add("fx-"+g));lb.append(cb," İç saha");hucre(lb);
     hucre(inp("text",m.skor,"54-48","Skor","skor"));
     const sil=document.createElement("button");sil.type="button";sil.className="btn";sil.textContent="Sil";sil.setAttribute("aria-label","Bu maçı sil");
     sil.onclick=()=>{tr.remove();kirli.add("fx-"+g);};hucre(sil);
@@ -140,7 +139,7 @@ function fiksturCiz(g,maclar,durumMetni){
   const d=document.createElement("span");d.className="durum";d.setAttribute("role","status");d.textContent=durumMetni||"";
   kaydet.onclick=()=>kilitle(kaydet,async()=>{
     const liste=[...tb.children].map(tr=>{const i=tr.querySelectorAll("input");
-      return {tarih:i[0].value,saat:i[1].value,rakip:i[2].value.trim(),yer:i[3].value.trim(),ev:i[4].checked,skor:i[5].value.trim()};})
+      return {tarih:i[0].value,saat:i[1].value,rakip:i[2].value.trim(),yer:i[3].value.trim(),skor:i[4].value.trim()};})
       .filter(m=>m.tarih||m.rakip);
     if(liste.some(m=>!m.tarih)){d.textContent="Her maçın tarihi olmalı.";return;}
     d.textContent="Kaydediliyor…";
