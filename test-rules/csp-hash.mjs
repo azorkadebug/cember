@@ -10,6 +10,9 @@
  *
  * Çıktıdaki hash'leri firebase.json → Content-Security-Policy → script-src
  * içine yapıştır, sonra gizli pencerede test et.
+ * NOT (denetim #5): setExtraHTTPHeaders İSTEK başlığı ekler, yanıta politika
+ * koymaz; bu yüzden çoğu zaman "Hash bulunamadı" der. Hash'leri ve CSP'yi
+ * birlikte doğrulamak için `npm run yayin-oncesi` kullan.
  */
 import puppeteer from 'puppeteer-core';
 
