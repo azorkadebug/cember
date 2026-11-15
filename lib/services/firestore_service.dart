@@ -203,8 +203,54 @@ class FirestoreService {
     }, SetOptions(merge: true));
   }
 
-  Future<void> saglikNotuSil(String sinifId, String ogrenciId, Map<String, dynamic> not) {
-    return _ogrenciRef(sinifId, ogrenciId).update({'saglikNotlari': FieldValue.arrayRemove([not])});
+  /// [sayaciAzalt]: not silinirken sağlık sayacı da aynı yazmada bir düşer
+  /// (not listesi ile sayaç ayrışmasın; denetim #5 3-O1/2-O7).
+  Future<void> saglikNotuSil(String sinifId, String ogrenciId, Map<String, dynamic> not,
+      {bool sayaciAzalt = false}) {
+    return _ogrenciRef(sinifId, ogrenciId).update({
+      'saglikNotlari': FieldValue.arrayRemove([not]),
+      if (sayaciAzalt) 'saglikDurumu': FieldValue.increment(-1),
+    });
+  }
+
+  /// Kart Kaydet'i sunucuda reddedilince gösterilecek gerçek neden. Genel
+  /// "silinmiş ya da bağlantı" metni 50 not/rozet sınırını (firestore.rules
+  /// listeSiniri) yanıltıcı biçimde açıklıyordu (denetim #5 1-O3).
+  static String kartKaydiHataMesaji(Object e) {
+    final m = e.toString();
+    if (m.contains('permission-denied')) {
+      return 'Kaydedilemedi: sunucu kaydı kabul etmedi. Bir öğrencide en fazla '
+          '${Ogrenci.saglikNotuMaxAdet} sağlık notu ve ${Ogrenci.rozetMaxAdet} rozet tutulur; '
+          'fazlasını silip tekrar dene.';
+    }
+    if (m.contains('not-found')) return 'Kaydedilemedi: öğrenci silinmiş olabilir.';
+    if (m.contains('unavailable') || m.contains('network')) {
+      return 'Kaydedilemedi: bağlantı yok. İnternetini kontrol edip tekrar dene.';
+    }
+    return 'Kaydedilemedi. Tekrar dene.';
+  }
+
+  /// Sayaç değişikliklerinin güncelleme alanları. [tamHarita] verilirse
+  /// (eski şemalı belge: haritası yok) harita tohumlanmış hâliyle BÜTÜN
+  /// yazılır; yoksa `kalemSayaclari.<id>` artımı haritayı yalnız o anahtarla
+  /// yaratıp öteki sayaçları siliyordu (denetim #5 3-O2). Eski düz alanlar
+  /// (v1.0/1.0.1 istemcileri) her durumda artımla yansır.
+  static Map<String, dynamic> kalemGuncellemeAlanlari(
+      Map<String, int> kalemFarklari, {Map<String, int>? tamHarita}) {
+    const eskiAd = {'sari_kart': 'sariKart', 'kiyafet': 'kiyafetEksik', 'ayakkabi': 'ayakkabiEksik'};
+    final alanlar = <String, dynamic>{};
+    var degisti = false;
+    kalemFarklari.forEach((id, d) {
+      if (d == 0) return;
+      degisti = true;
+      if (tamHarita == null) alanlar['kalemSayaclari.$id'] = FieldValue.increment(d);
+      final eski = eskiAd[id];
+      if (eski != null) alanlar[eski] = FieldValue.increment(d);
+    });
+    if (tamHarita != null && degisti) {
+      alanlar['kalemSayaclari'] = Map<String, int>.from(tamHarita);
+    }
+    return alanlar;
   }
 
   /// Firestore/ağ hatasını öğretmenin anlayacağı Türkçeye çevirir; ham
@@ -352,12 +398,18 @@ class FirestoreService {
   /// K2). Artımlı yazma çevrimdışı kuyruğa girer, sunucuda atomik uygulanır;
   /// aynı anda iki cihazdan verilen sarı kartlar ikisi de sayılır. Mutlak
   /// yazma diğer cihazın ad/not/rozet/eş değişikliğini eziyordu (Y1).
-  /// Tek WriteBatch: partner güncellemeleri de aynı anda gider.
-  Future<void> ogrenciFarklariniYaz(
+  /// [kalemHaritasi]: eski şemalı öğrencide (belgede harita yok) tohumlanmış
+  /// tam harita; bkz. [kalemGuncellemeAlanlari].
+  ///
+  /// Dönen liste: güncellenemeyen (başka cihazda silinmiş) eş id'leri. Eş
+  /// güncellemeleri ana kayıttan AYRI yazılır; var olmayan eş belgesi tüm
+  /// kaydı (ad/puan/sayaç) reddettiriyordu (denetim #5 3-D3).
+  Future<List<String>> ogrenciFarklariniYaz(
     String sinifId,
     String ogrenciId, {
     Map<String, dynamic> alanlar = const {},
     Map<String, int> kalemFarklari = const {},
+    Map<String, int>? kalemHaritasi,
     int saglikFarki = 0,
     List<Map<String, dynamic>> yeniSaglikNotlari = const [],
     List<String> esEkle = const [],
@@ -367,36 +419,48 @@ class FirestoreService {
     final guncelleme = <String, dynamic>{
       ...alanlar,
       'sifrelendi': false,
+      // 3 PE kalemi v1.0/1.0.1 istemcileri için düz alanlara da yansır.
+      ...kalemGuncellemeAlanlari(kalemFarklari, tamHarita: kalemHaritasi),
     };
-    // kalemSayaclari haritasındaki 3 PE kalemi v1.0/1.0.1 istemcileri için
-    // düz alanlara da yansır.
-    const eskiAd = {'sari_kart': 'sariKart', 'kiyafet': 'kiyafetEksik', 'ayakkabi': 'ayakkabiEksik'};
-    kalemFarklari.forEach((id, d) {
-      if (d == 0) return;
-      guncelleme['kalemSayaclari.$id'] = FieldValue.increment(d);
-      final eski = eskiAd[id];
-      if (eski != null) guncelleme[eski] = FieldValue.increment(d);
-    });
     if (saglikFarki != 0) guncelleme['saglikDurumu'] = FieldValue.increment(saglikFarki);
     if (yeniSaglikNotlari.isNotEmpty) {
       guncelleme['saglikNotlari'] = FieldValue.arrayUnion(yeniSaglikNotlari);
     }
     if (esEkle.isNotEmpty) guncelleme['eslesenIdler'] = FieldValue.arrayUnion(esEkle);
 
-    final batch = _db.batch();
-    batch.update(ref, guncelleme);
-    for (final eid in esEkle) {
-      batch.update(_ogrenciRef(sinifId, eid), {'eslesenIdler': FieldValue.arrayUnion([ogrenciId])});
-    }
-    for (final eid in esKaldir) {
-      batch.update(_ogrenciRef(sinifId, eid), {'eslesenIdler': FieldValue.arrayRemove([ogrenciId])});
-    }
-    await batch.commit();
-    // Aynı alana bir batch içinde hem union hem remove yazılamaz; kaldırma
+    // TÜM yazmalar sırayla, beklemeden başlatılır: çevrimdışıyken her biri
+    // yerel kuyruğa girer (uygulama kapansa da bağlanınca gider). Ardışık
+    // `await` eş yazmalarını ana kayıt sunucudan onaylanana kadar
+    // başlatmıyordu. Var olmayan eş kararı yalnız sunucunun kesin
+    // "not-found" yanıtıyla verilir; okuma yapılmaz, önbelleğe bakılmaz.
+    final yazimlar = <Future<void>>[ref.update(guncelleme)];
+    // Aynı alana tek güncellemede hem union hem remove yazılamaz; kaldırma
     // ayrı, çok nadir (aynı kayıtta hem ekleme hem çıkarma).
     if (esKaldir.isNotEmpty) {
-      await ref.update({'eslesenIdler': FieldValue.arrayRemove(esKaldir)});
+      yazimlar.add(ref.update({'eslesenIdler': FieldValue.arrayRemove(esKaldir)}));
     }
+    final eksik = <String>[];
+    Future<void> es(String eid, FieldValue degisiklik) async {
+      try {
+        await _ogrenciRef(sinifId, eid).update({'eslesenIdler': degisiklik});
+      } on FirebaseException catch (e) {
+        if (e.code != 'not-found') rethrow;
+        eksik.add(eid);
+      }
+    }
+    for (final eid in esEkle) {
+      yazimlar.add(es(eid, FieldValue.arrayUnion([ogrenciId])));
+    }
+    for (final eid in esKaldir) {
+      yazimlar.add(es(eid, FieldValue.arrayRemove([ogrenciId])));
+    }
+    await Future.wait(yazimlar);
+    // Olmayan eşe işaret eden kimlik bu öğrencinin listesinde çöp çip kalmasın.
+    final temizlenecek = eksik.where(esEkle.contains).toList();
+    if (temizlenecek.isNotEmpty) {
+      await ref.update({'eslesenIdler': FieldValue.arrayRemove(temizlenecek)});
+    }
+    return eksik;
   }
 
   /// Öğrenci kartından kaydederken sayaçlar (kalemSayaclari + geriye dönük

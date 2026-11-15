@@ -58,7 +58,9 @@ void main() {
       expect(yeni.rozetler, isEmpty);
       expect(yeni.eslesenIdler, isEmpty);
       expect(yeni.kalemSayaclari, isEmpty);
-      expect(yeni.saglikDurumu, 0);
+      // Sağlık sayacı eski değeri değil, taşınan not sayısını izler
+      // (denetim #5 4-O2: not varsa işaret de olsun).
+      expect(yeni.saglikDurumu, yeni.saglikNotlari.length);
       expect(yeni.buradaMi, isTrue);
     });
 
