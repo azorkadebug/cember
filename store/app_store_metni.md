@@ -131,12 +131,15 @@ Notes for the App Review Team:
 |---|---|---|---|
 | **Contact Info — E-posta** | ✅ Evet | ✅ Evet | ❌ Hayır |
 | **Contact Info — İsim** | ✅ Evet | ✅ Evet | ❌ Hayır |
-| **User Content — Sınıf/öğrenci verisi** | ✅ Evet | ✅ Evet | ❌ Hayır |
+| **Health & Fitness — Health** (öğrenci sağlık notları) | ✅ Evet | ✅ Evet | ❌ Hayır |
+| **User Content — Other User Content** (sınıf/öğrenci verisi) | ✅ Evet | ✅ Evet | ❌ Hayır |
 | **Identifiers — User ID** | ✅ Evet | ✅ Evet | ❌ Hayır |
-| **Usage Data — Ürün etkileşimi** | ✅ Evet | ❌ Hayır (anonim) | ❌ Hayır |
-| **Diagnostics — Crash data** | ✅ Evet | ❌ Hayır (anonim) | ❌ Hayır |
+| **Usage Data — Product Interaction** | ✅ Evet | ✅ Evet (Analytics `setUserId`) | ❌ Hayır |
+| ~~Diagnostics — Crash / Performance Data~~ | ❌ Hayır (Crashlytics/Performance SDK yok) | — | — |
 
-Amaçlar: "App Functionality" (tümü için), "Analytics" (Usage Data için).
+> 2026-11-15 App Store Connect'te bu hale getirildi (denetim #5 4-O6): Product Interaction "bağlı" yapıldı, toplanmayan Crash + Performance Data kaldırıldı, Health eklendi. Hata izleme eklenirse Diagnostics yeniden beyan edilmeli.
+
+Amaçlar: "App Functionality" (tümü için), "Analytics" (Product Interaction için).
 
 ---
 
