@@ -6,10 +6,12 @@
   "scripts": {
     "test": "firebase emulators:exec --only firestore --project demo-cember \"node --test rules.test.mjs\"",
     "csp-hash": "node csp-hash.mjs",
-    "smoke": "node smoke.mjs"
+    "smoke": "node smoke.mjs",
+    "yayin-oncesi": "node yayin-oncesi.mjs"
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "^4.0.1",
-    "firebase": "^11.0.0"
+    "firebase": "^11.0.0",
+    "puppeteer-core": "^25.8.0"
   }
 }

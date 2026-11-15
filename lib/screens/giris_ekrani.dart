@@ -13,16 +13,20 @@ import '../services/auth_service.dart';
 
 class GirisEkrani extends StatefulWidget {
   const GirisEkrani({super.key});
+
+  /// Ekranın altında gösterilen sürüm. Flutter'da pubspec sürümünü paket
+  /// eklemeden (package_info_plus) okumanın yolu yok; `--dart-define=APP_VERSION=...`
+  /// verilmezse (iOS/Android derlemeleri vermiyor) bu varsayılan görünür.
+  /// pubspec.yaml'daki `version:` ile AYNI tutulmalı — test/surum_test.dart
+  /// ikisi ayrışınca kırılır (denetim #5 D2: 2.0.1'de "v2.0.0" yazıyordu).
+  static const String surum =
+      String.fromEnvironment('APP_VERSION', defaultValue: 'v2.0.1');
+
   @override
   State<GirisEkrani> createState() => _GirisEkraniState();
 }
 
 class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin {
-  /// pubspec.yaml'daki sürüm. `--dart-define=APP_VERSION=...` ile
-  /// derleme sırasında geçilebilir; verilmezse buradaki değer kullanılır.
-  static const String _surum =
-      String.fromEnvironment('APP_VERSION', defaultValue: 'v2.0.0');
-
   final _emailCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
   final _authService = AuthService();
@@ -432,7 +436,7 @@ class _GirisEkraniState extends State<GirisEkrani> with TickerProviderStateMixin
                       // Elle yazılan sürüm numarası güncellenmeyi unutuyordu
                       // (pubspec 1.1.0 iken ekranda hâlâ v1.0.0 yazıyordu).
                       // grey.shade300 beyaz üzerinde 1,3:1 — pratikte görünmüyordu.
-                      Text(_surum, style: TextStyle(color: r.metinIkincil, fontSize: 12)),
+                      Text(GirisEkrani.surum, style: TextStyle(color: r.metinIkincil, fontSize: 12)),
                     ],
                   ),
                     ),
