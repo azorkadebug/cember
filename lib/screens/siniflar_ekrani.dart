@@ -18,6 +18,7 @@ import '../widgets/yoklama_halkasi.dart';
 import '../widgets/ziplayan_logo.dart';
 import '../widgets/yenilikler_penceresi.dart';
 import '../utils/sinif_ozeti.dart';
+import '../utils/bugun_burada.dart';
 import 'ogrenci_listesi_ekrani.dart';
 import 'ogrenci_arama_ekrani.dart';
 import 'arsiv_sinif_ekrani.dart';
@@ -613,7 +614,11 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
       kod = sinifKisaltmasi(temizAd);
       baslik = trBuyut(temizAd).replaceAll(RegExp(r'[\s\-/._]+'), '') == kod ? null : temizAd;
     }
-    return StreamBuilder<QuerySnapshot>(
+    // Gece yarısını geçen açık oturumda "bugün 9/12" "dün"e dönsün
+    // (denetim #5 Y1).
+    return ValueListenableBuilder<String>(
+      valueListenable: Bugun(),
+      builder: (context, _, _) => StreamBuilder<QuerySnapshot>(
       stream: _ogrenciSayisiAkisi(docId),
       initialData: _sonSayaclar[docId],
       builder: (context, ogrSnap) {
@@ -728,7 +733,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
           },
         );
       },
-    );
+    ));
   }
 
   Widget _macBanner(BuildContext context) {
@@ -1248,11 +1253,10 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
   }
 
   Future<List<TakimBilgi>?> _siniflarArasiMacBaslat(String sinif1Id, String sinif2Id, String renk1, String renk2, String ad1, String ad2) async {
-    final ogrenciler1 = await _db.ogrencileriGetir(sinif1Id);
-    final ogrenciler2 = await _db.ogrencileriGetir(sinif2Id);
-
-    final gelenler1 = ogrenciler1.where((o) => o.buradaMi).toList();
-    final gelenler2 = ogrenciler2.where((o) => o.buradaMi).toList();
+    // "Gelen" bugünün yoklamasından: dün yok yazılan öğrenci bugün de
+    // yarışmadan düşüyordu (denetim #5 Y1).
+    final gelenler1 = await _db.bugunGelenleriGetir(sinif1Id);
+    final gelenler2 = await _db.bugunGelenleriGetir(sinif2Id);
 
     if (gelenler1.isEmpty || gelenler2.isEmpty) {
       if (mounted) {
