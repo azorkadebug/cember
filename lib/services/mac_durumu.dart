@@ -8,6 +8,7 @@ import 'package:flutter/widgets.dart' show WidgetsBinding, WidgetsBindingObserve
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/ogrenci.dart';
 import '../screens/skor_ekrani.dart';
+import 'alarm_servisi.dart';
 import 'firestore_service.dart';
 
 /// Skor ekranındaki 2 dakikalık molanın kaydı: hangi takımdan hangi oyuncu,
@@ -64,6 +65,16 @@ class MacDurumu extends ChangeNotifier with WidgetsBindingObserver {
   @visibleForTesting
   static void Function() alarmCal = _varsayilanAlarm;
 
+  /// Skor ekranı açıkken molayı o yönetir (sayaç, "Mola bitti" penceresi).
+  /// Kapalıyken biten molayı burası düşürür ve [molaBittiDuyuru] ile haber
+  /// verir; eskiden ekran dışında biten mola sessizce kayboluyordu.
+  static int skorEkraniSayisi = 0;
+  static bool get skorEkraniAcik => skorEkraniSayisi > 0;
+
+  /// Skor ekranı dışında biten mola için uygulama içi duyuru (takım rengi,
+  /// oyuncunun görünen adı). main.dart genel bildirim şeridine bağlar.
+  static void Function(String renkAdi, Ogrenci oyuncu)? molaBittiDuyuru;
+
   /// Geri yüklemede öğrenci adlarının çözüldüğü kaynak (Firestore).
   @visibleForTesting
   static Future<List<Ogrenci>> Function(String uid, String sinifId) ogrenciKaynagi =
@@ -88,6 +99,7 @@ class MacDurumu extends ChangeNotifier with WidgetsBindingObserver {
   final List<MacMolasi> _molalar = [];
 
   Timer? _bitisZamanlayici;
+  final Map<MacMolasi, Timer> _molaZamanlayicilari = {};
   bool _gozlemciEklendi = false;
 
   List<TakimBilgi>? get takimlar => _takimlar;
@@ -200,7 +212,7 @@ class MacDurumu extends ChangeNotifier with WidgetsBindingObserver {
     _durKalan = 0;
     _timerBitti = true;
     _bantDurdurdu = false;
-    if (alarm) alarmCal();
+    if (alarm && uygulamaIciSesGerekir(b)) alarmCal();
     _degisti();
     return true;
   }
@@ -237,6 +249,21 @@ class MacDurumu extends ChangeNotifier with WidgetsBindingObserver {
     notifyListeners();
   }
 
+  /// Telefon alarmı/bildirimi zaten çaldıysa uygulama içi düdük ikinci kez
+  /// çalmasın. AlarmKit uygulama öndeyken de çalar → hiç çalma. Bildirim
+  /// uygulama öndeyken görünmez → yalnız bitişten epey sonra (arka plandan
+  /// dönüş) fark edildiyse çalma; o an bildirim zaten duyurmuştu.
+  static bool uygulamaIciSesGerekir(DateTime bitis) {
+    switch (AlarmServisi.yol) {
+      case AlarmYolu.alarmKit:
+        return false;
+      case AlarmYolu.bildirim:
+        return saat().difference(bitis) < const Duration(seconds: 3);
+      case AlarmYolu.yok:
+        return true;
+    }
+  }
+
   // --- Mola ---
 
   MacMolasi molaEkle(int takimIndex, String oyuncuId) {
@@ -246,13 +273,64 @@ class MacDurumu extends ChangeNotifier with WidgetsBindingObserver {
       bitis: saat().add(const Duration(seconds: 120)),
     );
     _molalar.add(m);
+    _molaZamanlayicisiKur(m);
     kaydet();
     return m;
   }
 
   void molaKaldir(MacMolasi m) {
+    _molaZamanlayicilari.remove(m)?.cancel();
     if (_molalar.remove(m)) kaydet();
   }
+
+  void _molaZamanlayicisiKur(MacMolasi m) {
+    _molaZamanlayicilari.remove(m)?.cancel();
+    final kalan = m.bitis.difference(saat());
+    _molaZamanlayicilari[m] = Timer(kalan.isNegative ? Duration.zero : kalan, () => _molaBitti(m));
+  }
+
+  /// Mola süresi doldu. Skor ekranı açıksa o kendi sayacıyla bitirir (aynı
+  /// saniyede; burada bir şey yapılmaz). Kapalıysa mola düşer, düdük
+  /// (gerekirse) çalar, uygulama içi duyuru gösterilir.
+  void _molaBitti(MacMolasi m) {
+    _molaZamanlayicilari.remove(m);
+    if (!_molalar.contains(m)) return;
+    if (saat().isBefore(m.bitis)) {
+      _molaZamanlayicisiKur(m); // Timer erken uyandı
+      return;
+    }
+    if (skorEkraniAcik) return;
+    molaKaldir(m);
+    final takimlar = _takimlar;
+    if (takimlar == null || m.takimIndex >= takimlar.length) return;
+    final takim = takimlar[m.takimIndex];
+    final oyuncu = takim.oyuncular.where((o) => o.id == m.oyuncuId).firstOrNull;
+    if (oyuncu == null) return;
+    if (uygulamaIciSesGerekir(m.bitis)) alarmCal();
+    molaBittiDuyuru?.call(takim.renkAdi, oyuncu);
+  }
+
+  /// Telefonun çalacağı alarmlar: çalışan süre ve süren molalar. Bildirim
+  /// kilit ekranında görünür; öğrenci adı yazılmaz (bkz. AlarmServisi).
+  List<PlanliAlarm> planliAlarmlar() {
+    final takimlar = _takimlar;
+    if (takimlar == null) return const [];
+    return [
+      if (_bitis != null)
+        PlanliAlarm(id: 'sure', zaman: _bitis!, baslik: 'Süre bitti', govde: 'Maç süresi doldu.'),
+      for (final m in _molalar)
+        PlanliAlarm(
+          id: 'mola_${m.oyuncuId}',
+          zaman: m.bitis,
+          baslik: 'Mola bitti',
+          govde: m.takimIndex < takimlar.length && takimlar[m.takimIndex].renkAdi.isNotEmpty
+              ? '${takimlar[m.takimIndex].renkAdi} takımındaki oyuncu oyuna dönebilir.'
+              : 'Moladaki oyuncu oyuna dönebilir.',
+        ),
+    ];
+  }
+
+  void _alarmlariEsitle() => unawaited(AlarmServisi.esitle(planliAlarmlar()));
 
   /// Düdük skor ekranı açık olmasa da sessiz modda çalsın (playback) ama
   /// Bluetooth'tan çalan müziği kesmesin: duckOthers müziği kısar, düdük
@@ -286,12 +364,17 @@ class MacDurumu extends ChangeNotifier with WidgetsBindingObserver {
 
   void macBitir() {
     _bellegiSifirla();
+    _alarmlariEsitle();
     _temizle();
     notifyListeners();
   }
 
   void _bellegiSifirla() {
     _zamanlayiciIptal();
+    for (final t in _molaZamanlayicilari.values) {
+      t.cancel();
+    }
+    _molaZamanlayicilari.clear();
     _takimlar = null;
     _sinifId = null;
     _ekSinifIdler = const [];
@@ -311,6 +394,9 @@ class MacDurumu extends ChangeNotifier with WidgetsBindingObserver {
   static void kullaniciAyarla(String uid) => _aktifUid = uid;
 
   Future<void> kaydet() async {
+    // Her kayıt bir durum değişimidir: telefon alarmlarını da eşitle
+    // (duraklat, sıfırla, mola iptali, maç bitişi dahil).
+    _alarmlariEsitle();
     final anahtar = _anahtar;
     if (_takimlar == null || anahtar == null) return;
     final prefs = await SharedPreferences.getInstance();
@@ -369,6 +455,7 @@ class MacDurumu extends ChangeNotifier with WidgetsBindingObserver {
   /// Eski sürümden kalan, kullanıcıya göre ayrılmamış kaydı da temizler.
   static Future<void> tamTemizlik([String? uid]) async {
     _instance._bellegiSifirla();
+    _instance._alarmlariEsitle();
     try {
       final prefs = await SharedPreferences.getInstance();
       final silinecek = prefs
@@ -494,6 +581,11 @@ class MacDurumu extends ChangeNotifier with WidgetsBindingObserver {
             bitis: DateTime.fromMillisecondsSinceEpoch((mm['bitis'] as num).toInt()),
           );
         }).where((m) => m.bitis.isAfter(saat())));
+      for (final t in _molaZamanlayicilari.values) {
+        t.cancel();
+      }
+      _molaZamanlayicilari.clear();
+      _molalar.forEach(_molaZamanlayicisiKur);
 
       // Kadro tamamen boşaldıysa (sınıf silinmiş vb.) maçı kapat.
       if (_takimlar!.every((t) => t.oyuncular.isEmpty)) {

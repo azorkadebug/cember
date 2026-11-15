@@ -6,12 +6,6 @@
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>tr</string>
-	<key>CFBundleLocalizations</key>
-	<array>
-		<string>tr</string>
-	</array>
-	<key>ITSAppUsesNonExemptEncryption</key>
-	<false/>
 	<key>CFBundleDisplayName</key>
 	<string>Çember</string>
 	<key>CFBundleExecutable</key>
@@ -20,6 +14,10 @@
 	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>tr</string>
+	</array>
 	<key>CFBundleName</key>
 	<string>cember</string>
 	<key>CFBundlePackageType</key>
@@ -28,10 +26,27 @@
 	<string>$(FLUTTER_BUILD_NAME)</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.73438566042-j4s7hrbqavmf51a5m40o0535m9frqfnj</string>
+			</array>
+		</dict>
+	</array>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<key>GIDClientID</key>
+	<string>73438566042-j4s7hrbqavmf51a5m40o0535m9frqfnj.apps.googleusercontent.com</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSAlarmKitUsageDescription</key>
+	<string>Oyuncu molası ve maç süresi bittiğinde, telefon sessizdeyken ya da kilitliyken de haber vermek için alarm kurar.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
@@ -72,18 +87,5 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
-<key>GIDClientID</key>
-    <string>73438566042-j4s7hrbqavmf51a5m40o0535m9frqfnj.apps.googleusercontent.com</string>
-    <key>CFBundleURLTypes</key>
-    <array>
-        <dict>
-            <key>CFBundleTypeRole</key>
-            <string>Editor</string>
-            <key>CFBundleURLSchemes</key>
-            <array>
-                <string>com.googleusercontent.apps.73438566042-j4s7hrbqavmf51a5m40o0535m9frqfnj</string>
-            </array>
-        </dict>
-    </array>	
 </dict>
 </plist>

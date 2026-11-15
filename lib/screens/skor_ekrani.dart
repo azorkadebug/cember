@@ -91,6 +91,8 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    // Açıkken molaları bu ekran bitirir; MacDurumu ekran dışını üstlenir.
+    MacDurumu.skorEkraniSayisi++;
     _pulseCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
     // Düdük sessiz modda da çalsın ama müziği kesmesin (denetim #4 Y5);
     // ayrıntı MacDurumu.sesBaglaminiKur'da.
@@ -151,6 +153,7 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
     // Süre ve molalar MacDurumu'nda zaten kayıtlı; çıkışta kaydedilecek bir
     // şey yok (eskiden yalnız burada kaydediliyordu, denetim #5 Y3).
     _mac.removeListener(_macDegisti);
+    MacDurumu.skorEkraniSayisi--;
     WidgetsBinding.instance.removeObserver(this);
     _timer?.cancel();
     _pulseCtrl.dispose();
@@ -253,7 +256,7 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
           t.cancel();
           _cezalar.remove(ceza);
           _mac.molaKaldir(ceza.kayit);
-          _cezaBittiUyari(ceza.takimIndex, ceza.oyuncu);
+          _cezaBittiUyari(ceza.takimIndex, ceza.oyuncu, ceza.bitis);
         }
       });
     });
@@ -276,9 +279,12 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
     }
   }
 
-  void _cezaBittiUyari(int takimIndex, Ogrenci oyuncu) {
+  void _cezaBittiUyari(int takimIndex, Ogrenci oyuncu, DateTime bitis) {
     // Düdükle aynı yoldan (sessiz modu aşar); sistem sesi sessiz modda gelmiyordu.
-    unawaited(_ses.play(AssetSource('sounds/sure_bitti.wav')).catchError((_) {}));
+    // Telefon alarmı (AlarmKit) zaten çalıyorsa ikinci ses yok.
+    if (MacDurumu.uygulamaIciSesGerekir(bitis)) {
+      unawaited(_ses.play(AssetSource('sounds/sure_bitti.wav')).catchError((_) {}));
+    }
     unawaited(HapticFeedback.heavyImpact());
 
     final t = widget.takimlar[takimIndex];
