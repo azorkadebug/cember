@@ -428,11 +428,16 @@ class FirestoreService {
     }
     if (esEkle.isNotEmpty) guncelleme['eslesenIdler'] = FieldValue.arrayUnion(esEkle);
 
-    await ref.update(guncelleme);
+    // TÜM yazmalar sırayla, beklemeden başlatılır: çevrimdışıyken her biri
+    // yerel kuyruğa girer (uygulama kapansa da bağlanınca gider). Ardışık
+    // `await` eş yazmalarını ana kayıt sunucudan onaylanana kadar
+    // başlatmıyordu. Var olmayan eş kararı yalnız sunucunun kesin
+    // "not-found" yanıtıyla verilir; okuma yapılmaz, önbelleğe bakılmaz.
+    final yazimlar = <Future<void>>[ref.update(guncelleme)];
     // Aynı alana tek güncellemede hem union hem remove yazılamaz; kaldırma
     // ayrı, çok nadir (aynı kayıtta hem ekleme hem çıkarma).
     if (esKaldir.isNotEmpty) {
-      await ref.update({'eslesenIdler': FieldValue.arrayRemove(esKaldir)});
+      yazimlar.add(ref.update({'eslesenIdler': FieldValue.arrayRemove(esKaldir)}));
     }
     final eksik = <String>[];
     Future<void> es(String eid, FieldValue degisiklik) async {
@@ -444,11 +449,12 @@ class FirestoreService {
       }
     }
     for (final eid in esEkle) {
-      await es(eid, FieldValue.arrayUnion([ogrenciId]));
+      yazimlar.add(es(eid, FieldValue.arrayUnion([ogrenciId])));
     }
     for (final eid in esKaldir) {
-      await es(eid, FieldValue.arrayRemove([ogrenciId]));
+      yazimlar.add(es(eid, FieldValue.arrayRemove([ogrenciId])));
     }
+    await Future.wait(yazimlar);
     // Olmayan eşe işaret eden kimlik bu öğrencinin listesinde çöp çip kalmasın.
     final temizlenecek = eksik.where(esEkle.contains).toList();
     if (temizlenecek.isNotEmpty) {

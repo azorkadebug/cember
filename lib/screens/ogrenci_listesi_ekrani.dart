@@ -5,6 +5,7 @@ import '../utils/metin.dart';
 import '../utils/sinif_ozeti.dart';
 import '../utils/bugun_burada.dart';
 import '../utils/kart_saglik.dart';
+import '../utils/kayit_onayi.dart';
 import 'dart:math';
 import 'dart:async';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -160,6 +161,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
   final _aramaCtrl = TextEditingController();
   bool _otomatikKartAcildi = false;
   bool _kartKapaniyor = false;
+  final _kartOnaylari = <KayitOnayi<List<String>>>[];
   /// Kontrol kalemleri/forma renkleri yüklendi mi (arama kartı bunu bekler).
   late final Future<void> _sinifBilgisiHazir;
 
@@ -173,6 +175,9 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
 
   @override
   void dispose() {
+    for (final k in _kartOnaylari) {
+      k.iptal();
+    }
     _yoklamaAbonelik?.cancel();
     Bugun().removeListener(_yoklamaIsle);
     _aramaCtrl.dispose();
@@ -1553,28 +1558,36 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
       // söylenir; önce söylenip sonra reddedilince öğretmen ikisini birden
       // görüyordu (denetim #5 1-O3, 6-P6).
       final ad = o.gorunenAd;
-      unawaited(_db
-          .ogrenciFarklariniYaz(
-            widget.sinifId, o.id,
-            alanlar: alanlar,
-            kalemFarklari: farklar,
-            saglikFarki: saglikFarki,
-            kalemHaritasi: !o.kalemHaritasiVar && farklar.isNotEmpty ? Map<String, int>.from(o.kalemSayaclari) : null,
-            yeniSaglikNotlari: yeniNotlar,
-            esEkle: esEkle,
-            esKaldir: esKaldir,
-          )
-          .then<void>((eksikEsler) {
-            if (!mounted) return;
-            if (farklar.isNotEmpty) o.kalemHaritasiVar = true;
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              content: Text(eksikEsler.isEmpty
-                  ? '$ad kaydedildi'
-                  : '$ad kaydedildi; ama eşleştirilen öğrenci artık yok (başka cihazda silinmiş), eşleşme yapılamadı.'),
-              duration: const Duration(seconds: 2),
-            ));
-          })
-          .catchError((Object e) { _hataGoster(FirestoreService.kartKaydiHataMesaji(e)); }));
+      _kartOnaylari.add(KayitOnayi<List<String>>(
+        yazim: _db.ogrenciFarklariniYaz(
+          widget.sinifId, o.id,
+          alanlar: alanlar,
+          kalemFarklari: farklar,
+          saglikFarki: saglikFarki,
+          kalemHaritasi: !o.kalemHaritasiVar && farklar.isNotEmpty ? Map<String, int>.from(o.kalemSayaclari) : null,
+          yeniSaglikNotlari: yeniNotlar,
+          esEkle: esEkle,
+          esKaldir: esKaldir,
+        ),
+        aktif: () => mounted,
+        onay: (eksikEsler, gec) {
+          if (farklar.isNotEmpty) o.kalemHaritasiVar = true;
+          // Bekleme iletisi zaten "kaydedildi" dedi; ikinci kez söylenmez.
+          if (gec && eksikEsler.isEmpty) return;
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(eksikEsler.isEmpty
+                ? '$ad kaydedildi'
+                : '$ad kaydedildi; ama eşleştirilen öğrenci artık yok (başka cihazda silinmiş), eşleşme yapılamadı.'),
+            duration: const Duration(seconds: 2),
+          ));
+        },
+        // Çevrimdışı: yazma kuyrukta, bağlanınca gider (kalıcı önbellek açık).
+        bekliyor: () => ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('$ad kaydedildi, internet gelince gönderilecek.'),
+          duration: const Duration(seconds: 3),
+        )),
+        hata: (e) => _hataGoster(FirestoreService.kartKaydiHataMesaji(e)),
+      ));
     }
 
     Widget bolumBasligi(String metin, {IconData? ikon}) => Padding(
