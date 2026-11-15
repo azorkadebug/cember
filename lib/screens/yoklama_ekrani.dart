@@ -140,8 +140,9 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
     }
     setState(() => _kaydediyor = true);
     try {
-      // Sınıf listesindeki "buradaMi" ile aynı kayda işlesin (denetim #4 Y1);
-      // bugünün yoklaması için geldi/yok değişenler listeye de yazılır.
+      // Liste, takım kurma ve kura artık "Yok"u bugünün yoklamasından okur
+      // (denetim #5 Y1); `buradaMi` yalnız App Store'daki eski sürümler
+      // için yazılmaya devam ediyor (denetim #4 Y1).
       final b = DateTime.now();
       final buGunMu = _tarih.year == b.year && _tarih.month == b.month && _tarih.day == b.day;
       if (buGunMu) {

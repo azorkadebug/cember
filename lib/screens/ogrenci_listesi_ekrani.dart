@@ -3,6 +3,7 @@ import '../tema_renkleri.dart';
 import '../widgets/kalem_simgeleri.dart';
 import '../utils/metin.dart';
 import '../utils/sinif_ozeti.dart';
+import '../utils/bugun_burada.dart';
 import 'dart:math';
 import 'dart:async';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -119,11 +120,34 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
   /// karttaki sayaçlar görünüyordu, yoklamadaki işaret listeye yansımıyordu
   /// (denetim #4, Sabri).
   Map<String, Set<String>> _bugunEksikler = const {};
+  /// Bugünkü yoklamada "Yok" olanlar: listedeki "Yok" işaretinin, takım
+  /// kurmanın ve kuranın tek kaynağı. Eskiden öğrenci belgesindeki tarihsiz
+  /// `buradaMi` okunuyordu, dün yok yazılan bugün de yok görünüyordu
+  /// (denetim #5 Y1).
+  Set<String> _bugunGelmeyenler = const {};
   StreamSubscription<QuerySnapshot>? _yoklamaAbonelik;
+  QuerySnapshot? _yoklamaAbonelikSon;
 
-  static String _bugunAnahtari() {
-    final b = DateTime.now();
-    return '${b.year}-${b.month.toString().padLeft(2, '0')}-${b.day.toString().padLeft(2, '0')}';
+  static String _bugunAnahtari() => Bugun().value;
+
+  bool _burada(Ogrenci o) => !_bugunGelmeyenler.contains(o.id);
+
+  /// Son yoklama belgesinden bugünün eksik kalemlerini ve gelmeyenleri
+  /// çıkarır. Gün değişince (gece yarısı, uygulama öne gelince) yeniden
+  /// çağrılır: dünkü belge bugüne ait olmadığı için ikisi de boşalır.
+  void _yoklamaIsle() {
+    final bugun = _yoklamaAbonelikSon?.docs.where((d) => d.id == _bugunAnahtari()).firstOrNull;
+    final veri = bugun?.data() as Map<String, dynamic>?;
+    final kayitlar = (veri?['kayitlar'] as Map?) ?? const {};
+    final eksikler = <String, Set<String>>{};
+    kayitlar.forEach((ogrId, kayit) {
+      final kalemler = kayit is Map ? kayit['kalemler'] : null;
+      if (kalemler is! Map) return;
+      final eksik = {for (final e in kalemler.entries) if (e.value == false) e.key as String};
+      if (eksik.isNotEmpty) eksikler[ogrId as String] = eksik;
+    });
+    final gelmeyenler = bugunGelmeyenler(bugun?.id, veri, Bugun().simdi);
+    if (mounted) setState(() { _bugunEksikler = eksikler; _bugunGelmeyenler = gelmeyenler; });
   }
 
   int secilenTakimSayisi = 2;
@@ -149,6 +173,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
   @override
   void dispose() {
     _yoklamaAbonelik?.cancel();
+    Bugun().removeListener(_yoklamaIsle);
     _aramaCtrl.dispose();
     super.dispose();
   }
@@ -172,17 +197,10 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
     _sinifAd = widget.sinifAd; // sınıf listesinden geldiyse anında göster; yoksa fetch dolduracak
     _sinifBilgisiHazir = _formaRenkleriniYukle();
     _yoklamaAbonelik = _db.sonYoklamaStream(widget.sinifId).listen((snap) {
-      final bugun = snap.docs.where((d) => d.id == _bugunAnahtari()).firstOrNull;
-      final kayitlar = ((bugun?.data() as Map<String, dynamic>?)?['kayitlar'] as Map?) ?? const {};
-      final eksikler = <String, Set<String>>{};
-      kayitlar.forEach((ogrId, kayit) {
-        final kalemler = kayit is Map ? kayit['kalemler'] : null;
-        if (kalemler is! Map) return;
-        final eksik = {for (final e in kalemler.entries) if (e.value == false) e.key as String};
-        if (eksik.isNotEmpty) eksikler[ogrId as String] = eksik;
-      });
-      if (mounted) setState(() => _bugunEksikler = eksikler);
+      _yoklamaAbonelikSon = snap;
+      _yoklamaIsle();
     }, onError: (_) {});
+    Bugun().addListener(_yoklamaIsle);
   }
 
   List<KontrolKalemi> _kontrolKalemleriCoz(Map<String, dynamic>? data) {
@@ -291,6 +309,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                     sinifId: widget.sinifId,
                     sinifAd: _sinifAd,
                     ogrenciler: _tumOgrenciler,
+                    gelmeyenler: _bugunGelmeyenler,
                     renkler: _renkler,
                   ),
                 )),
@@ -827,13 +846,16 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
             key: Key(o.id),
             direction: DismissDirection.startToEnd,
             confirmDismiss: (_) async {
-              o.buradaMi = !o.buradaMi;
-              // Tek alan yazılıyor: tüm dokümanı geri yazmak, ikinci bir
-              // cihazdan o sırada girilen puan/sayaç değişikliklerini siler.
-              unawaited(_db.buradaMiGuncelle(widget.sinifId, o.id, o.buradaMi));
-              // Yoklama ekranı ile sınıf listesi iki ayrı "yok" tutuyordu
-              // (denetim #4 Y1): kaydırma bugünün yoklamasına da işlensin.
-              unawaited(_db.yoklamaTekOgrenci(widget.sinifId, _bugunAnahtari(), o.id, o.buradaMi).catchError((_) {}));
+              final geldi = !_burada(o);
+              // Ekranda hemen görünsün; yoklama akışı aynı sonucu getirir.
+              setState(() => _bugunGelmeyenler =
+                  geldi ? ({..._bugunGelmeyenler}..remove(o.id)) : {..._bugunGelmeyenler, o.id});
+              // Asıl kayıt bugünün yoklaması (denetim #4 Y1, #5 Y1).
+              unawaited(_db.yoklamaTekOgrenci(widget.sinifId, _bugunAnahtari(), o.id, geldi).catchError((_) {}));
+              // `buradaMi` yalnız App Store'daki eski sürümler okusun diye
+              // yazılıyor; bu sürüm onu okumaz. Tek alan: tüm dokümanı geri
+              // yazmak ikinci cihazın puan/sayaç değişikliklerini siler.
+              unawaited(_db.buradaMiGuncelle(widget.sinifId, o.id, geldi).catchError((_) {}));
               return false; // Kartı silme, sadece toggle
             },
             background: Container(
@@ -841,7 +863,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
               padding: const EdgeInsets.only(left: 24),
               margin: const EdgeInsets.only(right: 3, bottom: 3),
               decoration: BoxDecoration(
-                color: o.buradaMi
+                color: _burada(o)
                     ? (r.yokZemin)
                     : (r.geldiZemin),
                 borderRadius: BorderRadius.circular(18),
@@ -850,11 +872,11 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                 children: [
                   // green.shade700, green.shade100 zemin üzerinde 3,1:1
                   // veriyordu; AppTema.basari (green900) 5,9:1.
-                  Icon(o.buradaMi ? Icons.cancel_rounded : Icons.check_circle_rounded,
-                      color: o.buradaMi ? (r.yokMetin) : r.basari),
+                  Icon(_burada(o) ? Icons.cancel_rounded : Icons.check_circle_rounded,
+                      color: _burada(o) ? (r.yokMetin) : r.basari),
                   const SizedBox(width: 8),
-                  Text(o.buradaMi ? "Yok yaz" : "Geldi",
-                      style: TextStyle(fontWeight: FontWeight.w700, color: o.buradaMi ? (r.yokMetin) : r.basari)),
+                  Text(_burada(o) ? "Yok yaz" : "Geldi",
+                      style: TextStyle(fontWeight: FontWeight.w700, color: _burada(o) ? (r.yokMetin) : r.basari)),
                 ],
               ),
             ),
@@ -884,7 +906,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                           height: 42,
                           alignment: Alignment.center,
                           decoration: BoxDecoration(
-                            color: !o.buradaMi ? const Color(0xFFE6E2DA) : AppTema.ogrenciRengi(o.id, _renkler),
+                            color: !_burada(o) ? const Color(0xFFE6E2DA) : AppTema.ogrenciRengi(o.id, _renkler),
                             shape: BoxShape.circle,
                             border: Border.all(color: AppTema.ana, width: 2),
                           ),
@@ -914,7 +936,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                                       maxLines: 1, overflow: TextOverflow.ellipsis,
                                       style: TextStyle(
                                         fontWeight: FontWeight.w800, fontSize: 16,
-                                        color: o.buradaMi ? r.metin : r.metinUcuncul,
+                                        color: _burada(o) ? r.metin : r.metinUcuncul,
                                       )),
                                 ),
                               ],
@@ -949,7 +971,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
 
   /// "Su · eşli · not var" gibi kısa bilgi.
   String _bilgiSatiri(Ogrenci o) {
-    if (!o.buradaMi) return 'bugün gelmedi';
+    if (!_burada(o)) return 'bugün gelmedi';
     // Kalem eksikleri yazıyla değil sağdaki çıkartmalarla (Sabri).
     final parcalar = <String>[
       ?ElementSistemi.etiket(o.element),
@@ -965,7 +987,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
   Widget _rozetGrubu(Ogrenci o) {
     final r = context.renk;
     final cikartmalar = <Widget>[
-      if (!o.buradaMi)
+      if (!_burada(o))
         Transform.rotate(
           angle: -0.07,
           child: Container(
@@ -996,7 +1018,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
           // Kıyafet/ayakkabı eksik ve diğer sayaçlar: çerçevesiz renkli
           // çıkartma, 2+ ise köşede sayı.
           KalemCikartmasi(k.ikon, sayi: o.kalemDeger(k.id))
-        else if (o.buradaMi && (_bugunEksikler[o.id]?.contains(k.id) ?? false))
+        else if (_burada(o) && (_bugunEksikler[o.id]?.contains(k.id) ?? false))
           // Bugünkü yoklamada eksik işaretlenen günlük kalem.
           KalemCikartmasi(k.ikon),
       if (o.saglikDurumu != 0) const KalemCikartmasi('saglik'),
@@ -1017,11 +1039,11 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
         ),
     ];
     final etiket = [
-      if (!o.buradaMi) 'yok',
+      if (!_burada(o)) 'yok',
       for (final k in _kontrolKalemleri)
         if (o.kalemDeger(k.id) > 0)
           '${k.ad} ${o.kalemDeger(k.id)}'
-        else if (o.buradaMi && (_bugunEksikler[o.id]?.contains(k.id) ?? false))
+        else if (_burada(o) && (_bugunEksikler[o.id]?.contains(k.id) ?? false))
           '${k.ad} bugün eksik',
       if (o.saglikDurumu != 0) 'sağlık notu',
       if (o.not.isNotEmpty) 'not var',
@@ -2484,7 +2506,8 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
     secilenTakimSayisi = secilenTakimSayisi.clamp(2, _enCokTakim);
     final List<Ogrenci> gelenler;
     try {
-      gelenler = (await _db.ogrencileriGetir(widget.sinifId)).where((o) => o.buradaMi).toList();
+      // Bugünün yoklamasından (denetim #5 Y1).
+      gelenler = await _db.bugunGelenleriGetir(widget.sinifId);
     } catch (_) {
       _hataGoster('Öğrenci listesi alınamadı. Bağlantını kontrol et.');
       return;

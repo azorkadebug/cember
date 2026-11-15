@@ -4,6 +4,7 @@ library;
 
 import 'package:intl/intl.dart';
 
+import 'bugun_burada.dart';
 import 'metin.dart';
 
 /// Halkanın ortasındaki kısaltma: ayırıcılar atılır, en çok 3 karakter.
@@ -57,9 +58,8 @@ YoklamaOzeti? yoklamaOzeti(Map<String, dynamic>? yoklama, Iterable<String> ogren
   var toplam = 0, gelen = 0;
   for (final id in ogrenciIdleri) {
     toplam++;
-    final r = kayitlar[id];
-    final geldi = r is Map ? r['geldi'] != false : true;
-    if (geldi) gelen++;
+    // Listedeki "Yok" ve takım kurma ile aynı kural (denetim #5 Y1).
+    if (kayitGeldiMi(kayitlar, id)) gelen++;
   }
   return YoklamaOzeti(gelen: gelen, toplam: toplam, tarih: tarih);
 }

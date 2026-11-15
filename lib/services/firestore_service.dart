@@ -4,6 +4,7 @@ import '../models/ogrenci.dart';
 import 'deneme_sinifi.dart';
 import '../models/kontrol_kalemi.dart';
 import '../utils/egitim_yili.dart';
+import '../utils/bugun_burada.dart';
 
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -155,6 +156,23 @@ class FirestoreService {
         .doc(tarihKey)
         .get();
     return doc.data();
+  }
+
+  /// Bugün gelen öğrenciler (takım kurma, yarışma): "bugün burada mı"
+  /// tanımı `bugunGelmeyenler`de, kaynak bugünün yoklama belgesi
+  /// (denetim #5 Y1). Tek belge okuması; öğrenci belgelerine yazma yok.
+  Future<List<Ogrenci>> bugunGelenleriGetir(String sinifId, {DateTime? simdi}) async {
+    final s = simdi ?? DateTime.now();
+    final ogrenciler = await ogrencileriGetir(sinifId);
+    final anahtar = gunAnahtari(s);
+    Map<String, dynamic>? yoklama;
+    try {
+      yoklama = await yoklamaGetir(sinifId, anahtar);
+    } catch (_) {
+      // Çevrimdışı ve bugünün belgesi önbellekte yoksa get() hata verir;
+      // bu cihazda bugün yoklama alınmamış demektir, herkes geldi sayılır.
+    }
+    return bugunGelenler(ogrenciler, bugunGelmeyenler(anahtar, yoklama, s));
   }
 
   /// Sınıfın en son tarihli yoklama dokümanı (sınıf kartındaki halka için).

@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/ogrenci.dart';
 import '../tema.dart';
+import '../utils/bugun_burada.dart';
 import '../tema_renkleri.dart';
 import '../utils/metin.dart';
 import '../widgets/cikartma.dart';
@@ -21,12 +22,17 @@ class KuraEkrani extends StatefulWidget {
   final String sinifId;
   final String? sinifAd;
   final List<Ogrenci> ogrenciler;
+  /// Bugünkü yoklamada "Yok" olanlar (`bugunGelmeyenler`). Eskiden
+  /// öğrenci belgesindeki tarihsiz `buradaMi` okunuyordu, dün yok yazılan
+  /// bugün de kuraya giremiyordu (denetim #5 Y1).
+  final Set<String> gelmeyenler;
   final Map<String, Color> renkler;
   const KuraEkrani({
     super.key,
     required this.sinifId,
     this.sinifAd,
     required this.ogrenciler,
+    this.gelmeyenler = const {},
     required this.renkler,
   });
 
@@ -43,7 +49,7 @@ class _KuraEkraniState extends State<KuraEkrani> {
   bool _bitti = false; // son öğrenci yerine oturdu mu (büyüme animasyonu)
   Timer? _zamanlayici;
 
-  List<Ogrenci> get _gelenler => widget.ogrenciler.where((o) => o.buradaMi).toList();
+  List<Ogrenci> get _gelenler => bugunGelenler(widget.ogrenciler, widget.gelmeyenler);
   String get _anahtar => 'kura_${widget.sinifId}';
 
   static String _bugun() {
