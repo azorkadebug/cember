@@ -1,7 +1,10 @@
 import '../tema.dart';
 import '../tema_renkleri.dart';
+import '../utils/bekleyen_yazma.dart';
 import '../utils/metin.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../widgets/girdi.dart';
@@ -144,6 +147,31 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
     final degisti = [_adCtrl.text, _okulCtrl.text, _sehirCtrl.text]
         .asMap().entries.any((e) => e.value != _ilkMetinler[e.key]);
     if (degisti != _kirli && mounted) setState(() => _kirli = degisti);
+  }
+
+  /// Web çıkışında bekleyen yazmalar birkaç saniye beklenir; gitmediyse
+  /// öğretmene sorulur. true: çıkılabilir.
+  Future<bool> _cikistaKayitlarGitti() async {
+    final gitti = await bekleyenYazmalarGitti(
+        () => FirebaseFirestore.instance.waitForPendingWrites());
+    if (gitti || !mounted) return true;
+    final cik = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Gönderilmemiş kayıtlar var'),
+        content: const Text('Gönderilmemiş kayıtlar var; şimdi çıkarsan silinecek. '
+            'İnternet gelince tekrar dene.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Vazgeç')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text('Çık',
+                style: TextStyle(color: ctx.renk.tehlike, fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+    return cik ?? false;
   }
 
   /// Kaydedilmemiş değişiklikle çıkmadan önce sorar.
@@ -381,7 +409,11 @@ class _ProfilEkraniState extends State<ProfilEkrani> {
                                 title: const Text('Çıkış Yap', style: TextStyle(fontWeight: FontWeight.w800)),
                                 // Profil üstte açıkken çıkış yapılınca yığında kalıp
                                 // giriş ekranının üstünde duruyordu; önce köke dön.
-                                onTap: () {
+                                onTap: () async {
+                                  // Web'de çıkış önbelleği siler; kuyruktaki
+                                  // yoklama/kart kayıtları gitmeden silinmesin.
+                                  if (kIsWeb && !await _cikistaKayitlarGitti()) return;
+                                  if (!context.mounted) return;
                                   Navigator.of(context).popUntil((rota) => rota.isFirst);
                                   unawaited(AuthService().signOut());
                                 },
