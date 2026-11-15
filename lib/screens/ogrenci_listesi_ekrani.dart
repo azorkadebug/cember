@@ -210,18 +210,8 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
     Bugun().addListener(_yoklamaIsle);
   }
 
-  List<KontrolKalemi> _kontrolKalemleriCoz(Map<String, dynamic>? data) {
-    final raw = data?['kontrolKalemleri'];
-    if (raw is List && raw.isNotEmpty) {
-      final list = raw
-          .map((e) => KontrolKalemi.fromMap(Map<String, dynamic>.from(e as Map)))
-          .toList();
-      list.sort((a, b) => a.sira.compareTo(b.sira));
-      return list;
-    }
-    // Eski sınıf: branşı yoksa Beden Eğitimi varsayılır.
-    return bransSablonu(data?['brans'] as String?).varsayilanKalemler;
-  }
+  List<KontrolKalemi> _kontrolKalemleriCoz(Map<String, dynamic>? data) =>
+      kontrolKalemleriCoz(data?['kontrolKalemleri'], data?['brans'] as String?);
 
   Future<void> _formaRenkleriniYukle() async {
     try {

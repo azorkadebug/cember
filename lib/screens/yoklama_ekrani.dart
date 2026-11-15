@@ -365,8 +365,10 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
                       spacing: 8,
                       runSpacing: 6,
                       children: [
-                        Text('Karta dokununca kalemler açılır',
-                            style: TextStyle(color: r.metinIkincil, fontSize: 13, fontWeight: FontWeight.w600)),
+                        // Kalem yokken açılacak bir şey yok (denetim #5 O5).
+                        if (_gunlukKalemler.isNotEmpty)
+                          Text('Karta dokununca kalemler açılır',
+                              style: TextStyle(color: r.metinIkincil, fontSize: 13, fontWeight: FontWeight.w600)),
                         OutlinedButton.icon(
                           onPressed: _tumuGeldi,
                           icon: const Icon(Icons.done_all_rounded, size: 20),
