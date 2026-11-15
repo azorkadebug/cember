@@ -4,6 +4,7 @@ import '../widgets/kalem_simgeleri.dart';
 import '../utils/metin.dart';
 import '../utils/sinif_ozeti.dart';
 import '../utils/bugun_burada.dart';
+import '../utils/kart_saglik.dart';
 import 'dart:math';
 import 'dart:async';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -1119,7 +1120,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
     );
   }
 
-  Widget _saglikSatiri(Ogrenci o, StateSetter setDialogState) {
+  Widget _saglikSatiri(Ogrenci o, StateSetter setDialogState, KartSaglikIzi iz) {
     final r = context.renk;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
@@ -1128,7 +1129,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
         Expanded(
           child: InkWell(
             borderRadius: BorderRadius.circular(12),
-            onTap: o.saglikNotlari.isEmpty ? null : () => _saglikGecmisiDialog(o),
+            onTap: o.saglikNotlari.isEmpty ? null : () => _saglikGecmisiDialog(o, iz, setDialogState),
             child: ConstrainedBox(
               constraints: const BoxConstraints(minHeight: 44),
               child: Row(children: [
@@ -1143,20 +1144,37 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
             ),
           ),
         ),
-        _kartSayacDugmesi(Icons.remove_rounded, 'Sağlık puanını azalt',
-            () => setDialogState(() => o.saglikDurumu += -1), false),
+        // Sayaç notlardan ayrı düşürülemez (denetim #5 2-O7): "−" geçmişi açar,
+        // sayaç silinen notla birlikte iner. Not sayısından fazla kalmış
+        // (eski hatadan) sayaç ise 0'a kadar doğrudan düşer.
+        _kartSayacDugmesi(Icons.remove_rounded, 'Sağlık notunu sil',
+            () {
+              if (KartSaglikIzi.yetimSayac(o)) {
+                setDialogState(() => iz.yetimSayaciDusur(o));
+              } else if (o.saglikNotlari.isNotEmpty) {
+                _saglikGecmisiDialog(o, iz, setDialogState);
+              }
+            }, false),
         SizedBox(
           width: 38,
           child: Text("${o.saglikDurumu}",
               textAlign: TextAlign.center,
               style: const TextStyle(fontFamily: AppTema.baslikFontu, fontWeight: FontWeight.w700, fontSize: 20)),
         ),
-        _kartSayacDugmesi(Icons.add_rounded, 'Sağlık notu ekle', () => _saglikNotuEkleDialog(o, setDialogState), true),
+        _kartSayacDugmesi(Icons.add_rounded, 'Sağlık notu ekle', () {
+          // Sunucu 50'den fazlasında kartın tüm kaydını reddeder (firestore.rules
+          // listeSiniri); eklemeden önce söylenir (denetim #5 1-O3).
+          if (KartSaglikIzi.dolu(o)) {
+            _hataGoster('En fazla ${Ogrenci.saglikNotuMaxAdet} sağlık notu tutuluyor. Yenisini eklemek için geçmişten eski bir notu sil.');
+            return;
+          }
+          _saglikNotuEkleDialog(o, setDialogState, iz);
+        }, true),
       ]),
     );
   }
 
-  void _saglikNotuEkleDialog(Ogrenci o, StateSetter setDialogState) {
+  void _saglikNotuEkleDialog(Ogrenci o, StateSetter setDialogState, KartSaglikIzi iz) {
     final notCtrl = TextEditingController();
     showDialog(
       context: context,
@@ -1195,8 +1213,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
             onPressed: () {
               final now = DateTime.now();
               final tarih = "${now.day.toString().padLeft(2, '0')}.${now.month.toString().padLeft(2, '0')}.${now.year}";
-              o.saglikNotlari.add({'tarih': tarih, 'not': notCtrl.text.trim()});
-              setDialogState(() => o.saglikDurumu += 1);
+              setDialogState(() => iz.ekle(o, {'tarih': tarih, 'not': notCtrl.text.trim()}));
               Navigator.pop(ctx);
             },
             child: const Text("Ekle", style: TextStyle(fontWeight: FontWeight.w700)),
@@ -1206,7 +1223,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
     );
   }
 
-  void _saglikGecmisiDialog(Ogrenci o) {
+  void _saglikGecmisiDialog(Ogrenci o, KartSaglikIzi iz, StateSetter kartSetState) {
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(builder: (ctx, setD) => AlertDialog(
@@ -1237,9 +1254,15 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                   icon: Icon(Icons.delete_outline_rounded, color: ctx.renk.tehlike, size: 20),
                   tooltip: 'Notu sil',
                   onPressed: () {
-                    setD(() => o.saglikNotlari.remove(kayit));
-                    unawaited(_db.saglikNotuSil(widget.sinifId, o.id, kayit)
-                        .catchError((_) => _hataGoster('Not silinemedi.')));
+                    final sonuc = iz.sil(o, kayit);
+                    setD(() {});
+                    // Kart ekranındaki sayaç da güncellensin.
+                    try { kartSetState(() {}); } catch (_) {}
+                    // Bu oturumda eklenip kaydedilmemiş not sunucuda yok.
+                    if (sonuc.sunucudan) {
+                      unawaited(_db.saglikNotuSil(widget.sinifId, o.id, kayit, sayaciAzalt: sonuc.sayaciAzalt)
+                          .catchError((_) => _hataGoster('Not silinemedi.')));
+                    }
                     if (o.saglikNotlari.isEmpty) Navigator.pop(ctx);
                   },
                 ),
@@ -1307,11 +1330,23 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                 child: InkWell(
                   borderRadius: BorderRadius.circular(10),
                   onTap: () {
+                    // firestore.rules listeSiniri: 50'den fazlasını sunucu
+                    // reddeder, çip görünüp kalıyordu (denetim #5 1-O3).
+                    if (o.rozetler.length >= Ogrenci.rozetMaxAdet) {
+                      Navigator.pop(ctx);
+                      _hataGoster('En fazla ${Ogrenci.rozetMaxAdet} rozet tutuluyor. Yenisini vermek için eski bir rozeti sil.');
+                      return;
+                    }
                     final now = DateTime.now();
                     final tarih = "${now.day.toString().padLeft(2, '0')}.${now.month.toString().padLeft(2, '0')}.${now.year}";
                     final rozet = {'rozet': e.key, 'tarih': tarih};
                     o.rozetler.add(rozet);
-                    unawaited(_db.rozetEkle(widget.sinifId, o.id, rozet));
+                    unawaited(_db.rozetEkle(widget.sinifId, o.id, rozet).catchError((_) {
+                      // Yazım olmadıysa çip de kalmasın.
+                      o.rozetler.remove(rozet);
+                      try { parentSetState(() {}); } catch (_) {}
+                      _hataGoster('Rozet kaydedilemedi. Bağlantını kontrol edip tekrar dene.');
+                    }));
                     parentSetState(() {});
                     Navigator.pop(ctx);
                   },
@@ -1452,8 +1487,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
     // Açılış anının kopyası — iptalde geri almak için.
     final ilkIsMale = o.isMale;
     final ilkElement = o.element;
-    final ilkSaglik = o.saglikDurumu;
-    final ilkSaglikNotlari = o.saglikNotlari.map((e) => Map<String, dynamic>.from(e)).toList();
+    final saglikIzi = KartSaglikIzi(o);
     final ilkSayaclar = Map<String, int>.from(o.kalemSayaclari);
     final ilkEsler = List<String>.from(o.eslesenIdler);
     final ilkPartnerEsleri = {
@@ -1462,10 +1496,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
     void geriAl() {
       o.isMale = ilkIsMale;
       o.element = ilkElement;
-      o.saglikDurumu = ilkSaglik;
-      o.saglikNotlari
-        ..clear()
-        ..addAll(ilkSaglikNotlari);
+      saglikIzi.geriAl(o);
       o.kalemSayaclari
         ..clear()
         ..addAll(ilkSayaclar);
@@ -1503,12 +1534,11 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
         final fark = (o.kalemSayaclari[id] ?? 0) - (ilkSayaclar[id] ?? 0);
         if (fark != 0) farklar[id] = fark;
       }
-      final yeniNotlar = o.saglikNotlari.length > ilkSaglikNotlari.length
-          ? o.saglikNotlari.sublist(ilkSaglikNotlari.length)
-          : const <Map<String, dynamic>>[];
+      final yeniNotlar = List<Map<String, dynamic>>.from(saglikIzi.eklenen);
+      final saglikFarki = o.saglikDurumu - saglikIzi.ilkSayac;
       final esEkle = o.eslesenIdler.where((e) => !ilkEsler.contains(e)).toList();
       final esKaldir = ilkEsler.where((e) => !o.eslesenIdler.contains(e)).toList();
-      final bosMu = alanlar.isEmpty && farklar.isEmpty && o.saglikDurumu == ilkSaglik &&
+      final bosMu = alanlar.isEmpty && farklar.isEmpty && saglikFarki == 0 &&
           yeniNotlar.isEmpty && esEkle.isEmpty && esKaldir.isEmpty;
       // Kapanış animasyonu sırasında ikinci dokunuş alt çubuktaki "AI Takım
       // Kur"a düşüyordu (denetim #3 O7).
@@ -1518,24 +1548,33 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
       });
       Navigator.pop(sheetCtx, 'kaydedildi');
       if (bosMu) return;
-      // Başarı için hiç geri bildirim yoktu (denetim #4 O1).
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('${o.gorunenAd} kaydedildi'),
-        duration: const Duration(seconds: 2),
-      ));
       // Beklenmiyor: çevrimdışıyken kuyruğa girer, bağlanınca gider
-      // (kalıcı önbellek açık). Hata gelirse kullanıcıya söylenir.
+      // (kalıcı önbellek açık). "Kaydedildi" ancak sunucu kabul edince
+      // söylenir; önce söylenip sonra reddedilince öğretmen ikisini birden
+      // görüyordu (denetim #5 1-O3, 6-P6).
+      final ad = o.gorunenAd;
       unawaited(_db
           .ogrenciFarklariniYaz(
             widget.sinifId, o.id,
             alanlar: alanlar,
             kalemFarklari: farklar,
-            saglikFarki: o.saglikDurumu - ilkSaglik,
+            saglikFarki: saglikFarki,
+            kalemHaritasi: !o.kalemHaritasiVar && farklar.isNotEmpty ? Map<String, int>.from(o.kalemSayaclari) : null,
             yeniSaglikNotlari: yeniNotlar,
             esEkle: esEkle,
             esKaldir: esKaldir,
           )
-          .catchError((e) => _hataGoster('Kaydedilemedi: öğrenci silinmiş ya da bağlantı sorunu olabilir.')));
+          .then<void>((eksikEsler) {
+            if (!mounted) return;
+            if (farklar.isNotEmpty) o.kalemHaritasiVar = true;
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text(eksikEsler.isEmpty
+                  ? '$ad kaydedildi'
+                  : '$ad kaydedildi; ama eşleştirilen öğrenci artık yok (başka cihazda silinmiş), eşleşme yapılamadı.'),
+              duration: const Duration(seconds: 2),
+            ));
+          })
+          .catchError((Object e) { _hataGoster(FirestoreService.kartKaydiHataMesaji(e)); }));
     }
 
     Widget bolumBasligi(String metin, {IconData? ikon}) => Padding(
@@ -1677,7 +1716,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                               ),
                               Divider(height: 1, color: r.cizgi),
                             ],
-                            _saglikSatiri(o, setSheetState),
+                            _saglikSatiri(o, setSheetState, saglikIzi),
                           ]),
                         ),
 
