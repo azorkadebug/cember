@@ -38,9 +38,23 @@ void main() async {
       cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
     );
   } catch (_) {}
+  // Skor ekranı dışındayken biten mola: hangi ekranda olursan ol üstte
+  // haber ver (eskiden sessizce düşüyordu).
+  MacDurumu.molaBittiDuyuru = (renkAdi, oyuncu) {
+    genelMesajAnahtari.currentState?.showSnackBar(SnackBar(
+      duration: const Duration(seconds: 8),
+      showCloseIcon: true,
+      content: Text(renkAdi.isEmpty
+          ? 'Mola bitti: ${oyuncu.gorunenAd} oyuna dönebilir.'
+          : 'Mola bitti: ${oyuncu.gorunenAd} ($renkAdi) oyuna dönebilir.'),
+    ));
+  };
   runApp(const CemberApp());
   AcilisBekleme.ilkKareKontrol();
 }
+
+/// Ekrandan bağımsız bildirim şeridi (mola bitti gibi arka plan olayları).
+final genelMesajAnahtari = GlobalKey<ScaffoldMessengerState>();
 
 class CemberApp extends StatelessWidget {
   const CemberApp({super.key});
@@ -51,6 +65,7 @@ class CemberApp extends StatelessWidget {
       builder: (context, themeMode, _) => MaterialApp(
       title: 'Çember',
       debugShowCheckedModeBanner: false,
+      scaffoldMessengerKey: genelMesajAnahtari,
       // Bunlar olmadan Material'ın yerleşik metinleri İngilizce kalıyordu:
       // geri tuşu ipucu "Back", tarih seçici, kopyala/yapıştır menüsü.
       locale: const Locale('tr'),

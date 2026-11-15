@@ -5,8 +5,6 @@ import '../widgets/kalem_simgeleri.dart';
 import '../widgets/simgeler.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:audioplayers/audioplayers.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import '../widgets/girdi.dart';
 import '../models/ogrenci.dart';
@@ -85,12 +83,13 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
   bool _sunum = false;
   /// Süre bitti uyarısı (tam ekran kırmızı, titreşim, düdük) — iki modda da.
   bool _alarmGoster = false;
-  final _ses = AudioPlayer();
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    // Açıkken molaları bu ekran bitirir; MacDurumu ekran dışını üstlenir.
+    MacDurumu.skorEkraniSayisi++;
     _pulseCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
     // Düdük sessiz modda da çalsın ama müziği kesmesin (denetim #4 Y5);
     // ayrıntı MacDurumu.sesBaglaminiKur'da.
@@ -151,11 +150,11 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
     // Süre ve molalar MacDurumu'nda zaten kayıtlı; çıkışta kaydedilecek bir
     // şey yok (eskiden yalnız burada kaydediliyordu, denetim #5 Y3).
     _mac.removeListener(_macDegisti);
+    MacDurumu.skorEkraniSayisi--;
     WidgetsBinding.instance.removeObserver(this);
     _timer?.cancel();
     _pulseCtrl.dispose();
     for (var c in _cezalar) { c.timer.cancel(); }
-    _ses.dispose();
     if (_sunum) unawaited(WakelockPlus.disable());
     super.dispose();
   }
@@ -253,7 +252,7 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
           t.cancel();
           _cezalar.remove(ceza);
           _mac.molaKaldir(ceza.kayit);
-          _cezaBittiUyari(ceza.takimIndex, ceza.oyuncu);
+          _cezaBittiUyari(ceza.takimIndex, ceza.oyuncu, ceza.bitis);
         }
       });
     });
@@ -276,10 +275,10 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
     }
   }
 
-  void _cezaBittiUyari(int takimIndex, Ogrenci oyuncu) {
-    // Düdükle aynı yoldan (sessiz modu aşar); sistem sesi sessiz modda gelmiyordu.
-    unawaited(_ses.play(AssetSource('sounds/sure_bitti.wav')).catchError((_) {}));
-    unawaited(HapticFeedback.heavyImpact());
+  void _cezaBittiUyari(int takimIndex, Ogrenci oyuncu, DateTime bitis) {
+    // "Dı dı dın" (düdükten ayrı). Uygulama içi ses playback oturumunda
+    // sessiz modu da aşar. Telefon bildirimi zaten çaldıysa ikinci ses yok.
+    if (MacDurumu.uygulamaIciSesGerekir(bitis)) MacDurumu.molaSesiCal();
 
     final t = widget.takimlar[takimIndex];
     showDialog(
