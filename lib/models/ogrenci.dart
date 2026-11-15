@@ -56,6 +56,13 @@ class Ogrenci {
   bool buradaMi, isMale;
   /// Kontrol kalemi değerleri — kalem id'sine göre (yeni branş-bağımsız sistem).
   Map<String, int> kalemSayaclari;
+  /// Belgede `kalemSayaclari` haritası gerçekten var mı? Eski şemalı
+  /// (v1.0/1.0.1) belgede yok; sayaçlar yalnız eski alanlarda durur ve
+  /// `kalemSayaclari` buradan tohumlanır. Haritasız belgeye
+  /// `kalemSayaclari.sari_kart` artımı yazmak haritayı YALNIZ o anahtarla
+  /// yaratıp diğer sayaçları görünmez kılıyordu (denetim #5 O2); bu bayrak
+  /// kart kaydında tohumlanmış haritanın bütün olarak yazılmasını sağlar.
+  bool kalemHaritasiVar;
   String? element;
   /// Takım kurarken hep aynı takıma düşmesi istenen öğrencilerin id'leri
   /// (karşılıklı — A, B'nin listesindeyse B de A'nın listesindedir).
@@ -96,6 +103,7 @@ class Ogrenci {
     List<Map<String, dynamic>>? saglikNotlari,
     List<Map<String, dynamic>>? rozetler,
     Map<String, int>? kalemSayaclari,
+    this.kalemHaritasiVar = true,
     this.oncekiKayit,
   }) : eslesenIdler = eslesenIdler ?? [],
        saglikNotlari = saglikNotlari ?? [],
@@ -179,6 +187,10 @@ class Ogrenci {
       puan: puan,
       isMale: isMale,
       element: element,
+      // Sağlık işareti notlarla tutarlı taşınır: not varsa işaret de olsun,
+      // yoksa özel nitelikli veri yeni yılda listede işaretsiz kalıyordu
+      // (denetim #5 4-O2).
+      saglikDurumu: saglikNotlari.length,
       saglikNotlari: saglikNotlari.map((n) => Map<String, dynamic>.from(n)).toList(),
       oncekiKayit: {
         'sinifId': sinifId,
@@ -216,6 +228,7 @@ class Ogrenci {
       saglikNotlari: _haritaListesi(map['saglikNotlari']),
       rozetler: _haritaListesi(map['rozetler']),
       kalemSayaclari: _kalemSayaclariCoz(map),
+      kalemHaritasiVar: map['kalemSayaclari'] is Map,
       oncekiKayit: _oncekiKayitCoz(map['oncekiKayit']),
     );
   }
