@@ -738,6 +738,11 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
 
   Widget _macBanner(BuildContext context) {
     final mac = MacDurumu();
+    // Süre ekran dışında dolduysa bant da söylesin; eskiden "sürüyor"
+    // demeye devam ediyordu (denetim #5 O3).
+    final durum = mac.timerBitti
+        ? "Süre bitti"
+        : mac.duraklatildi ? "Etkinlik duraklatıldı" : "Etkinlik sürüyor";
     // "Teneffüs": limon sarısı bilet.
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 10),
@@ -748,12 +753,13 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
       dolgu: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       child: Row(
         children: [
-          Icon(mac.duraklatildi ? Icons.pause_circle_rounded : Icons.timer_rounded, color: AppTema.ana, size: 24),
+          Icon(mac.timerBitti ? Icons.alarm_rounded : mac.duraklatildi ? Icons.pause_circle_rounded : Icons.timer_rounded,
+              color: AppTema.ana, size: 24),
           const SizedBox(width: 10),
           Expanded(
             child: Semantics(
               button: true,
-              label: '${mac.duraklatildi ? "Etkinlik duraklatıldı" : "Etkinlik devam ediyor"}, etkinliğe dönmek için dokun',
+              label: '$durum, etkinliğe dönmek için dokun',
               excludeSemantics: true,
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
@@ -783,7 +789,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          mac.duraklatildi ? "Etkinlik duraklatıldı" : "Etkinlik sürüyor",
+                          durum,
                           style: const TextStyle(color: AppTema.ana, fontWeight: FontWeight.w800, fontSize: 14),
                         ),
                         if (skor != null)
@@ -814,6 +820,7 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
               mac.duraklatildi ? Icons.play_arrow_rounded : Icons.pause_rounded,
               color: AppTema.ana, size: 22,
             ),
+            // Süreyi gerçekten durdurur/sürdürür (denetim #5 Y2).
             onPressed: () => mac.duraklatildi ? mac.devamEt() : mac.duraklat(),
           ),
           const SizedBox(width: 8),
@@ -1286,7 +1293,9 @@ class _SiniflarEkraniState extends State<SiniflarEkrani> {
       ),
     ];
 
-    MacDurumu().macBaslat(sinif1Id, takimlar);
+    // Deplasman sınıfı da kaydedilir; yoksa yeniden açılışta o kadronun
+    // adları çözülemiyor, takım boş geliyordu (denetim #5 O2).
+    MacDurumu().macBaslat(sinif1Id, takimlar, ekSinifIdler: [sinif2Id]);
     unawaited(AnalyticsService.macBasladi(takimSayisi: 2, oyuncuSayisi: gelenler1.length + gelenler2.length));
     return takimlar;
   }
