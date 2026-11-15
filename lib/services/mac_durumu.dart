@@ -1,10 +1,24 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:ui';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart' show WidgetsBinding, WidgetsBindingObserver, AppLifecycleState;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/ogrenci.dart';
 import '../screens/skor_ekrani.dart';
 import 'firestore_service.dart';
+
+/// Skor ekranındaki 2 dakikalık molanın kaydı: hangi takımdan hangi oyuncu,
+/// ne zaman bitiyor. Skor ekranından çıkınca molalar siliniyordu (denetim
+/// #5 D7); artık süre gibi burada tutuluyor.
+class MacMolasi {
+  final int takimIndex;
+  final String oyuncuId;
+  final DateTime bitis;
+  const MacMolasi({required this.takimIndex, required this.oyuncuId, required this.bitis});
+}
 
 /// Yarım kalan maçın cihazda saklanması.
 ///
@@ -17,7 +31,15 @@ import 'firestore_service.dart';
 /// çıkar. Ayrıca kayıt kullanıcı bazlı anahtarda tutulur ve çıkışta
 /// silinir — yoksa okulda paylaşılan bir tablette sonraki öğretmen
 /// öncekinin öğrencilerini görür.
-class MacDurumu extends ChangeNotifier {
+///
+/// SÜRE: Tek doğruluk kaynağı burası (denetim #5 Y2/Y3/O3). Çalışan süre
+/// bitiş anı (duvar saati) olarak tutulur, kalan = bitiş − şimdi. Eskiden
+/// skor ekranı kendi sayacını tutuyor, buraya yalnız ekrandan çıkarken
+/// "kalan + çıkış anı" yazıyordu: sayfa yenilenince süre son girişe geri
+/// sarılıyor, bant ⏸ yalnız bayrak değiştiriyor, ekran dışında biten süre
+/// alarm çalmıyordu. Her değişim (başlat, durdur, sıfırla, süre seçimi,
+/// duraklat) anında diske yazılır; her saniye yazılmaz.
+class MacDurumu extends ChangeNotifier with WidgetsBindingObserver {
   static final MacDurumu _instance = MacDurumu._();
   factory MacDurumu() => _instance;
   MacDurumu._();
@@ -33,81 +55,233 @@ class MacDurumu extends ChangeNotifier {
   static String? get _anahtar =>
       _aktifUid == null ? null : '${_anahtarOnEki}_$_aktifUid';
 
+  /// Saat. Testte sahte saat verilir; süre hesabı DateTime.now'ı doğrudan
+  /// çağırmaz.
+  static DateTime Function() saat = DateTime.now;
+
+  /// Süre bitince bir kez çağrılır (düdük + titreşim). Skor ekranı açık
+  /// olmasa da çalar; testte sayaçla değiştirilir.
+  @visibleForTesting
+  static void Function() alarmCal = _varsayilanAlarm;
+
+  /// Geri yüklemede öğrenci adlarının çözüldüğü kaynak (Firestore).
+  @visibleForTesting
+  static Future<List<Ogrenci>> Function(String uid, String sinifId) ogrenciKaynagi =
+      (uid, sinifId) => FirestoreService(uid: uid).ogrencileriGetir(sinifId);
+
   List<TakimBilgi>? _takimlar;
   String? _sinifId;
+  /// Sınıflar Arası Yarışma'da deplasman sınıfı. Eskiden kaydedilmiyordu,
+  /// geri yüklemede deplasman kadrosu boş geliyordu (denetim #5 O2).
+  List<String> _ekSinifIdler = const [];
   bool _duraklatildi = false;
+  /// Bant ⏸ çalışan bir süreyi durdurduysa ▶ onu yeniden başlatır; süre
+  /// zaten duruyorsa ▶ kendiliğinden başlatmaz.
+  bool _bantDurdurdu = false;
 
-  // Timer & skor durumu
-  int kalanSaniye = 0;
-  int toplamSaniye = 0;
-  bool timerCalisiyor = false;
-  bool timerBitti = false;
+  int _toplamSaniye = 0;
+  /// Süre dururken kalan saniye.
+  int _durKalan = 0;
+  /// Süre çalışırken bitiş anı; duruyorsa null.
+  DateTime? _bitis;
+  bool _timerBitti = false;
+  final List<MacMolasi> _molalar = [];
 
-  /// Timer'ın duraklatıldığı (ekrandan çıkıldığı) zaman
-  DateTime? _timerCikisZamani;
+  Timer? _bitisZamanlayici;
+  bool _gozlemciEklendi = false;
 
   List<TakimBilgi>? get takimlar => _takimlar;
   String? get sinifId => _sinifId;
+  List<String> get ekSinifIdler => List.unmodifiable(_ekSinifIdler);
   bool get aktif => _takimlar != null;
   bool get duraklatildi => _duraklatildi;
 
-  void macBaslat(String sinifId, List<TakimBilgi> takimlar) {
+  int get toplamSaniye => _toplamSaniye;
+  bool get timerCalisiyor => _bitis != null;
+  bool get timerBitti => _timerBitti;
+  int get kalanSaniye {
+    final b = _bitis;
+    if (b == null) return _durKalan;
+    final ms = b.difference(saat()).inMilliseconds;
+    return ms <= 0 ? 0 : (ms / 1000).ceil();
+  }
+
+  List<MacMolasi> get molalar => List.unmodifiable(_molalar);
+
+  void macBaslat(String sinifId, List<TakimBilgi> takimlar, {List<String> ekSinifIdler = const []}) {
+    _bellegiSifirla();
     _sinifId = sinifId;
+    _ekSinifIdler = List.of(ekSinifIdler);
     _takimlar = takimlar;
-    _duraklatildi = false;
-    kalanSaniye = 0;
-    toplamSaniye = 0;
-    timerCalisiyor = false;
-    timerBitti = false;
-    _timerCikisZamani = null;
     kaydet();
     notifyListeners();
   }
 
+  // --- Süre ---
+
+  /// Hazır süre seçildi: süre durur, seçilen değere kurulur.
+  void sureAyarla(int saniye) {
+    _zamanlayiciIptal();
+    _toplamSaniye = saniye;
+    _durKalan = saniye;
+    _bitis = null;
+    _timerBitti = false;
+    _bantDurdurdu = false;
+    _degisti();
+  }
+
+  void baslat() {
+    if (_timerBitti || _bitis != null) return;
+    // Süre seçilmeden BAŞLAT'a basınca varsayılan 1 dakika (eskiden düğme
+    // basılıyor ama hiçbir şey olmuyordu).
+    if (_durKalan <= 0) {
+      _toplamSaniye = 60;
+      _durKalan = 60;
+    }
+    _bitis = saat().add(Duration(seconds: _durKalan));
+    _duraklatildi = false;
+    _bantDurdurdu = false;
+    _zamanlayiciKur();
+    _degisti();
+  }
+
+  void durdur() {
+    if (_bitis == null || kontrolEt()) return;
+    _durKalan = kalanSaniye;
+    _bitis = null;
+    _zamanlayiciIptal();
+    _degisti();
+  }
+
+  void baslaDurdur() => timerCalisiyor ? durdur() : baslat();
+
+  /// Seçili süreye geri döner, süre durur.
+  void sifirla() {
+    _zamanlayiciIptal();
+    _durKalan = _toplamSaniye;
+    _bitis = null;
+    _timerBitti = false;
+    _bantDurdurdu = false;
+    _degisti();
+  }
+
+  /// Sınıflarım bandındaki ⏸: eskiden yalnız bayraktı, süre akmaya devam
+  /// ediyordu (denetim #5 Y2). Artık süreyi gerçekten durdurur.
   void duraklat() {
+    kontrolEt();
     _duraklatildi = true;
-    notifyListeners();
+    if (_bitis != null) {
+      _durKalan = kalanSaniye;
+      _bitis = null;
+      _bantDurdurdu = true;
+      _zamanlayiciIptal();
+    }
+    _degisti();
   }
 
   void devamEt() {
     _duraklatildi = false;
+    if (_bantDurdurdu && !_timerBitti && _durKalan > 0) {
+      baslat();
+      return;
+    }
+    _bantDurdurdu = false;
+    _degisti();
+  }
+
+  /// Süre dolduysa bitmiş duruma geçer, alarmı BİR KEZ çalar. Bitiş
+  /// zamanlayıcısı, skor ekranının saniye sayacı ve uygulamanın öne gelişi
+  /// bunu çağırır; hangisi önce görürse o bitirir. Bittiyse true.
+  bool kontrolEt({bool alarm = true}) {
+    final b = _bitis;
+    if (b == null || saat().isBefore(b)) return false;
+    _zamanlayiciIptal();
+    _bitis = null;
+    _durKalan = 0;
+    _timerBitti = true;
+    _bantDurdurdu = false;
+    if (alarm) alarmCal();
+    _degisti();
+    return true;
+  }
+
+  void _zamanlayiciKur() {
+    _bitisZamanlayici?.cancel();
+    final b = _bitis;
+    if (b == null) return;
+    final kalan = b.difference(saat());
+    _bitisZamanlayici = Timer(kalan.isNegative ? Duration.zero : kalan, () {
+      // Timer duvar saatinden biraz erken uyanabilir; bitmediyse yeniden kur.
+      if (!kontrolEt() && _bitis != null) _zamanlayiciKur();
+    });
+    // iOS arka planda Timer'ı donduruyor; öne gelince hemen kontrol et ki
+    // arka planda biten süre dönüşte bir kez alarm çalsın (denetim #4 Y4).
+    if (!_gozlemciEklendi) {
+      WidgetsBinding.instance.addObserver(this);
+      _gozlemciEklendi = true;
+    }
+  }
+
+  void _zamanlayiciIptal() {
+    _bitisZamanlayici?.cancel();
+    _bitisZamanlayici = null;
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) kontrolEt();
+  }
+
+  void _degisti() {
+    kaydet();
     notifyListeners();
   }
 
-  /// Skor ekranından çıkarken durumu kaydet
-  void durumKaydet({
-    required int kalanSn,
-    required int toplamSn,
-    required bool calisiyor,
-    required bool bitti,
-  }) {
-    kalanSaniye = kalanSn;
-    toplamSaniye = toplamSn;
-    timerBitti = bitti;
-    // Timer çalışıyorsa çıkış zamanını kaydet, geri dönünce farkı hesaplayalım
-    if (calisiyor && !bitti) {
-      timerCalisiyor = true;
-      _timerCikisZamani = DateTime.now();
-    } else {
-      timerCalisiyor = false;
-      _timerCikisZamani = null;
-    }
+  // --- Mola ---
+
+  MacMolasi molaEkle(int takimIndex, String oyuncuId) {
+    final m = MacMolasi(
+      takimIndex: takimIndex,
+      oyuncuId: oyuncuId,
+      bitis: saat().add(const Duration(seconds: 120)),
+    );
+    _molalar.add(m);
     kaydet();
+    return m;
   }
 
-  /// Skor ekranına dönerken geçen süreyi hesapla
-  int kalanSaniyeHesapla() {
-    if (_timerCikisZamani != null && timerCalisiyor) {
-      final gecenSaniye = DateTime.now().difference(_timerCikisZamani!).inSeconds;
-      final yeniKalan = kalanSaniye - gecenSaniye;
-      kalanSaniye = yeniKalan > 0 ? yeniKalan : 0;
-      if (kalanSaniye <= 0) {
-        timerCalisiyor = false;
-        timerBitti = true;
+  void molaKaldir(MacMolasi m) {
+    if (_molalar.remove(m)) kaydet();
+  }
+
+  /// Düdük skor ekranı açık olmasa da sessiz modda çalsın (playback) ama
+  /// Bluetooth'tan çalan müziği kesmesin: duckOthers müziği kısar, düdük
+  /// bitince geri getirir (denetim #4 Y5). Web'de desteklenmez, sessizce
+  /// geçilir.
+  static Future<void> sesBaglaminiKur() => AudioPlayer.global
+      .setAudioContext(AudioContext(
+        iOS: AudioContextIOS(
+          category: AVAudioSessionCategory.playback,
+          options: const {AVAudioSessionOptions.duckOthers},
+        ),
+        android: const AudioContextAndroid(audioFocus: AndroidAudioFocus.gainTransientMayDuck),
+      ))
+      .catchError((_) {});
+
+  static AudioPlayer? _alarmCalar;
+
+  static void _varsayilanAlarm() {
+    unawaited(() async {
+      await sesBaglaminiKur();
+      final p = _alarmCalar ??= AudioPlayer();
+      await p.play(AssetSource('sounds/sure_bitti.wav')).catchError((_) {});
+    }());
+    unawaited(() async {
+      for (var i = 0; i < 3; i++) {
+        unawaited(HapticFeedback.heavyImpact());
+        await Future<void>.delayed(const Duration(milliseconds: 250));
       }
-      _timerCikisZamani = null;
-    }
-    return kalanSaniye;
+    }());
   }
 
   void macBitir() {
@@ -117,14 +291,17 @@ class MacDurumu extends ChangeNotifier {
   }
 
   void _bellegiSifirla() {
+    _zamanlayiciIptal();
     _takimlar = null;
     _sinifId = null;
+    _ekSinifIdler = const [];
     _duraklatildi = false;
-    kalanSaniye = 0;
-    toplamSaniye = 0;
-    timerCalisiyor = false;
-    timerBitti = false;
-    _timerCikisZamani = null;
+    _bantDurdurdu = false;
+    _toplamSaniye = 0;
+    _durKalan = 0;
+    _bitis = null;
+    _timerBitti = false;
+    _molalar.clear();
   }
 
   // --- Yerel depolama ---
@@ -140,11 +317,23 @@ class MacDurumu extends ChangeNotifier {
     final data = {
       'uid': _aktifUid,
       'sinifId': _sinifId,
-      'toplamSaniye': toplamSaniye,
+      if (_ekSinifIdler.isNotEmpty) 'ekSinifIdler': _ekSinifIdler,
+      'toplamSaniye': _toplamSaniye,
       'kalanSaniye': kalanSaniye,
       'timerCalisiyor': timerCalisiyor,
-      'timerBitti': timerBitti,
-      'cikisZamani': _timerCikisZamani?.millisecondsSinceEpoch,
+      'timerBitti': _timerBitti,
+      // Çalışırken bitiş anı; kalan her okumada bundan hesaplanır.
+      'bitis': _bitis?.millisecondsSinceEpoch,
+      'duraklatildi': _duraklatildi,
+      'bantDurdurdu': _bantDurdurdu,
+      if (_molalar.isNotEmpty)
+        'molalar': _molalar
+            .map((m) => {
+                  'takim': m.takimIndex,
+                  'id': m.oyuncuId,
+                  'bitis': m.bitis.millisecondsSinceEpoch,
+                })
+            .toList(),
       'takimlar': _takimlar!
           .map((t) => {
                 'isim': t.isim,
@@ -233,20 +422,25 @@ class MacDurumu extends ChangeNotifier {
         await _temizle();
         return false;
       }
+      final ekSinifIdler =
+          (data['ekSinifIdler'] as List?)?.map((e) => e.toString()).toList() ?? const <String>[];
 
-      // Adları Firestore'dan getir.
-      final ogrenciler = await FirestoreService(uid: uid).ogrencileriGetir(sinifId);
+      // Adları Firestore'dan getir. Yarışmada deplasman sınıfınınkiler de
+      // (denetim #5 O2); o sınıf okunamazsa maçı kaybetmektense o kadro
+      // boş gelsin.
+      final ogrenciler = [
+        ...await ogrenciKaynagi(uid, sinifId),
+        for (final ek in ekSinifIdler)
+          ...await ogrenciKaynagi(uid, ek).catchError((_) => <Ogrenci>[]),
+      ];
       final adaGore = {for (final o in ogrenciler) o.id: o};
 
+      _zamanlayiciIptal();
       _sinifId = sinifId;
-      toplamSaniye = data['toplamSaniye'] ?? 0;
-      kalanSaniye = data['kalanSaniye'] ?? 0;
-      timerCalisiyor = data['timerCalisiyor'] ?? false;
-      timerBitti = data['timerBitti'] ?? false;
-      if (data['cikisZamani'] != null) {
-        _timerCikisZamani =
-            DateTime.fromMillisecondsSinceEpoch(data['cikisZamani']);
-      }
+      _ekSinifIdler = ekSinifIdler;
+      _sureyiCoz(data);
+      _duraklatildi = data['duraklatildi'] == true;
+      _bantDurdurdu = data['bantDurdurdu'] == true;
 
       final takimlarData = (data['takimlar'] as List).cast<Map<String, dynamic>>();
       _takimlar = takimlarData.map((t) {
@@ -290,21 +484,58 @@ class MacDurumu extends ChangeNotifier {
         );
       }).toList();
 
+      _molalar
+        ..clear()
+        ..addAll(((data['molalar'] as List?) ?? const []).map((m) {
+          final mm = m as Map<String, dynamic>;
+          return MacMolasi(
+            takimIndex: (mm['takim'] as num).toInt(),
+            oyuncuId: mm['id'] as String,
+            bitis: DateTime.fromMillisecondsSinceEpoch((mm['bitis'] as num).toInt()),
+          );
+        }).where((m) => m.bitis.isAfter(saat())));
+
       // Kadro tamamen boşaldıysa (sınıf silinmiş vb.) maçı kapat.
       if (_takimlar!.every((t) => t.oyuncular.isEmpty)) {
         macBitir();
         return false;
       }
 
+      // Uygulama kapalıyken süre dolduysa "süre bitti" durumunda açılır;
+      // alarm çalınmaz (saatler sonra açılmış olabilir). Dolmadıysa bitiş
+      // zamanlayıcısı yeniden kurulur.
+      if (!kontrolEt(alarm: false) && _bitis != null) _zamanlayiciKur();
+
       // Yeni biçimde ve doğru anahtarla tekrar yaz (eski kayıttan geldiyse).
       await kaydet();
-
-      kalanSaniyeHesapla();
       notifyListeners();
       return true;
     } catch (_) {
+      _bellegiSifirla();
       await _temizle();
       return false;
+    }
+  }
+
+  /// Kayıttaki süre alanlarını okur. Yeni biçim bitiş anını (`bitis`)
+  /// tutar; 2.0.1 ve öncesi "kalan saniye + ekrandan çıkış anı"
+  /// (`cikisZamani`) tutuyordu — bitiş = çıkış + kalan diye çevrilir.
+  /// Çalışıyor deyip ikisi de yoksa (eski sürümde skor değişince yazılan
+  /// bayat kayıt) süre durmuş kabul edilir.
+  void _sureyiCoz(Map<String, dynamic> data) {
+    _toplamSaniye = (data['toplamSaniye'] as num?)?.toInt() ?? 0;
+    final kalan = (data['kalanSaniye'] as num?)?.toInt() ?? 0;
+    _timerBitti = data['timerBitti'] == true;
+    _durKalan = kalan < 0 ? 0 : kalan;
+    _bitis = null;
+    if (data['timerCalisiyor'] == true && !_timerBitti) {
+      final bitisMs = (data['bitis'] as num?)?.toInt();
+      final cikisMs = (data['cikisZamani'] as num?)?.toInt();
+      if (bitisMs != null) {
+        _bitis = DateTime.fromMillisecondsSinceEpoch(bitisMs);
+      } else if (cikisMs != null) {
+        _bitis = DateTime.fromMillisecondsSinceEpoch(cikisMs).add(Duration(seconds: _durKalan));
+      }
     }
   }
 }

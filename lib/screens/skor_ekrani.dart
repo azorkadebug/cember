@@ -44,11 +44,16 @@ class _Ceza {
   final Ogrenci oyuncu;
   int kalanSaniye;
   late Timer timer;
+  /// MacDurumu'ndaki kaydı: ekrandan çıkınca mola silinmesin (denetim #5 D7).
+  final MacMolasi kayit;
 
-  _Ceza({required this.takimIndex, required this.oyuncu})
-      : kalanSaniye = 120,
-        bitis = DateTime.now().add(const Duration(seconds: 120));
+  _Ceza({required this.takimIndex, required this.oyuncu, required this.kayit})
+      : bitis = kayit.bitis,
+        kalanSaniye = _kalan(kayit.bitis);
   final DateTime bitis;
+
+  static int _kalan(DateTime bitis) =>
+      ((bitis.difference(MacDurumu.saat()).inMilliseconds / 1000).ceil()).clamp(0, 120);
 }
 
 class SkorEkrani extends StatefulWidget {
@@ -60,15 +65,19 @@ class SkorEkrani extends StatefulWidget {
 }
 
 class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, WidgetsBindingObserver {
+  /// Yalnız ekranı saniyede bir tazeler. Sürenin kendisi MacDurumu'nda,
+  /// bitiş anına bağlı tutulur (denetim #4 Y4, #5 Y3): ekran kapanınca,
+  /// sayfa yenilenince ya da Sınıflarım bandından duraklatılınca bile tek
+  /// doğru değer orada.
   Timer? _timer;
-  int _kalanSaniye = 0;
-  /// Süre geri sayımı tik saymaz, bitiş anına bağlıdır: iOS uygulamayı
-  /// arka plana alınca Timer donuyor, kaçırılan saniyeler geri gelmiyordu
-  /// (denetim #4 Y4). Kalan = bitiş − şimdi.
-  DateTime? _bitis;
-  int _toplamSaniye = 0;
-  bool _timerCalisiyor = false;
-  bool _timerBitti = false;
+  final MacDurumu _mac = MacDurumu();
+  int get _kalanSaniye => _mac.kalanSaniye;
+  int get _toplamSaniye => _mac.toplamSaniye;
+  bool get _timerCalisiyor => _mac.timerCalisiyor;
+  bool get _timerBitti => _mac.timerBitti;
+  /// Bitişi bu ekran açıkken mi gördük? Ekran dışında biten süre için alarm
+  /// MacDurumu'nda zaten çaldı; dönüşte kırmızı katman yeniden açılmaz.
+  bool _gorulenBitti = false;
   late AnimationController _pulseCtrl;
   final List<_Ceza> _cezalar = [];
   /// Sunum modu: tablet/projeksiyon için tam ekran, devasa skor, dokununca
@@ -83,17 +92,16 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _pulseCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
-    // Düdük sessiz modda da çalsın (playback) ama Bluetooth'tan çalan müziği
-    // kesmesin: duckOthers müziği kısar, düdük bitince geri getirir
-    // (denetim #4 Y5). Web'de desteklenmez, sessizce geçilir.
-    unawaited(AudioPlayer.global.setAudioContext(AudioContext(
-      iOS: AudioContextIOS(
-        category: AVAudioSessionCategory.playback,
-        options: const {AVAudioSessionOptions.duckOthers},
-      ),
-      android: const AudioContextAndroid(audioFocus: AndroidAudioFocus.gainTransientMayDuck),
-    )).catchError((_) {}));
-    _durumGeriYukle();
+    // Düdük sessiz modda da çalsın ama müziği kesmesin (denetim #4 Y5);
+    // ayrıntı MacDurumu.sesBaglaminiKur'da.
+    unawaited(MacDurumu.sesBaglaminiKur());
+    // Ekran dışındayken dolmuş olabilir: önce bitir (alarm orada bir kez
+    // çalar), sonra "görüldü" say ki katman dönüşte yeniden açılmasın.
+    _mac.kontrolEt();
+    _gorulenBitti = _mac.timerBitti;
+    _mac.addListener(_macDegisti);
+    if (_mac.timerCalisiyor) _sayaciKur();
+    _molalariGeriYukle();
   }
 
   @override
@@ -105,43 +113,44 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
     }
   }
 
-  /// Süreyi bitiş anından hesaplar; bitince alarmı çalar.
+  /// Süreyi bitiş anından hesaplar; dolduysa MacDurumu bitirir ve
+  /// dinleyici (_macDegisti) kırmızı katmanı açar.
   void _tik() {
-    if (_bitis == null) return;
-    final kalan = (_bitis!.difference(DateTime.now()).inMilliseconds / 1000).ceil();
+    if (_mac.kontrolEt()) return;
     setState(() {
-      _kalanSaniye = kalan < 0 ? 0 : kalan;
       if (_kalanSaniye <= 10 && _kalanSaniye > 0 && !_pulseCtrl.isAnimating) _pulseCtrl.repeat(reverse: true);
-      if (_kalanSaniye <= 0) {
-        _kalanSaniye = 0; _timerCalisiyor = false; _timerBitti = true; _bitis = null;
-        _timer?.cancel(); _pulseCtrl.reset();
-        _sureBittiAlarmi();
-      }
     });
   }
 
-  void _durumGeriYukle() {
-    final mac = MacDurumu();
-    if (mac.toplamSaniye > 0) {
-      _toplamSaniye = mac.toplamSaniye;
-      _kalanSaniye = mac.kalanSaniyeHesapla();
-      _timerBitti = mac.timerBitti;
-      // Timer çalışıyordu ve henüz bitmemişse devam ettir
-      if (mac.timerCalisiyor && !_timerBitti && _kalanSaniye > 0) {
-        WidgetsBinding.instance.addPostFrameCallback((_) => _baslaDurdur());
-      }
+  void _sayaciKur() {
+    _timer?.cancel();
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) => _tik());
+  }
+
+  /// Süre başka yerden de değişebilir (bant ⏸/▶, ekran dışında bitiş);
+  /// ekran her değişimde MacDurumu'ndan tazelenir.
+  void _macDegisti() {
+    if (!mounted) return;
+    final yeniBitti = _mac.timerBitti && !_gorulenBitti;
+    _gorulenBitti = _mac.timerBitti;
+    if (_mac.timerCalisiyor) {
+      if (!(_timer?.isActive ?? false)) _sayaciKur();
+    } else {
+      _timer?.cancel();
+      if (!_alarmGoster) _pulseCtrl.reset();
+    }
+    if (yeniBitti) {
+      _sureBittiAlarmi();
+    } else {
+      setState(() {});
     }
   }
 
   @override
   void dispose() {
-    // Çıkarken durumu kaydet
-    MacDurumu().durumKaydet(
-      kalanSn: _kalanSaniye,
-      toplamSn: _toplamSaniye,
-      calisiyor: _timerCalisiyor,
-      bitti: _timerBitti,
-    );
+    // Süre ve molalar MacDurumu'nda zaten kayıtlı; çıkışta kaydedilecek bir
+    // şey yok (eskiden yalnız burada kaydediliyordu, denetim #5 Y3).
+    _mac.removeListener(_macDegisti);
     WidgetsBinding.instance.removeObserver(this);
     _timer?.cancel();
     _pulseCtrl.dispose();
@@ -151,41 +160,18 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
     super.dispose();
   }
 
-  void _sureAyarla(int saniye) {
-    _timer?.cancel();
-    setState(() { _kalanSaniye = saniye; _toplamSaniye = saniye; _timerCalisiyor = false; _timerBitti = false; });
-    _pulseCtrl.reset();
-  }
+  void _sureAyarla(int saniye) => _mac.sureAyarla(saniye);
 
   void _baslaDurdur() {
     if (_timerBitti) return;
-    if (_timerCalisiyor) {
-      _timer?.cancel();
-      _pulseCtrl.reset();
-      _bitis = null;
-      setState(() => _timerCalisiyor = false);
-    } else {
-      // Süre seçilmeden BAŞLAT'a basınca burada sessizce return ediliyordu:
-      // düğme etkin görünüyor, basılıyor, hiçbir şey olmuyordu. Artık
-      // varsayılan 1 dakikayla başlıyor.
-      if (_kalanSaniye <= 0) {
-        _toplamSaniye = 60;
-        _kalanSaniye = 60;
-        _timerBitti = false;
-      }
-      // Nabız animasyonu süre boyunca değil yalnız son 10 sn'de: 60 fps
-      // sürekli çizim 10 dk'lık maçta tableti ısıtıyordu (denetim #3 O1).
-      if (_kalanSaniye <= 10) _pulseCtrl.repeat(reverse: true);
-      _bitis = DateTime.now().add(Duration(seconds: _kalanSaniye));
-      setState(() => _timerCalisiyor = true);
-      _timer = Timer.periodic(const Duration(seconds: 1), (_) => _tik());
-    }
+    // Süre seçilmeden BAŞLAT: MacDurumu varsayılan 1 dakikayla başlatır.
+    _mac.baslaDurdur();
+    // Nabız animasyonu süre boyunca değil yalnız son 10 sn'de: 60 fps
+    // sürekli çizim 10 dk'lık maçta tableti ısıtıyordu (denetim #3 O1).
+    if (_timerCalisiyor && _kalanSaniye <= 10) _pulseCtrl.repeat(reverse: true);
   }
 
-  void _sifirla() {
-    _timer?.cancel(); _pulseCtrl.reset();
-    setState(() { _kalanSaniye = _toplamSaniye; _timerCalisiyor = false; _timerBitti = false; });
-  }
+  void _sifirla() => _mac.sifirla();
 
   String _sureFmt(int saniye) {
     final m = saniye ~/ 60;
@@ -193,18 +179,13 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
     return "${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}";
   }
 
-  /// Süre bitince: tam ekran kırmızı katman + titreşim + kısa düdük.
-  /// Eskiden yalnız sayaç kırmızıya dönüyordu; salonda kimse fark etmiyordu.
+  /// Süre bitince: tam ekran kırmızı katman. Eskiden yalnız sayaç kırmızıya
+  /// dönüyordu; salonda kimse fark etmiyordu. Düdük ve titreşim
+  /// MacDurumu.alarmCal'da: ekran dışında bitse de bir kez çalsın
+  /// (denetim #5 O3).
   void _sureBittiAlarmi() {
     setState(() => _alarmGoster = true);
     _pulseCtrl.repeat(reverse: true);
-    unawaited(_ses.play(AssetSource('sounds/sure_bitti.wav')).catchError((_) {}));
-    unawaited(() async {
-      for (var i = 0; i < 3; i++) {
-        unawaited(HapticFeedback.heavyImpact());
-        await Future<void>.delayed(const Duration(milliseconds: 250));
-      }
-    }());
   }
 
   void _sunumuAcKapa() {
@@ -260,18 +241,39 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
   }
 
   void _cezaBaslat(int takimIndex, Ogrenci oyuncu) {
-    final ceza = _Ceza(takimIndex: takimIndex, oyuncu: oyuncu);
+    final ceza = _Ceza(takimIndex: takimIndex, oyuncu: oyuncu, kayit: _mac.molaEkle(takimIndex, oyuncu.id));
+    setState(() => _cezaIzle(ceza));
+  }
+
+  void _cezaIzle(_Ceza ceza) {
     ceza.timer = Timer.periodic(const Duration(seconds: 1), (t) {
       setState(() {
-        ceza.kalanSaniye = ((ceza.bitis.difference(DateTime.now()).inMilliseconds / 1000).ceil()).clamp(0, 120);
+        ceza.kalanSaniye = _Ceza._kalan(ceza.bitis);
         if (ceza.kalanSaniye <= 0) {
           t.cancel();
           _cezalar.remove(ceza);
-          _cezaBittiUyari(takimIndex, oyuncu);
+          _mac.molaKaldir(ceza.kayit);
+          _cezaBittiUyari(ceza.takimIndex, ceza.oyuncu);
         }
       });
     });
-    setState(() => _cezalar.add(ceza));
+    _cezalar.add(ceza);
+  }
+
+  /// Ekrandan çıkıp dönünce süren molalar kaldığı yerden devam eder
+  /// (denetim #5 D7). Ekran dışındayken bitenler sessizce düşer: oyuncu
+  /// oyuna dönmüş sayılır.
+  void _molalariGeriYukle() {
+    for (final m in _mac.molalar) {
+      final oyuncu = m.takimIndex < widget.takimlar.length
+          ? widget.takimlar[m.takimIndex].oyuncular.where((o) => o.id == m.oyuncuId).firstOrNull
+          : null;
+      if (oyuncu == null || !m.bitis.isAfter(MacDurumu.saat())) {
+        _mac.molaKaldir(m);
+        continue;
+      }
+      _cezaIzle(_Ceza(takimIndex: m.takimIndex, oyuncu: oyuncu, kayit: m));
+    }
   }
 
   void _cezaBittiUyari(int takimIndex, Ogrenci oyuncu) {
@@ -371,9 +373,8 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
         if (didPop) return;
         if (_alarmGoster) { setState(() => _alarmGoster = false); return; }
         if (_sunum) { _sunumuAcKapa(); return; }
-        // Süre bilinçli olarak DURDURULMUYOR: dispose'da çıkış zamanı
-        // kaydediliyor, "Devam Et" ile dönüşte geçen süre düşülüyor
-        // (mac_durumu.dart kalanSaniyeHesapla). Eskiden burada
+        // Süre bilinçli olarak DURDURULMUYOR: bitiş anı MacDurumu'nda,
+        // ekran dışında da işler, dolunca orada alarm çalar. Eskiden burada
         // _baslaDurdur() çağrılıp sayaç sessizce donuyordu (denetim O1).
         Navigator.pop(context, 'geridon');
       },
@@ -753,6 +754,7 @@ class _SkorEkraniState extends State<SkorEkrani> with TickerProviderStateMixin, 
                     InkWell(
                       onTap: () {
                         c.timer.cancel();
+                        _mac.molaKaldir(c.kayit);
                         setState(() => _cezalar.remove(c));
                       },
                       customBorder: const CircleBorder(),
