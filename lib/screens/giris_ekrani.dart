@@ -20,7 +20,7 @@ class GirisEkrani extends StatefulWidget {
   /// pubspec.yaml'daki `version:` ile AYNI tutulmalı — test/surum_test.dart
   /// ikisi ayrışınca kırılır (denetim #5 D2: 2.0.1'de "v2.0.0" yazıyordu).
   static const String surum =
-      String.fromEnvironment('APP_VERSION', defaultValue: 'v2.0.1');
+      String.fromEnvironment('APP_VERSION', defaultValue: 'v2.0.2');
 
   @override
   State<GirisEkrani> createState() => _GirisEkraniState();
