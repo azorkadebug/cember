@@ -1,4 +1,4 @@
-// Mola / süre bitişi için telefon alarmı (AlarmKit / yerel bildirim) ve
+// Mola / süre bitişi için telefon bildirimi (zamana duyarlı, özel ses) ve
 // skor ekranı dışında biten molanın uygulama içi duyurusu.
 //
 // Yerel kanal sahte: gönderilen alarm listeleri kaydedilir. Saat enjekte;
@@ -14,8 +14,9 @@ import 'package:cember/services/mac_durumu.dart';
 
 late DateTime simdi;
 var alarmSayisi = 0;
+var molaSesiSayisi = 0;
 final gonderilenler = <List<Map<String, Object>>>[];
-String yerelYanit = 'alarmkit';
+String yerelYanit = 'bildirim';
 final duyurular = <String>[];
 
 final _ayse = Ogrenci(id: 'a1', ad: 'Ayşe', isMale: false);
@@ -46,7 +47,7 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     AlarmServisi.sifirla();
     AlarmServisi.destekleniyor = () => true;
-    yerelYanit = 'alarmkit';
+    yerelYanit = 'bildirim';
     gonderilenler.clear();
     AlarmServisi.gonder = (liste) async {
       gonderilenler.add(liste);
@@ -57,6 +58,8 @@ void main() {
     MacDurumu.saat = () => simdi;
     alarmSayisi = 0;
     MacDurumu.alarmCal = () => alarmSayisi++;
+    molaSesiSayisi = 0;
+    MacDurumu.molaSesiCal = () => molaSesiSayisi++;
     MacDurumu.skorEkraniSayisi = 0;
     duyurular.clear();
     MacDurumu.molaBittiDuyuru = (renk, o) => duyurular.add('$renk:${o.ad}');
@@ -76,6 +79,7 @@ void main() {
       final mola = gonderilenler.last.single;
       expect(mola['id'], 'mola_a1');
       expect(mola['baslik'], 'Mola bitti');
+      expect(mola['ses'], 'mola_bitti.wav');
       expect(mola['govde'], contains('Kırmızı'));
       expect(mola['govde'], isNot(contains('Ayşe')));
       expect(mola['zaman'], simdi.add(const Duration(seconds: 120)).millisecondsSinceEpoch);
@@ -87,6 +91,7 @@ void main() {
       m.baslat();
       await _bekle();
       expect(_sonKimlikler, ['sure']);
+      expect(gonderilenler.last.single['ses'], 'sure_bitti.wav');
       m.durdur();
       await _bekle();
       expect(_sonKimlikler, isEmpty);
@@ -167,17 +172,6 @@ void main() {
   });
 
   group('Uygulama içi düdük iki kez çalmasın', () {
-    test('AlarmKit: telefon çalıyor, uygulama düdüğü çalmaz', () async {
-      final m = _mac();
-      m.sureAyarla(60);
-      m.baslat();
-      await _bekle();
-      expect(AlarmServisi.yol, AlarmYolu.alarmKit);
-      simdi = simdi.add(const Duration(seconds: 61));
-      expect(m.kontrolEt(), isTrue);
-      expect(alarmSayisi, 0);
-    });
-
     test('Bildirim: zamanında (uygulama önde) düdük çalar; geç fark edildiyse çalmaz', () async {
       yerelYanit = 'bildirim';
       final m = _mac();
@@ -210,8 +204,7 @@ void main() {
   });
 
   group('Skor ekranı dışında biten mola', () {
-    testWidgets('duyurulur, mola düşer, (yerel alarm yoksa) düdük çalar', (tester) async {
-      yerelYanit = 'yok';
+    testWidgets('duyurulur, mola düşer, "dı dı dın" çalar (düdük değil)', (tester) async {
       final m = _mac();
       m.molaEkle(0, 'a1');
       await tester.runAsync(_bekle);
@@ -219,16 +212,7 @@ void main() {
       await tester.pump(const Duration(seconds: 121));
       expect(duyurular, ['Kırmızı:Ayşe']);
       expect(m.molalar, isEmpty);
-      expect(alarmSayisi, 1);
-    });
-
-    testWidgets('AlarmKit varken duyurulur ama düdük çalmaz', (tester) async {
-      final m = _mac();
-      m.molaEkle(0, 'a1');
-      await tester.runAsync(_bekle);
-      simdi = simdi.add(const Duration(seconds: 120));
-      await tester.pump(const Duration(seconds: 121));
-      expect(duyurular, ['Kırmızı:Ayşe']);
+      expect(molaSesiSayisi, 1);
       expect(alarmSayisi, 0);
     });
 

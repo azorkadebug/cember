@@ -10,13 +10,23 @@ class PlanliAlarm {
   final DateTime zaman;
   final String baslik;
   final String govde;
-  const PlanliAlarm({required this.id, required this.zaman, required this.baslik, required this.govde});
+  /// Bildirim sesi: assets/sounds altındaki dosya adı (yerel taraf
+  /// Library/Sounds'a kopyalar).
+  final String ses;
+  const PlanliAlarm({
+    required this.id,
+    required this.zaman,
+    required this.baslik,
+    required this.govde,
+    required this.ses,
+  });
 
   Map<String, Object> toMap() => {
         'id': id,
         'zaman': zaman.millisecondsSinceEpoch,
         'baslik': baslik,
         'govde': govde,
+        'ses': ses,
       };
 
   @override
@@ -25,24 +35,28 @@ class PlanliAlarm {
       other.id == id &&
       other.zaman.millisecondsSinceEpoch == zaman.millisecondsSinceEpoch &&
       other.baslik == baslik &&
-      other.govde == govde;
+      other.govde == govde &&
+      other.ses == ses;
 
   @override
-  int get hashCode => Object.hash(id, zaman.millisecondsSinceEpoch, baslik, govde);
+  int get hashCode => Object.hash(id, zaman.millisecondsSinceEpoch, baslik, govde, ses);
 }
 
-/// Alarmı telefon hangi yolla kurdu.
+/// Telefon bildirimi kurabildi mi.
+///
+/// AlarmKit (iOS 26) bilerek kullanılmıyor: sessiz modu deliyor ama alarm
+/// ekranı açıp kapatılana kadar çalıyor; Sabri "alarm gibi değil, tok bir
+/// bildirim sesi" istedi (2026-11-15).
 enum AlarmYolu {
-  /// iOS 26+ AlarmKit: sessiz modu ve Odak'ı deler, Saat alarmı gibi çalar.
-  alarmKit,
-  /// Zamana duyarlı yerel bildirim (iOS 16–25 ya da AlarmKit izni yoksa).
+  /// Zamana duyarlı yerel bildirim: Odak'ı deler; telefon sessizdeyse yalnız
+  /// titreşim.
   bildirim,
   /// Kurulamadı (web, Android, izin yok): yalnız uygulama içi uyarı.
   yok,
 }
 
 /// Mola ve süre bitişini uygulama arka plandayken / telefon kilitliyken de
-/// duyurmak için iOS'a "şu anda çal" alarmları kurar.
+/// duyurmak için iOS'a zamanlanmış yerel bildirim kurar.
 ///
 /// Tek giriş noktası [esitle]: istenen alarmların TAM listesi verilir; yerel
 /// taraf listede olmayanı iptal eder, eksik olanı kurar. Böylece duraklat,
@@ -71,8 +85,7 @@ class AlarmServisi {
   static AlarmYolu _yol = AlarmYolu.yok;
   static Future<void> _sira = Future.value();
 
-  /// Son kurulumda kullanılan yol. AlarmKit ise uygulama içi düdük
-  /// çalınmaz (telefon zaten çalıyor, iki ses üst üste binmesin).
+  /// Son kurulumda kullanılan yol.
   static AlarmYolu get yol => _yol;
 
   static Future<String?> _varsayilanGonder(List<Map<String, Object>> alarmlar) =>
@@ -91,7 +104,6 @@ class AlarmServisi {
       try {
         final sonuc = await gonder(liste.map((a) => a.toMap()).toList());
         _yol = switch (sonuc) {
-          'alarmkit' => AlarmYolu.alarmKit,
           'bildirim' => AlarmYolu.bildirim,
           _ => liste.isEmpty ? _yol : AlarmYolu.yok,
         };

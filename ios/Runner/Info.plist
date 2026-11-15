@@ -45,8 +45,6 @@
 	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
-	<key>NSAlarmKitUsageDescription</key>
-	<string>Oyuncu molası ve maç süresi bittiğinde, telefon sessizdeyken ya da kilitliyken de haber vermek için alarm kurar.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

@@ -1,12 +1,6 @@
-import CryptoKit
 import Flutter
-import SwiftUI
 import UIKit
 import UserNotifications
-
-#if canImport(AlarmKit)
-import AlarmKit
-#endif
 
 @main
 @objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
@@ -25,14 +19,20 @@ import AlarmKit
   }
 }
 
-/// Mola ve maç süresi bitişini telefonun kendisine çaldırır (lib/services/alarm_servisi.dart).
+/// Mola ve maç süresi bitişini telefona bildirim olarak kurar
+/// (lib/services/alarm_servisi.dart).
 ///
-/// Tek komut `esitle`: Dart istenen alarmların TAM listesini yollar
-/// ([{id, zaman(ms), baslik, govde}]). Listede olmayan eski alarm iptal,
-/// eksik olan kurulur. Dönüş: "alarmkit" | "bildirim" | "yok".
+/// Tek komut `esitle`: Dart istenen bildirimlerin TAM listesini yollar
+/// ([{id, zaman(ms), baslik, govde, ses}]). Listede olmayan bekleyen bildirim
+/// iptal, eksik olan kurulur. Dönüş: "bildirim" | "yok".
 ///
-/// iOS 26+: AlarmKit (sessiz modu ve Odak'ı deler; ilk kullanımda izin ister).
-/// Daha eski iOS ya da AlarmKit izni reddedildiyse: zamana duyarlı yerel bildirim.
+/// Zamana duyarlı bildirim: Odak'ı deler; telefon sessizdeyse yalnız titreşim.
+/// Ses dosyası Flutter varlıklarından Library/Sounds'a kopyalanır (iOS özel
+/// bildirim sesini yalnız uygulama paketinden ya da oradan çalar).
+///
+/// AlarmKit (iOS 26) bilerek yok: sessiz modu deliyor ama alarm ekranı açıp
+/// kapatılana kadar çalıyor; Sabri "alarm gibi değil, tok bir bildirim sesi"
+/// istedi (2026-11-15).
 enum CemberAlarm {
   static let bildirimOnEki = "cember.alarm."
 
@@ -46,8 +46,8 @@ enum CemberAlarm {
       let ham = ((call.arguments as? [String: Any])?["alarmlar"] as? [[String: Any]]) ?? []
       let istenen = ham.compactMap(Istenen.init)
       Task { @MainActor in
-        let yol = await esitle(istenen)
-        result(yol)
+        let tamam = await bildirimleEsitle(istenen)
+        result(tamam ? "bildirim" : "yok")
       }
     }
   }
@@ -57,6 +57,7 @@ enum CemberAlarm {
     let zaman: Date
     let baslik: String
     let govde: String
+    let ses: String?
     let ms: Int64
 
     init?(_ m: [String: Any]) {
@@ -69,91 +70,40 @@ enum CemberAlarm {
       self.zaman = Date(timeIntervalSince1970: Double(ms) / 1000)
       self.baslik = baslik
       self.govde = govde
+      self.ses = m["ses"] as? String
     }
 
-    /// Kimlik + zaman → sabit UUID. Zaman değişince (duraklat/devam) farklı
-    /// UUID çıkar; eski alarm listede olmadığı için iptal edilir. Uygulama
-    /// yeniden açılınca da aynı UUID'ler üretildiği için kayıt tutmak gerekmez.
-    var uuid: UUID {
-      let ozet = SHA256.hash(data: Data("cember|\(id)|\(ms)".utf8))
-      var b = Array(ozet.prefix(16))
-      b[6] = (b[6] & 0x0F) | 0x50  // sürüm 5 biçimi
-      b[8] = (b[8] & 0x3F) | 0x80
-      return UUID(uuid: (b[0], b[1], b[2], b[3], b[4], b[5], b[6], b[7],
-                         b[8], b[9], b[10], b[11], b[12], b[13], b[14], b[15]))
-    }
-
+    /// Kimlik + zaman: zaman değişince (duraklat/devam) yeni kimlik çıkar,
+    /// eskisi listede olmadığı için iptal edilir. Uygulama yeniden açılınca
+    /// aynı kimlikler üretildiği için ayrıca kayıt tutmak gerekmez.
     var bildirimKimligi: String { "\(bildirimOnEki)\(id).\(ms)" }
   }
 
-  @MainActor
-  static func esitle(_ istenen: [Istenen]) async -> String {
-    #if canImport(AlarmKit)
-    if #available(iOS 26.0, *) {
-      if await alarmKitIleEsitle(istenen) {
-        await bildirimleEsitle([])  // eski yoldan kalanları temizle
-        return "alarmkit"
-      }
+  /// assets/sounds/<ad> → Library/Sounds/<ad> (yoksa ya da boyu farklıysa).
+  static func sesiHazirla(_ ad: String) -> UNNotificationSound {
+    let fm = FileManager.default
+    guard let lib = fm.urls(for: .libraryDirectory, in: .userDomainMask).first else { return .default }
+    let klasor = lib.appendingPathComponent("Sounds", isDirectory: true)
+    let hedef = klasor.appendingPathComponent(ad)
+    let anahtar = FlutterDartProject.lookupKey(forAsset: "assets/sounds/\(ad)")
+    guard let kaynak = Bundle.main.path(forResource: anahtar, ofType: nil) else {
+      NSLog("CemberAlarm ses bulunamadı: \(anahtar)")
+      return .default
     }
-    #endif
-    return await bildirimleEsitle(istenen) ? "bildirim" : "yok"
+    do {
+      try fm.createDirectory(at: klasor, withIntermediateDirectories: true)
+      let kaynakBoy = (try? fm.attributesOfItem(atPath: kaynak))?[.size] as? NSNumber
+      let hedefBoy = (try? fm.attributesOfItem(atPath: hedef.path))?[.size] as? NSNumber
+      if kaynakBoy != hedefBoy {
+        try? fm.removeItem(at: hedef)
+        try fm.copyItem(atPath: kaynak, toPath: hedef.path)
+      }
+      return UNNotificationSound(named: UNNotificationSoundName(ad))
+    } catch {
+      NSLog("CemberAlarm ses: \(error)")
+      return .default
+    }
   }
-
-  // MARK: AlarmKit (iOS 26+)
-
-  #if canImport(AlarmKit)
-  @available(iOS 26.0, *)
-  struct CemberMeta: AlarmMetadata {}
-
-  /// true: AlarmKit kullanılabildi (izin var). false: bildirim yoluna düş.
-  @available(iOS 26.0, *)
-  @MainActor
-  static func alarmKitIleEsitle(_ istenen: [Istenen]) async -> Bool {
-    let yonetici = AlarmManager.shared
-    var durum = yonetici.authorizationState
-    if durum == .notDetermined {
-      // İzin yalnız gerçekten kurulacak bir alarm varken sorulur (ilk mola).
-      if istenen.isEmpty { return false }
-      durum = (try? await yonetici.requestAuthorization()) ?? .denied
-    }
-    guard durum == .authorized else { return false }
-
-    let hedef = Dictionary(istenen.map { ($0.uuid, $0) }, uniquingKeysWith: { a, _ in a })
-    let mevcut = (try? yonetici.alarms) ?? []
-    for alarm in mevcut where hedef[alarm.id] == nil {
-      // Çalmakta olan alarm (kullanıcı henüz kapatmadı) iptal edilmez.
-      if alarm.state == .alerting { continue }
-      try? yonetici.cancel(id: alarm.id)
-    }
-    let mevcutKimlikler = Set(mevcut.map(\.id))
-    for (uuid, a) in hedef where !mevcutKimlikler.contains(uuid) {
-      guard a.zaman > Date() else { continue }
-      let uyari: AlarmPresentation.Alert
-      if #available(iOS 26.1, *) {
-        uyari = AlarmPresentation.Alert(title: LocalizedStringResource(stringLiteral: a.baslik))
-      } else {
-        uyari = AlarmPresentation.Alert(
-          title: LocalizedStringResource(stringLiteral: a.baslik),
-          stopButton: AlarmButton(text: "Tamam", textColor: .white, systemImageName: "checkmark"))
-      }
-      let nitelik = AlarmAttributes<CemberMeta>(
-        presentation: AlarmPresentation(alert: uyari),
-        metadata: CemberMeta(),
-        tintColor: Color(red: 0, green: 0.47, blue: 0.42))
-      do {
-        _ = try await yonetici.schedule(
-          id: uuid,
-          configuration: .alarm(schedule: .fixed(a.zaman), attributes: nitelik))
-      } catch {
-        NSLog("CemberAlarm AlarmKit: \(error)")
-        return false
-      }
-    }
-    return true
-  }
-  #endif
-
-  // MARK: Yerel bildirim (iOS 16–25 ya da AlarmKit izni yok)
 
   @MainActor
   static func bildirimleEsitle(_ istenen: [Istenen]) async -> Bool {
@@ -168,6 +118,7 @@ enum CemberAlarm {
 
     var ayar = await merkez.notificationSettings()
     if ayar.authorizationStatus == .notDetermined {
+      // İzin yalnız gerçekten kurulacak bir bildirim varken sorulur (ilk mola).
       _ = try? await merkez.requestAuthorization(options: [.alert, .sound])
       ayar = await merkez.notificationSettings()
     }
@@ -182,7 +133,7 @@ enum CemberAlarm {
       let icerik = UNMutableNotificationContent()
       icerik.title = a.baslik
       icerik.body = a.govde
-      icerik.sound = .default
+      icerik.sound = a.ses.map(sesiHazirla) ?? .default
       icerik.interruptionLevel = .timeSensitive
       let tetik = UNTimeIntervalNotificationTrigger(timeInterval: saniye, repeats: false)
       do {

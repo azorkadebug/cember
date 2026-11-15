@@ -65,6 +65,10 @@ class MacDurumu extends ChangeNotifier with WidgetsBindingObserver {
   @visibleForTesting
   static void Function() alarmCal = _varsayilanAlarm;
 
+  /// Mola bitince "dı dı dın" (düdükten ayrı; Sabri seçti, 2026-11-15).
+  /// Skor ekranı da bunu çağırır; testte sayaçla değiştirilir.
+  static void Function() molaSesiCal = _varsayilanMolaSesi;
+
   /// Skor ekranı açıkken molayı o yönetir (sayaç, "Mola bitti" penceresi).
   /// Kapalıyken biten molayı burası düşürür ve [molaBittiDuyuru] ile haber
   /// verir; eskiden ekran dışında biten mola sessizce kayboluyordu.
@@ -249,14 +253,12 @@ class MacDurumu extends ChangeNotifier with WidgetsBindingObserver {
     notifyListeners();
   }
 
-  /// Telefon alarmı/bildirimi zaten çaldıysa uygulama içi düdük ikinci kez
-  /// çalmasın. AlarmKit uygulama öndeyken de çalar → hiç çalma. Bildirim
-  /// uygulama öndeyken görünmez → yalnız bitişten epey sonra (arka plandan
-  /// dönüş) fark edildiyse çalma; o an bildirim zaten duyurmuştu.
+  /// Telefon bildirimi zaten çaldıysa uygulama içi ses ikinci kez
+  /// çalmasın. Bildirim uygulama öndeyken görünmez → uygulama çalar; yalnız
+  /// bitişten epey sonra (arka plandan dönüş) fark edildiyse çalmaz, o an
+  /// bildirim zaten duyurmuştu.
   static bool uygulamaIciSesGerekir(DateTime bitis) {
     switch (AlarmServisi.yol) {
-      case AlarmYolu.alarmKit:
-        return false;
       case AlarmYolu.bildirim:
         return saat().difference(bitis) < const Duration(seconds: 3);
       case AlarmYolu.yok:
@@ -306,7 +308,7 @@ class MacDurumu extends ChangeNotifier with WidgetsBindingObserver {
     final takim = takimlar[m.takimIndex];
     final oyuncu = takim.oyuncular.where((o) => o.id == m.oyuncuId).firstOrNull;
     if (oyuncu == null) return;
-    if (uygulamaIciSesGerekir(m.bitis)) alarmCal();
+    if (uygulamaIciSesGerekir(m.bitis)) molaSesiCal();
     molaBittiDuyuru?.call(takim.renkAdi, oyuncu);
   }
 
@@ -317,12 +319,14 @@ class MacDurumu extends ChangeNotifier with WidgetsBindingObserver {
     if (takimlar == null) return const [];
     return [
       if (_bitis != null)
-        PlanliAlarm(id: 'sure', zaman: _bitis!, baslik: 'Süre bitti', govde: 'Maç süresi doldu.'),
+        PlanliAlarm(
+            id: 'sure', zaman: _bitis!, baslik: 'Süre bitti', govde: 'Maç süresi doldu.', ses: 'sure_bitti.wav'),
       for (final m in _molalar)
         PlanliAlarm(
           id: 'mola_${m.oyuncuId}',
           zaman: m.bitis,
           baslik: 'Mola bitti',
+          ses: 'mola_bitti.wav',
           govde: m.takimIndex < takimlar.length && takimlar[m.takimIndex].renkAdi.isNotEmpty
               ? '${takimlar[m.takimIndex].renkAdi} takımındaki oyuncu oyuna dönebilir.'
               : 'Moladaki oyuncu oyuna dönebilir.',
@@ -360,6 +364,15 @@ class MacDurumu extends ChangeNotifier with WidgetsBindingObserver {
         await Future<void>.delayed(const Duration(milliseconds: 250));
       }
     }());
+  }
+
+  static void _varsayilanMolaSesi() {
+    unawaited(() async {
+      await sesBaglaminiKur();
+      final p = _alarmCalar ??= AudioPlayer();
+      await p.play(AssetSource('sounds/mola_bitti.wav')).catchError((_) {});
+    }());
+    unawaited(HapticFeedback.heavyImpact());
   }
 
   void macBitir() {
