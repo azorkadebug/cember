@@ -117,7 +117,10 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
     }
   }
 
-  Future<void> _kaydet() async {
+  /// true: kayıt gitti ya da çevrimdışı kuyruğa alındı (ya da değişiklik yok);
+  /// false: kayıt başarısız, ekranda kalınmalı (kaydedilmemiş işaretler
+  /// kaybolmasın, denetim #5 O4).
+  Future<bool> _kaydet() async {
     // Yalnız değişen öğrencilerin değişen alanları; set(merge) haritayı derin
     // birleştirdiği için diğer cihazın kayıtları korunur.
     final kayitlar = <String, dynamic>{};
@@ -136,7 +139,7 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
     }
     if (kayitlar.isEmpty && _kayitVar) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Değişiklik yok.')));
-      return;
+      return true;
     }
     setState(() => _kaydediyor = true);
     try {
@@ -164,6 +167,7 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ));
       }
+      return true;
     } on TimeoutException {
       // Yazma kuyrukta: kalıcı önbellek açık, bağlantı gelince gidecek.
       if (mounted) {
@@ -173,6 +177,7 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
           backgroundColor: AppTema.uyari,
         ));
       }
+      return true;
     } catch (_) {
       if (mounted) {
         setState(() => _kaydediyor = false);
@@ -183,6 +188,7 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ));
       }
+      return false;
     }
   }
 
@@ -233,10 +239,29 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
       lastDate: DateTime.now(),
     );
     if (secilen != null) {
+      // Kirli kontrol yapılmadan yeniden yükleme işaretleri siliyordu.
+      if (_kirli) {
+        final secim = await _kirliSor();
+        if (secim == null || !mounted) return;
+        if (secim == 'kaydet' && !await _kaydet()) return;
+        if (!mounted) return;
+      }
       setState(() => _tarih = secilen);
       await _yukle();
     }
   }
+
+  Future<String?> _kirliSor() => showDialog<String>(
+        context: context,
+        builder: (c) => AlertDialog(
+          title: const Text('Kaydedilmemiş değişiklikler'),
+          content: const Text('Yoklamada kaydetmediğin işaretler var.'),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(c, 'cik'), child: const Text('Kaydetmeden çık')),
+            FilledButton(onPressed: () => Navigator.pop(c, 'kaydet'), child: const Text('Kaydet')),
+          ],
+        ),
+      );
 
   bool get _kirli => _ogrenciler.any((o) {
         final s = _kayitlar[o.id], i = _ilkKayitlar[o.id];
@@ -258,18 +283,9 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
       onPopInvokedWithResult: (didPop, _) async {
         if (didPop) return;
         if (!_kirli) { Navigator.pop(context); return; }
-        final secim = await showDialog<String>(
-          context: context,
-          builder: (c) => AlertDialog(
-            title: const Text('Kaydedilmemiş değişiklikler'),
-            content: const Text('Yoklamada kaydetmediğin işaretler var.'),
-            actions: [
-              TextButton(onPressed: () => Navigator.pop(c, 'cik'), child: const Text('Kaydetmeden çık')),
-              FilledButton(onPressed: () => Navigator.pop(c, 'kaydet'), child: const Text('Kaydet')),
-            ],
-          ),
-        );
-        if (secim == 'kaydet') await _kaydet();
+        final secim = await _kirliSor();
+        // Kayıt başarısızsa ekranda kal: kapanınca işaretler gidiyordu.
+        if (secim == 'kaydet' && !await _kaydet()) return;
         if (secim != null && context.mounted) Navigator.pop(context);
       },
       child: Scaffold(
@@ -349,8 +365,10 @@ class _YoklamaEkraniState extends State<YoklamaEkrani> {
                       spacing: 8,
                       runSpacing: 6,
                       children: [
-                        Text('Karta dokununca kalemler açılır',
-                            style: TextStyle(color: r.metinIkincil, fontSize: 13, fontWeight: FontWeight.w600)),
+                        // Kalem yokken açılacak bir şey yok (denetim #5 O5).
+                        if (_gunlukKalemler.isNotEmpty)
+                          Text('Karta dokununca kalemler açılır',
+                              style: TextStyle(color: r.metinIkincil, fontSize: 13, fontWeight: FontWeight.w600)),
                         OutlinedButton.icon(
                           onPressed: _tumuGeldi,
                           icon: const Icon(Icons.done_all_rounded, size: 20),

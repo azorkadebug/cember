@@ -155,3 +155,18 @@ Brans bransSablonu(String? id) => bransSablonlari.firstWhere(
       (b) => b.id == id,
       orElse: () => bransSablonlari.first,
     );
+
+/// Sınıf belgesindeki `kontrolKalemleri` alanını çözer.
+/// - alan yok (null) ya da bozuk (liste değil): branş varsayılanları
+///   (eski sınıf: branşı yoksa Beden Eğitimi);
+/// - boş liste GEÇERLİ: öğretmen bütün kalemleri silip kaydettiyse varsayılanlar
+///   geri gelmez (denetim #5 O5);
+/// - dolu liste: `sira`ya göre sıralı.
+List<KontrolKalemi> kontrolKalemleriCoz(Object? raw, String? brans) {
+  if (raw is! List) return bransSablonu(brans).varsayilanKalemler;
+  final list = raw
+      .map((e) => KontrolKalemi.fromMap(Map<String, dynamic>.from(e as Map)))
+      .toList();
+  list.sort((a, b) => a.sira.compareTo(b.sira));
+  return list;
+}

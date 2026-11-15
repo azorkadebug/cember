@@ -7,6 +7,7 @@ import '../tema.dart';
 import '../tema_renkleri.dart';
 import '../utils/egitim_yili.dart';
 import '../utils/metin.dart';
+import '../utils/toplu_ekleme.dart';
 import '../widgets/simgeler.dart';
 import '../widgets/kalem_simgeleri.dart';
 
@@ -76,7 +77,7 @@ class _GecenYildanEkleEkraniState extends State<GecenYildanEkleEkrani> {
       if (!mounted) return;
       setState(() {
         _siniflar = sonuc.where((s) => s.ogrenciler.isNotEmpty).toList();
-        _mevcutAdlar = mevcut.map(trKucult).toSet();
+        _mevcutAdlar = mevcut.map(adAnahtari).toSet();
         _yukleniyor = false;
       });
     } catch (_) {
@@ -84,11 +85,24 @@ class _GecenYildanEkleEkraniState extends State<GecenYildanEkleEkrani> {
     }
   }
 
-  bool _sinifta(Ogrenci o) => _mevcutAdlar.contains(trKucult(o.ad.trim()));
+  bool _sinifta(Ogrenci o) => _mevcutAdlar.contains(adAnahtari(o.ad));
+
+  /// Aynı (Türkçe duyarsız) ada sahip başka bir kayıt zaten seçili mi?
+  /// Öğrenci iki eski sınıfta da kayıtlıysa ikisi birden aktarılınca hedefte
+  /// iki kayıt oluşuyordu; özelliğin amacı bunu önlemek (Kararlar, 2026-10-03).
+  bool _baskaAyniAdSecili(_EskiSinif s, Ogrenci o) {
+    final ak = adAnahtari(o.ad);
+    for (final es in _siniflar) {
+      for (final eo in es.ogrenciler) {
+        if (es.id == s.id && eo.id == o.id) continue;
+        if (_secili.contains('${es.id}/${eo.id}') && adAnahtari(eo.ad) == ak) return true;
+      }
+    }
+    return false;
+  }
 
   Future<void> _aktar() async {
     if (_secili.isEmpty || _kaydediyor) return;
-    setState(() => _kaydediyor = true);
     final kopyalar = <Ogrenci>[];
     for (final s in _siniflar) {
       for (final o in s.ogrenciler) {
@@ -97,6 +111,25 @@ class _GecenYildanEkleEkraniState extends State<GecenYildanEkleEkrani> {
         }
       }
     }
+    // Aynı adlı iki FARKLI öğrenci gerçekten olabilir: engelleme, sor.
+    final tekrar = tekrarEdenAdlar(kopyalar.map((o) => o.ad));
+    if (tekrar.isNotEmpty) {
+      final devam = await showDialog<bool>(
+        context: context,
+        builder: (c) => AlertDialog(
+          title: const Text("Aynı İsim İki Kez Seçili"),
+          content: Text("Şu isimler iki eski sınıftan da seçili, hedef sınıfta ikişer kayıt olur: "
+              "${tekrar.join(', ')}.\n\nAynı öğrenciyse birini seçimden çıkar; "
+              "gerçekten iki ayrı öğrenciyse yine de ekle."),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(c, false), child: const Text("Vazgeç")),
+            ElevatedButton(onPressed: () => Navigator.pop(c, true), child: const Text("Yine de Ekle")),
+          ],
+        ),
+      );
+      if (devam != true || !mounted) return;
+    }
+    setState(() => _kaydediyor = true);
     try {
       await _db.ogrencilerTopluEkle(widget.hedefSinifId, kopyalar);
       if (mounted) Navigator.pop(context, kopyalar.length);
@@ -174,7 +207,7 @@ class _GecenYildanEkleEkraniState extends State<GecenYildanEkleEkrani> {
         ..sort((a, b) => trKarsilastir(a.gorunenAd, b.gorunenAd));
       if (liste.isEmpty) continue;
       final secilebilir = liste.where((o) => !_sinifta(o)).toList();
-      final hepsiSecili = secilebilir.isNotEmpty && secilebilir.every((o) => _secili.contains('${s.id}/${o.id}'));
+      final hepsiSecili = secilebilir.isNotEmpty && secilebilir.every((o) => _secili.contains('${s.id}/${o.id}') || _baskaAyniAdSecili(s, o));
       bolumler.add(Padding(
         padding: const EdgeInsets.fromLTRB(4, 16, 0, 4),
         child: Row(children: [
@@ -187,7 +220,13 @@ class _GecenYildanEkleEkraniState extends State<GecenYildanEkleEkrani> {
               onPressed: () => setState(() {
                 for (final o in secilebilir) {
                   final k = '${s.id}/${o.id}';
-                  hepsiSecili ? _secili.remove(k) : _secili.add(k);
+                  if (hepsiSecili) {
+                    _secili.remove(k);
+                  } else if (!_baskaAyniAdSecili(s, o)) {
+                    // Başka sınıftan aynı adla seçilmişse atla: toplu seçim
+                    // aynı kişiyi iki kez eklemesin. Tek tek seçilebilir.
+                    _secili.add(k);
+                  }
                 }
               }),
               child: Text(hepsiSecili ? "Seçimi Kaldır" : "Tümünü Seç"),
@@ -250,7 +289,9 @@ class _GecenYildanEkleEkraniState extends State<GecenYildanEkleEkrani> {
       ]),
       subtitle: sinifta
           ? Text("Zaten bu sınıfta", style: TextStyle(fontSize: 12, color: r.metinUcuncul))
-          : null,
+          : (_secili.contains(k) && _baskaAyniAdSecili(s, o)
+              ? Text("Aynı adla başka sınıftan da seçili", style: TextStyle(fontSize: 12, color: r.uyari))
+              : null),
     );
   }
 

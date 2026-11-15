@@ -3,6 +3,7 @@ import '../tema_renkleri.dart';
 import '../widgets/kalem_simgeleri.dart';
 import '../utils/metin.dart';
 import '../utils/sinif_ozeti.dart';
+import '../utils/toplu_ekleme.dart';
 import '../utils/bugun_burada.dart';
 import 'dart:math';
 import 'dart:async';
@@ -203,18 +204,8 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
     Bugun().addListener(_yoklamaIsle);
   }
 
-  List<KontrolKalemi> _kontrolKalemleriCoz(Map<String, dynamic>? data) {
-    final raw = data?['kontrolKalemleri'];
-    if (raw is List && raw.isNotEmpty) {
-      final list = raw
-          .map((e) => KontrolKalemi.fromMap(Map<String, dynamic>.from(e as Map)))
-          .toList();
-      list.sort((a, b) => a.sira.compareTo(b.sira));
-      return list;
-    }
-    // Eski sınıf: branşı yoksa Beden Eğitimi varsayılır.
-    return bransSablonu(data?['brans'] as String?).varsayilanKalemler;
-  }
+  List<KontrolKalemi> _kontrolKalemleriCoz(Map<String, dynamic>? data) =>
+      kontrolKalemleriCoz(data?['kontrolKalemleri'], data?['brans'] as String?);
 
   Future<void> _formaRenkleriniYukle() async {
     try {
@@ -2155,6 +2146,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                             excludeSemantics: true,
                             child: GestureDetector(
                             onTap: () => setSheetState(() {
+                              durum.cinsiyetEksik.remove(satir);
                               if (!satir.cinsiyetSecildi) {
                                 satir.cinsiyetSecildi = true;
                               } else {
@@ -2168,7 +2160,9 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
                                     ? r.kart
                                     : (satir.isMale ? const Color(0xFF4FA3F7) : const Color(0xFFFF8FB1)),
                                 shape: BoxShape.circle,
-                                border: Border.all(color: r.kenar, width: 2),
+                                border: durum.cinsiyetEksik.contains(satir)
+                                    ? Border.all(color: r.yokMetin, width: 3.5)
+                                    : Border.all(color: r.kenar, width: 2),
                               ),
                               child: Center(
                                 child: !satir.cinsiyetSecildi
@@ -2318,6 +2312,19 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
       _TopluKayitDurumu durum, StateSetter setSheetState) async {
     // Yavaş bağlantıda çift dokunuş işlemi iki kez koşturuyordu (denetim #3 Y8).
     if (durum.kaydediyor) return;
+    // Cinsiyeti seçilmemiş dolu satır sessizce erkek kaydediliyordu (denetim
+    // #5): kaydetme, satırları işaretle, yazılanlar pencerede kalsın.
+    final eksik = cinsiyetsizSatirlar([
+      for (final s in satirlar) (ad: s.adCtrl.text, cinsiyetSecildi: s.cinsiyetSecildi),
+    ]);
+    if (eksik.isNotEmpty) {
+      setSheetState(() {
+        durum.cinsiyetEksik = {for (final i in eksik) satirlar[i]};
+        durum.hata = "${eksik.length} satırda cinsiyet seçilmedi. Kırmızı işaretli "
+            "yuvarlağa dokunup seç.";
+      });
+      return;
+    }
     setSheetState(() {
       durum.kaydediyor = true;
       durum.hata = null;
@@ -2359,18 +2366,22 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
       mevcutAdlar = await _db.mevcutOgrenciAdlari(widget.sinifId, sadeceOnbellek: true);
     }
 
-    // Yeni ve çakışan öğrencileri ayır
+    // Yeni ve çakışan öğrencileri ayır. Karşılaştırma Türkçe büyük/küçük
+    // harfe duyarsız ve aynı parti içindeki tekrarı da yakalar (denetim #5).
     final yeniOgrenciler = <Ogrenci>[];
-    final cakisanSatirlar = <TopluOgrenciSatiri>[];
+    final cakisanListe = <TopluOgrenciSatiri>[];
     final cakisanlar = <String>[];
 
-    for (var s in satirlar) {
+    final cakisanIdx = cakisanSatirlar(
+        [for (final s in satirlar) s.adCtrl.text], mevcutAdlar);
+    for (var i = 0; i < satirlar.length; i++) {
+      final s = satirlar[i];
       final ad = s.adCtrl.text.trim();
       if (ad.isEmpty) continue;
 
-      if (mevcutAdlar.contains(ad)) {
+      if (cakisanIdx.contains(i)) {
         cakisanlar.add(ad);
-        cakisanSatirlar.add(s);
+        cakisanListe.add(s);
       } else {
         yeniOgrenciler.add(Ogrenci(
           id: '', ad: ad, isMale: s.isMale,
@@ -2425,7 +2436,7 @@ class _OgrenciListesiEkraniState extends State<OgrenciListesiEkrani> {
       );
 
       if (devamEt == true) {
-        final cakisanOgrenciler = cakisanSatirlar.map((s) => Ogrenci(
+        final cakisanOgrenciler = cakisanListe.map((s) => Ogrenci(
           id: '', ad: s.adCtrl.text.trim(), isMale: s.isMale,
           puan: int.tryParse(s.puanCtrl.text) ?? 100,
         )).toList();
@@ -2858,4 +2869,6 @@ class _TopluKayitDurumu {
   bool kaydedildi = false;
   bool taslakTemizlendi = false;
   String? hata;
+  /// Cinsiyeti seçilmemiş diye kırmızı işaretlenen satırlar.
+  Set<TopluOgrenciSatiri> cinsiyetEksik = {};
 }
